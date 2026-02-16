@@ -4,6 +4,8 @@ import PaginaSemilla from "@/paginas/PaginaSemilla";
 import VistaMesero from "@/componentes/mesero/VistaMesero";
 import TableroCocina from "@/componentes/cocina/TableroCocina";
 import GestionMenu from "@/componentes/admin/GestionMenu";
+import ResumenDia from '@/paginas/admind/ResumenDia';
+import ResumenPedidosDia from '@/componentes/admind/ResumenPedidosDia';
 
 // Páginas placeholder temporales
 const Dashboard = () => (
@@ -27,6 +29,8 @@ const router = createBrowserRouter([
       { path: "mesero", element: <VistaMesero /> },
       { path: "cocina", element: <TableroCocina /> },
       { path: "admin", element: <GestionMenu /> },
+      { path: "admin/resumen", element: <ResumenDia /> },
+      { path: "admin/pedidos-dia", element: <ResumenPedidosDia /> },
       { path: "semilla", element: <PaginaSemilla /> }, // Ruta oculta para devs
     ],
   },

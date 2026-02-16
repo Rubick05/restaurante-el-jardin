@@ -1,5 +1,5 @@
 import { Link, Outlet } from "react-router-dom";
-import { UtensilsCrossed, LayoutDashboard, Settings, ChefHat } from "lucide-react";
+import { UtensilsCrossed, LayoutDashboard, Settings, ChefHat, Calendar } from "lucide-react";
 import { Button } from "@/componentes/ui/button";
 
 export default function LayoutPrincipal() {
@@ -32,6 +32,12 @@ export default function LayoutPrincipal() {
                             <Button variant="ghost" className="w-full justify-start gap-2">
                                 <ChefHat className="w-4 h-4" />
                                 Cocina
+                            </Button>
+                        </Link>
+                        <Link to="/admin/pedidos-dia">
+                            <Button variant="ghost" className="w-full justify-start gap-2">
+                                <Calendar className="w-4 h-4" />
+                                Pedidos del Día
                             </Button>
                         </Link>
                         <Link to="/admin">

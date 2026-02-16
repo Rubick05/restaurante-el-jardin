@@ -28,38 +28,23 @@ export default function PaginaSemilla() {
             await bdLocal.elementosMenu.clear();
             await bdLocal.pedidos.clear();
             await bdLocal.itemsPedido.clear();
-            await bdLocal.mesas.clear();
+            await bdLocal.mesas.clear(); // Ya no usaremos mesas predefinidas, pero limpiamos por si acaso
 
             // 2. Insertar Menú Cochabambino
             const items = [
-                // Platos Fuertes
-                { nombre: "Pique Macho", precio: 60.00, cat: "Platos Fuertes", img: "https://images.unsplash.com/photo-1594970487933-d9d164d1421f?q=80&w=300&auto=format&fit=crop" }, // Placeholder genérico, idealmente usar fotos reales
+                { nombre: "Pique Macho", precio: 60.00, cat: "Platos Fuertes", img: "https://images.unsplash.com/photo-1594970487933-d9d164d1421f?q=80&w=300&auto=format&fit=crop" },
                 { nombre: "Silpancho", precio: 35.00, cat: "Platos Fuertes", img: "https://images.unsplash.com/photo-1604579976378-43869279d30c?q=80&w=300&auto=format&fit=crop" },
                 { nombre: "Chicharrón", precio: 50.00, cat: "Platos Fuertes", img: "https://images.unsplash.com/photo-1626804475297-411db7051a61?q=80&w=300&auto=format&fit=crop" },
                 { nombre: "Lapping", precio: 45.00, cat: "Platos Fuertes", img: null },
                 { nombre: "Planchitas", precio: 30.00, cat: "Platos Fuertes", img: null },
                 { nombre: "Falso Conejo", precio: 25.00, cat: "Platos Fuertes", img: null },
-
-                // Sopas
                 { nombre: "Sopa de Maní", precio: 15.00, cat: "Sopas", img: null },
                 { nombre: "Chairo", precio: 15.00, cat: "Sopas", img: null },
-
-                // Bebidas
                 { nombre: "Coca Cola 2L", precio: 15.00, cat: "Bebidas", img: null },
                 { nombre: "Coca Cola Personal", precio: 5.00, cat: "Bebidas", img: null },
-                { nombre: "Fanta 2L", precio: 15.00, cat: "Bebidas", img: null },
-                { nombre: "Sprite 2L", precio: 15.00, cat: "Bebidas", img: null },
-                { nombre: "Jugo de Naranja", precio: 10.00, cat: "Bebidas", img: null },
-                { nombre: "Limonada", precio: 8.00, cat: "Bebidas", img: null },
-
-                // Cervezas
                 { nombre: "Huari", precio: 20.00, cat: "Cervezas", img: null },
                 { nombre: "Paceña", precio: 18.00, cat: "Cervezas", img: null },
-                { nombre: "Taquiña", precio: 18.00, cat: "Cervezas", img: null },
-
-                // Entradas/Guarniciones
                 { nombre: "Porción de Arroz", precio: 5.00, cat: "Guarniciones", img: null },
-                { nombre: "Porción de Papas", precio: 8.00, cat: "Guarniciones", img: null },
             ];
 
             const batchMenu = items.map(item => ({
@@ -75,38 +60,104 @@ export default function PaginaSemilla() {
 
             await bdLocal.elementosMenu.bulkAdd(batchMenu);
 
-            // 3. Insertar Mesas (Resetear a disponibles)
-            const mesas = [
-                { n: '1', z: 'Principal', c: 4 },
-                { n: '2', z: 'Principal', c: 2 },
-                { n: '3', z: 'Principal', c: 4 },
-                { n: '4', z: 'Principal', c: 6 },
-                { n: '5', z: 'Terraza', c: 2 },
-                { n: '6', z: 'Terraza', c: 4 },
-                { n: '7', z: 'Terraza', c: 8 },
-                { n: '8', z: 'Barra', c: 1 },
-            ];
+            // 3. Generar Historial de Ventas (Pedidos Pagados de HOY)
+            const historialPedidos = [];
+            const ahora = new Date();
 
-            const batchMesas = mesas.map((m, i) => ({
-                id: uuidv4(),
-                id_restaurante: 'demo-tenant',
-                numero: m.n,
-                zona: m.z,
-                capacidad: m.c,
-                estado: 'disponible' as const,
-                posX: i % 4,
-                posY: Math.floor(i / 4)
-            }));
+            // Generar 15 pedidos pasados (hace 1-8 horas)
+            for (let i = 0; i < 15; i++) {
+                const haceHoras = Math.floor(Math.random() * 8) + 1;
+                const fecha = new Date(ahora.getTime() - haceHoras * 60 * 60 * 1000).toISOString();
 
-            await bdLocal.mesas.bulkAdd(batchMesas);
+                // Items aleatorios
+                const numItems = Math.floor(Math.random() * 3) + 1;
+                const itemsPedido = [];
+                let total = 0;
 
-            // Invalidar queries para que el menú se actualice
+                for (let j = 0; j < numItems; j++) {
+                    const itemMenu = batchMenu[Math.floor(Math.random() * batchMenu.length)];
+                    const cantidad = Math.floor(Math.random() * 2) + 1;
+                    const subtotal = itemMenu.precio_actual * cantidad;
+                    total += subtotal;
+                    itemsPedido.push({
+                        id_elemento_menu: itemMenu.id,
+                        nombre_item: itemMenu.nombre,
+                        cantidad: cantidad,
+                        precio_unitario: itemMenu.precio_actual,
+                        subtotal: subtotal,
+                        categoria: itemMenu.categoria
+                    });
+                }
+
+                historialPedidos.push({
+                    id: uuidv4(),
+                    id_restaurante: 'demo-tenant',
+                    id_mesa: 'historial', // Irrelevante para historial
+                    id_mesero: 'admin',
+                    numero_pedido: `HIST-${1000 + i}`,
+                    numero_ficha: (50 + i).toString(), // Fichas altas para historial
+                    estado: 'pagado',
+                    tipo_pedido: Math.random() > 0.7 ? 'llevar' : 'mesa',
+                    subtotal: total,
+                    impuesto: 0,
+                    total: total,
+                    creado_en: fecha,
+                    actualizado_en: fecha,
+                    version: 1,
+                    sincronizado: false,
+                    items: itemsPedido,
+                    datos_facturacion: Math.random() > 0.5 ? { tipo: 'recibo' } : { tipo: 'factura', nit_ci: '8574932', razon_social: 'Cliente Ejemplo' }
+                });
+            }
+
+            // 4. Generar Pedidos ACTIVOS (Pendientes, Cocina, Listos)
+            const pedidosActivos = [];
+            const estadosActivos = ['pendiente', 'en_proceso', 'listo', 'entregado'];
+
+            for (let i = 0; i < 8; i++) {
+                const estado = estadosActivos[i % estadosActivos.length];
+                const fecha = new Date(ahora.getTime() - (Math.random() * 60 * 1000)).toISOString(); // Hace minutos
+
+                const itemMenu = batchMenu[Math.floor(Math.random() * 5)]; // Solo platos principales
+                const cantidad = 1;
+
+                pedidosActivos.push({
+                    id: uuidv4(),
+                    id_restaurante: 'demo-tenant',
+                    id_mesa: 'activo',
+                    id_mesero: 'mesero1',
+                    numero_pedido: `ACT-${200 + i}`,
+                    numero_ficha: (i + 1).toString(), // Fichas 1 a 8
+                    estado: estado,
+                    tipo_pedido: 'mesa',
+                    subtotal: itemMenu.precio_actual,
+                    impuesto: 0,
+                    total: itemMenu.precio_actual,
+                    creado_en: fecha,
+                    actualizado_en: fecha,
+                    version: 1,
+                    sincronizado: false,
+                    items: [{
+                        id_elemento_menu: itemMenu.id,
+                        nombre_item: itemMenu.nombre,
+                        cantidad: cantidad,
+                        precio_unitario: itemMenu.precio_actual,
+                        subtotal: itemMenu.precio_actual,
+                        categoria: itemMenu.categoria
+                    }]
+                });
+            }
+
+            await bdLocal.pedidos.bulkAdd([...historialPedidos, ...pedidosActivos] as any);
+
+            // Invalidar queries
             await queryClient.invalidateQueries({ queryKey: ['menu'] });
-            await queryClient.invalidateQueries({ queryKey: ['mesas'] });
+            await queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
             await queryClient.invalidateQueries({ queryKey: ['pedidos-cocina'] });
-            await refetch(); // Refetch conteos
+            await queryClient.invalidateQueries({ queryKey: ['resumen-dia'] });
+            await refetch();
 
-            alert("✅ Datos de Cochabamba insertados correctamente! BD Reiniciada.");
+            alert("✅ Datos COMPLETOS sembrados:\n- 15 Ventas Históricas (Prueba Resumen)\n- 8 Pedidos Activos (Prueba Cocina/Fichas)");
         } catch (e) {
             console.error(e);
             alert("❌ Error al insertar datos");

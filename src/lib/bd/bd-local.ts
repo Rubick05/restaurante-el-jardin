@@ -13,6 +13,13 @@ export interface Pedido {
     impuesto: number;
     total: number;
     notas?: string;
+    numero_ficha: number; // Número secuencial del día (1, 2, 3...)
+    numero_letrero?: string; // Letrero físico para ubicación (1-30)
+    datos_facturacion?: {
+        tipo: 'factura' | 'recibo';
+        nit_ci?: string;
+        razon_social?: string;
+    };
     creado_en: string; // ISO String
     actualizado_en: string;
     version: number;
@@ -23,6 +30,8 @@ export interface Pedido {
         cantidad: number;
         precio_unitario: number;
         subtotal: number;
+        categoria?: string; // Nuevo campo para filtrar en cocina
+        estado_item?: 'pendiente' | 'en_proceso' | 'listo'; // Estado individual del item
     }[];
 }
 

@@ -7,6 +7,7 @@ export interface ItemCarrito {
     nombre: string;
     precio: number;
     cantidad: number;
+    categoria?: string;
 }
 
 interface Props {

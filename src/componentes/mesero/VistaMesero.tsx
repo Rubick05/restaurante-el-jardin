@@ -1,68 +1,73 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/componentes/ui/tabs";
-import NavegadorMenu from "./NavegadorMenu";
-import MapaMesas from "./MapaMesas";
-import MisPedidos from "./MisPedidos";
-import { useQuery } from "@tanstack/react-query";
-import { bdLocal, Mesa } from "@/lib/bd/bd-local";
 import { useState } from "react";
+import NavegadorMenu from "./NavegadorMenu";
+import TableroFichas from "./TableroFichas"; // Ahora es la Lista de Pedidos
+import { Button } from "@/componentes/ui/button";
+import { PlusCircle, UtensilsCrossed } from "lucide-react";
+import { Pedido } from "@/lib/bd/bd-local";
 
 export default function VistaMesero() {
-    const [tabActivo, setTabActivo] = useState("mapa");
-    const [mesaSeleccionada, setMesaSeleccionada] = useState<Mesa | null>(null);
-
-    const { data: menuCount } = useQuery({
-        queryKey: ['check-menu'],
-        queryFn: () => bdLocal.elementosMenu.count()
-    });
-
-    const handleMesaSelect = (mesa: Mesa) => {
-        setMesaSeleccionada(mesa);
-        // Si la mesa está disponible, ir directo a tomar pedido
-        // Si está ocupada, el MapaMesas manejará el diálogo de opciones
-    };
+    const [modo, setModo] = useState<"lista" | "menu">("lista");
+    const [pedidoSeleccionado, setPedidoSeleccionado] = useState<Pedido | null>(null);
 
     const irANuevoPedido = () => {
-        setTabActivo("nuevo");
+        setPedidoSeleccionado(null);
+        setModo("menu");
     };
 
+    const irAEditarPedido = (pedido: Pedido) => {
+        setPedidoSeleccionado(pedido);
+        setModo("menu");
+    };
+
+    const volverALista = () => {
+        setModo("lista");
+        setPedidoSeleccionado(null);
+    };
+
+    if (modo === "menu") {
+        return (
+            <NavegadorMenu
+                onVolver={volverALista}
+                pedidoExistente={pedidoSeleccionado}
+            />
+        );
+    }
+
     return (
-        <div className="space-y-4">
-            {menuCount === 0 && (
-                <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 text-yellow-800">
-                    <p className="font-bold">⚠️ El menú está vacío</p>
-                    <p className="text-sm">
-                        Para ver platos aquí, ve a <a href="/semilla" className="underline font-bold">/semilla</a> y carga los datos de prueba.
-                    </p>
+        <div className="h-full flex flex-col relative w-full bg-slate-50">
+            {/* Header */}
+            <header className="px-6 py-4 bg-white border-b shadow-sm sticky top-0 z-10 flex justify-between items-center">
+                <div>
+                    <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                        <UtensilsCrossed className="w-6 h-6 text-orange-600" />
+                        Mis Pedidos
+                    </h2>
+                    <p className="text-sm text-muted-foreground">Gestiona las órdenes activas</p>
                 </div>
-            )}
+                <Button
+                    onClick={irANuevoPedido}
+                    className="bg-orange-600 hover:bg-orange-700 text-white shadow-md gap-2 hidden md:flex"
+                >
+                    <PlusCircle className="w-5 h-5" />
+                    Nuevo Pedido
+                </Button>
+            </header>
 
-            <Tabs value={tabActivo} onValueChange={setTabActivo} className="w-full">
-                <TabsList className="w-full justify-start h-12 bg-slate-100 p-1 mb-4">
-                    <TabsTrigger value="nuevo" className="flex-1 max-w-[200px] h-full" onClick={() => setMesaSeleccionada(null)}>
-                        Nuevo Pedido (Barra)
-                    </TabsTrigger>
-                    <TabsTrigger value="mapa" className="flex-1 max-w-[200px] h-full">Mesas</TabsTrigger>
-                    <TabsTrigger value="pedidos" className="flex-1 max-w-[200px] h-full">Mis Pedidos</TabsTrigger>
-                </TabsList>
+            {/* Contenido: Lista de Pedidos (Antes TableroFichas) */}
+            <div className="flex-1 overflow-y-auto p-2">
+                <TableroFichas onPedidoSelect={irAEditarPedido} />
+            </div>
 
-                <TabsContent value="nuevo" className="min-h-[500px]">
-                    <NavegadorMenu
-                        mesaSeleccionada={mesaSeleccionada}
-                        onVolver={() => setTabActivo("mapa")}
-                    />
-                </TabsContent>
-
-                <TabsContent value="mapa">
-                    <MapaMesas
-                        onMesaSelect={handleMesaSelect}
-                        onNavegarPedido={irANuevoPedido}
-                    />
-                </TabsContent>
-
-                <TabsContent value="pedidos">
-                    <MisPedidos />
-                </TabsContent>
-            </Tabs>
+            {/* Botón Flotante (Móvil) */}
+            <div className="md:hidden fixed bottom-6 right-6 z-50">
+                <Button
+                    size="icon"
+                    className="rounded-full w-14 h-14 shadow-xl bg-orange-600 hover:bg-orange-700 p-0"
+                    onClick={irANuevoPedido}
+                >
+                    <PlusCircle className="w-8 h-8" />
+                </Button>
+            </div>
         </div>
     );
 }

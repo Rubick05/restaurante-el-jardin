@@ -1,35 +1,47 @@
 import { useState, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { bdLocal, ElementoMenu, Mesa } from '@/lib/bd/bd-local';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { bdLocal, ElementoMenu, Pedido } from '@/lib/bd/bd-local';
 import { TarjetaMenu } from './TarjetaMenu';
 import { CarritoPedido, ItemCarrito } from './CarritoPedido';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
-import { Search, ChevronLeft, BookOpen, Plus } from 'lucide-react';
+import { Search, ChevronLeft, BookOpen, Plus, Check, ChefHat } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { Dialog, DialogContent } from '@/componentes/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/componentes/ui/dialog';
 import { ModalSeleccionItem } from './ModalSeleccionItem';
+import SelectorFichas from './SelectorFichas';
+import { Badge } from '@/componentes/ui/badge';
+import { Card, CardContent } from '@/componentes/ui/card';
 
 interface Props {
-    mesaSeleccionada?: Mesa | null;
-    onVolver?: () => void;
+    onVolver: () => void;
+    pedidoExistente?: Pedido | null;
 }
 
-export default function NavegadorMenu({ mesaSeleccionada, onVolver }: Props) {
+export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
+    const queryClient = useQueryClient();
     const [categoriaActiva, setCategoriaActiva] = useState<string>("Todos");
     const [busqueda, setBusqueda] = useState("");
-    const [itemsCarrito, setItemsCarrito] = useState<ItemCarrito[]>([]);
-    const [notaCliente, setNotaCliente] = useState("");
+
+    // CAMBIO CLAVE: Solo items NUEVOS van al carrito
+    // Los items existentes NO se cargan al carrito
+    const [itemsNuevos, setItemsNuevos] = useState<ItemCarrito[]>([]);
+
+    const [notaCliente, setNotaCliente] = useState(pedidoExistente?.notas || "");
     const [procesando, setProcesando] = useState(false);
 
     // Estados para el nuevo flujo
     const [mostrarMenu, setMostrarMenu] = useState(false);
     const [itemSeleccionado, setItemSeleccionado] = useState<ElementoMenu | null>(null);
 
+    // Estado para confirmar letrero (RESTAURADO)
+    const [mostrarModalLetrero, setMostrarModalLetrero] = useState(false);
+    const [numeroLetrero, setNumeroLetrero] = useState(pedidoExistente?.numero_letrero || "");
+
     // Cargar menú desde Dexie
     const { data: menu = [] } = useQuery({
         queryKey: ['menu'],
-        queryFn: () => bdLocal.elementosMenu.toArray()
+        queryFn: () => bdLocal.elementosMenu.where('disponible').equals(1).toArray()
     });
 
     // Extraer categorías únicas
@@ -50,11 +62,11 @@ export default function NavegadorMenu({ mesaSeleccionada, onVolver }: Props) {
     const agregarAlCarrito = (cantidad: number) => {
         if (!itemSeleccionado) return;
 
-        setItemsCarrito(prev => {
+        setItemsNuevos(prev => {
             const existente = prev.find(i => i.id_elemento_menu === itemSeleccionado.id);
             if (existente) {
                 return prev.map(i => i.id_elemento_menu === itemSeleccionado.id
-                    ? { ...i, cantidad: i.cantidad + cantidad } // Sumar cantidad
+                    ? { ...i, cantidad: i.cantidad + cantidad }
                     : i
                 );
             }
@@ -62,16 +74,16 @@ export default function NavegadorMenu({ mesaSeleccionada, onVolver }: Props) {
                 id_elemento_menu: itemSeleccionado.id,
                 nombre: itemSeleccionado.nombre,
                 precio: itemSeleccionado.precio_actual,
-                cantidad: cantidad
+                cantidad: cantidad,
+                categoria: itemSeleccionado.categoria
             }];
         });
 
         setItemSeleccionado(null);
-        // No cerramos el menú para seguir pidiendo
     };
 
     const actualizarCantidad = (id: string, delta: number) => {
-        setItemsCarrito(prev => prev.map(item => {
+        setItemsNuevos(prev => prev.map(item => {
             if (item.id_elemento_menu === id) {
                 return { ...item, cantidad: Math.max(0, item.cantidad + delta) };
             }
@@ -79,63 +91,140 @@ export default function NavegadorMenu({ mesaSeleccionada, onVolver }: Props) {
         }).filter(i => i.cantidad > 0));
     };
 
-    const confirmarPedido = async () => {
-        if (itemsCarrito.length === 0) return;
+    const solicitarLetrero = () => {
+        if (!pedidoExistente && itemsNuevos.length === 0) return;
+        if (pedidoExistente && itemsNuevos.length === 0) {
+            alert("No hay items nuevos para agregar");
+            return;
+        }
+        setMostrarModalLetrero(true);
+    };
+
+    const confirmarPedidoFinal = async () => {
+        if (!numeroLetrero) {
+            alert("Debes seleccionar un número de letrero de la lista.");
+            return;
+        }
+
         setProcesando(true);
 
         try {
-            const nuevoPedido = {
-                id: uuidv4(),
-                id_restaurante: 'demo-tenant',
-                id_mesero: 'usuario-actual',
-                id_mesa: mesaSeleccionada?.id || 'sin-mesa',
-                numero_pedido: `ORD-${Date.now().toString().slice(-4)}`,
-                estado: 'pendiente' as const,
-                tipo_pedido: 'mesa' as const,
-                subtotal: itemsCarrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0),
-                impuesto: 0,
-                total: itemsCarrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0),
-                items: itemsCarrito.map(i => ({
-                    id_elemento_menu: i.id_elemento_menu,
-                    nombre_item: i.nombre,
-                    cantidad: i.cantidad,
-                    precio_unitario: i.precio,
-                    subtotal: i.precio * i.cantidad
-                })),
-                notas: notaCliente,
-                creado_en: new Date().toISOString(),
-                actualizado_en: new Date().toISOString(),
-                version: 1,
-                sincronizado: false
-            };
+            // Validar si el letrero ya está ocupado por OTRO pedido antes de guardar
+            if (!pedidoExistente) {
+                const ocupado = await bdLocal.pedidos
+                    .filter(p =>
+                        p.numero_letrero === numeroLetrero &&
+                        p.estado !== 'pagado' &&
+                        p.estado !== 'cancelado'
+                    ).first();
 
-            await bdLocal.pedidos.add(nuevoPedido);
+                if (ocupado) {
+                    alert(`⚠️ El letrero ${numeroLetrero} ya está ocupado por la Ficha #${ocupado.numero_ficha}. Por favor selecciona otro.`);
+                    setProcesando(false);
+                    return;
+                }
+            }
+            const itemsNuevosBD = itemsNuevos.map(i => ({
+                id_elemento_menu: i.id_elemento_menu,
+                nombre_item: i.nombre,
+                cantidad: i.cantidad,
+                precio_unitario: i.precio,
+                subtotal: i.precio * i.cantidad,
+                categoria: i.categoria,
+                estado_item: 'pendiente' as const  // Todos los nuevos empiezan como pendiente
+            }));
 
-            if (mesaSeleccionada && mesaSeleccionada.estado === 'disponible') {
-                await bdLocal.mesas.update(mesaSeleccionada.id, { estado: 'ocupada' });
+            const totalNuevos = itemsNuevos.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
+
+            // Variable para el alert final
+            let siguienteNumeroFicha = 0;
+
+            if (pedidoExistente) {
+                // CONCATENAR items nuevos a los existentes
+                const todosLosItems = [...(pedidoExistente.items || []), ...itemsNuevosBD];
+                const nuevoTotal = pedidoExistente.total + totalNuevos;
+
+                await bdLocal.pedidos.update(pedidoExistente.id, {
+                    items: todosLosItems,
+                    total: nuevoTotal,
+                    subtotal: nuevoTotal,
+                    numero_letrero: numeroLetrero, // Permitir actualizar letrero si cambia
+                    notas: notaCliente,
+                    actualizado_en: new Date().toISOString(),
+                    sincronizado: false
+                });
+            } else {
+                // Obtener siguiente número de ficha secuencial
+                const hoy = new Date();
+                hoy.setHours(0, 0, 0, 0);
+
+                const pedidosHoy = await bdLocal.pedidos
+                    .where('creado_en')
+                    .above(hoy.toISOString())
+                    .toArray();
+
+                siguienteNumeroFicha = pedidosHoy.length + 1;
+
+                // Crear Nuevo Pedido
+                const nuevoPedido: Pedido = {
+                    id: uuidv4(),
+                    id_restaurante: 'demo-tenant',
+                    id_mesero: 'usuario-actual',
+                    id_mesa: 'ficha',
+                    numero_ficha: siguienteNumeroFicha, // Auto-incremento diario
+                    numero_letrero: numeroLetrero, // Letrero seleccionado manualmente
+                    numero_pedido: `ORD-${Date.now().toString().slice(-4)}`,
+                    estado: 'pendiente',
+                    tipo_pedido: 'mesa',
+                    subtotal: totalNuevos,
+                    impuesto: 0,
+                    total: totalNuevos,
+                    items: itemsNuevosBD,
+                    notas: notaCliente,
+                    creado_en: new Date().toISOString(),
+                    actualizado_en: new Date().toISOString(),
+                    version: 1,
+                    sincronizado: false
+                };
+
+                await bdLocal.pedidos.add(nuevoPedido);
+
+                // Sincronización (cola)
+                await bdLocal.colaSincronizacion.add({
+                    id: uuidv4(),
+                    id_restaurante: nuevoPedido.id_restaurante,
+                    tipo_entidad: 'pedido',
+                    id_entidad: nuevoPedido.id,
+                    operacion: 'crear',
+                    carga_util: nuevoPedido,
+                    timestamp_cliente: new Date().toISOString(),
+                    procesado: false,
+                    conteo_reintentos: 0
+                });
             }
 
-            await bdLocal.colaSincronizacion.add({
-                id: uuidv4(),
-                id_restaurante: nuevoPedido.id_restaurante,
-                tipo_entidad: 'pedido',
-                id_entidad: nuevoPedido.id,
-                operacion: 'crear',
-                carga_util: nuevoPedido,
-                timestamp_cliente: new Date().toISOString(),
-                procesado: false,
-                conteo_reintentos: 0
-            });
+            // Invalidar queries
+            await queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
+            await queryClient.invalidateQueries({ queryKey: ['pedidos-cocina'] });
 
-            alert(`✅ Pedido Enviado a Cocina`);
-            setItemsCarrito([]);
+            alert(`✅ Pedido ${pedidoExistente ? 'Actualizado' : 'Creado'} - Ficha #${pedidoExistente ? pedidoExistente.numero_ficha : siguienteNumeroFicha} - Letrero ${numeroLetrero}`);
+            setItemsNuevos([]);
             setNotaCliente("");
             if (onVolver) onVolver();
         } catch (e) {
             console.error(e);
-            alert("Error al crear pedido");
+            alert("Error al guardar pedido");
         } finally {
             setProcesando(false);
+        }
+    };
+
+    const getEstadoBadgeColor = (estado?: string) => {
+        switch (estado) {
+            case 'pendiente': return 'default';
+            case 'en_proceso': return 'secondary';
+            case 'listo': return 'success';
+            default: return 'outline';
         }
     };
 
@@ -152,10 +241,13 @@ export default function NavegadorMenu({ mesaSeleccionada, onVolver }: Props) {
                     )}
                     <div>
                         <h2 className="text-lg font-bold leading-none">
-                            {mesaSeleccionada ? `Mesa ${mesaSeleccionada.numero}` : 'Nuevo Pedido'}
+                            {pedidoExistente ? `Ficha #${pedidoExistente.numero_ficha} - Agregar Items` : 'Nueva Orden'}
                         </h2>
                         <span className="text-xs text-muted-foreground">
-                            {itemsCarrito.length === 0 ? 'Sin items' : `${itemsCarrito.reduce((acc, i) => acc + i.cantidad, 0)} items`}
+                            {pedidoExistente
+                                ? `${itemsNuevos.length} items nuevos`
+                                : itemsNuevos.length === 0 ? 'Sin items' : `${itemsNuevos.reduce((acc, i) => acc + i.cantidad, 0)} items`
+                            }
                         </span>
                     </div>
                 </div>
@@ -166,25 +258,61 @@ export default function NavegadorMenu({ mesaSeleccionada, onVolver }: Props) {
                 </Button>
             </div>
 
-            {/* Vista Principal: Lista de Pedido (Carrito) */}
-            <div className="flex-1 overflow-hidden bg-slate-50 rounded-lg border flex flex-col items-center justify-center">
-                {itemsCarrito.length === 0 ? (
-                    <div className="text-center opacity-50 flex flex-col items-center">
+            {/* Vista Principal */}
+            <div className="flex-1 overflow-y-auto bg-slate-50 rounded-lg border p-4 space-y-4">
+
+                {/* Sección 1: Items EXISTENTES (Solo si estamos editando) */}
+                {pedidoExistente && pedidoExistente.items && pedidoExistente.items.length > 0 && (
+                    <Card>
+                        <CardContent className="p-4">
+                            <h3 className="font-bold text-sm uppercase text-muted-foreground mb-3 flex items-center gap-2">
+                                <ChefHat className="w-4 h-4" />
+                                Pedido Actual (Ficha #{pedidoExistente.numero_ficha})
+                            </h3>
+                            <div className="space-y-2">
+                                {pedidoExistente.items.map((item, idx) => (
+                                    <div key={idx} className="flex justify-between items-center p-2 bg-slate-100 rounded">
+                                        <div className="flex-1">
+                                            <span className="font-medium">{item.cantidad}x {item.nombre_item}</span>
+                                            <Badge variant={getEstadoBadgeColor(item.estado_item)} className="ml-2 text-xs">
+                                                {item.estado_item || 'pendiente'}
+                                            </Badge>
+                                        </div>
+                                        <span className="font-mono text-sm">${item.subtotal.toFixed(2)}</span>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="mt-3 pt-3 border-t flex justify-between font-bold">
+                                <span>Total Actual:</span>
+                                <span className="text-green-700">${pedidoExistente.total.toFixed(2)}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Sección 2: Items NUEVOS (Carrito Temporal) */}
+                {itemsNuevos.length === 0 ? (
+                    <div className="text-center opacity-50 flex flex-col items-center py-10">
                         <div className="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center mb-4">
                             <BookOpen className="w-10 h-10 text-slate-400" />
                         </div>
-                        <p className="text-xl font-bold">El pedido está vacío</p>
+                        <p className="text-xl font-bold">
+                            {pedidoExistente ? 'Agregar más items' : 'El pedido está vacío'}
+                        </p>
                         <p className="mb-6">Abre el menú para agregar platos y bebidas</p>
                         <Button size="lg" onClick={() => setMostrarMenu(true)} className="gap-2">
                             <Plus className="w-5 h-5" /> Agregar Items
                         </Button>
                     </div>
                 ) : (
-                    <div className="w-full h-full max-w-3xl mx-auto p-4 flex flex-col">
+                    <div className="w-full max-w-3xl mx-auto">
+                        <h3 className="font-bold text-sm uppercase text-muted-foreground mb-3">
+                            {pedidoExistente ? 'Items a Agregar' : 'Nuevo Pedido'}
+                        </h3>
                         <CarritoPedido
-                            items={itemsCarrito}
+                            items={itemsNuevos}
                             onUpdateQuantity={actualizarCantidad}
-                            onSubmit={confirmarPedido}
+                            onSubmit={solicitarLetrero}
                             procesando={procesando}
                             notaCliente={notaCliente}
                             onNotaChange={setNotaCliente}
@@ -243,7 +371,7 @@ export default function NavegadorMenu({ mesaSeleccionada, onVolver }: Props) {
                                     <TarjetaMenu
                                         key={item.id}
                                         item={item}
-                                        onAdd={() => setItemSeleccionado(item)} // Abre el modal de cantidad
+                                        onAdd={() => setItemSeleccionado(item)}
                                     />
                                 ))
                             )}
@@ -252,10 +380,10 @@ export default function NavegadorMenu({ mesaSeleccionada, onVolver }: Props) {
 
                     <div className="p-4 border-t bg-white flex justify-between items-center">
                         <span className="font-bold">
-                            {itemsCarrito.reduce((acc, i) => acc + i.cantidad, 0)} items en pedido
+                            {itemsNuevos.reduce((acc, i) => acc + i.cantidad, 0)} items nuevos
                         </span>
                         <Button onClick={() => setMostrarMenu(false)}>
-                            Ver Pedido Actual
+                            Ver Pedido
                         </Button>
                     </div>
                 </DialogContent>
@@ -269,6 +397,39 @@ export default function NavegadorMenu({ mesaSeleccionada, onVolver }: Props) {
                 onConfirmar={agregarAlCarrito}
             />
 
+            {/* Modal Asignar/Confirmar Letrero (RESTAURADO) */}
+            <Dialog open={mostrarModalLetrero} onOpenChange={setMostrarModalLetrero}>
+                <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {pedidoExistente ? 'Confirmar Items' : 'Seleccionar Letrero de Mesa'}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {pedidoExistente
+                                ? `Agregar ${itemsNuevos.length} items nuevos a la Ficha #${pedidoExistente.numero_ficha}`
+                                : 'Selecciona un letrero disponible (los marcados en gris están ocupados)'
+                            }
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <SelectorFichas
+                        onSelect={setNumeroLetrero}
+                        fichaActual={numeroLetrero}
+                    />
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setMostrarModalLetrero(false)}>Cancelar</Button>
+                        <Button
+                            onClick={confirmarPedidoFinal}
+                            className="bg-green-600 hover:bg-green-700"
+                            disabled={!numeroLetrero || procesando}
+                        >
+                            <Check className="mr-2 h-4 w-4" />
+                            {procesando ? 'Guardando...' : pedidoExistente ? 'Agregar Items' : 'Confirmar Pedido'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

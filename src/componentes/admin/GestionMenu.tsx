@@ -80,9 +80,26 @@ export default function GestionMenu() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold tracking-tight">Gestión del Menú</h2>
-        <Button onClick={() => iniciarEdicion()}>
-          <Plus className="w-4 h-4 mr-2" /> Nuevo Plato
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="destructive"
+            onClick={async () => {
+              if (confirm('PELIGRO: ¿Estás seguro de borrar TODA la base de datos? Esto eliminará todos los pedidos y reiniciará el sistema. No se puede deshacer.')) {
+                await bdLocal.pedidos.clear();
+                await bdLocal.colaSincronizacion.clear();
+                // Opcional: limpiar menú también si se desea, pero usualmente solo se quieren borrar pedidos
+                // await bdLocal.elementosMenu.clear(); 
+                alert('Sistema reiniciado. Todos los pedidos han sido eliminados.');
+                window.location.reload();
+              }
+            }}
+          >
+            <Trash2 className="w-4 h-4 mr-2" /> Reset Sistema
+          </Button>
+          <Button onClick={() => iniciarEdicion()}>
+            <Plus className="w-4 h-4 mr-2" /> Nuevo Plato
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
