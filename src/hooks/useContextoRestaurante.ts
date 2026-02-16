@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 interface RestauranteContextoType {
     tenantId: string;
@@ -11,7 +11,7 @@ const RestauranteContexto = createContext<RestauranteContextoType | undefined>(u
 export const ProveedorRestaurante: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     // TODO: Obtener esto de la autenticación o configuración inicial
     const [tenantId, setTenantId] = useState<string>('restaurante-demo-1');
-    const [nombre, setNombre] = useState<string>('Restaurante Demo');
+    const [nombre] = useState<string>('Restaurante Demo');
 
     const value = {
         tenantId,
@@ -23,7 +23,7 @@ export const ProveedorRestaurante: React.FC<{ children: React.ReactNode }> = ({ 
         <RestauranteContexto.Provider value= { value } >
         { children }
         </RestauranteContexto.Provider>
-  );
+    );
 };
 
 export const useContextoRestaurante = () => {
