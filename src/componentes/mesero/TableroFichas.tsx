@@ -6,6 +6,7 @@ import { Badge } from '@/componentes/ui/badge';
 import { Clock, Trash2, Utensils, Pencil, DollarSign, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/componentes/ui/button';
 import { format } from 'date-fns';
+import { API_BASE_URL } from '@/hooks/useInicializacion';
 
 interface Props {
     onPedidoSelect: (pedido: Pedido) => void;
@@ -40,9 +41,21 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
-        if (confirm('¿Eliminar este pedido?')) {
+        if (confirm('¿Eliminar este pedido permanentemente? (Desaparecerá también de cocina)')) {
+            // Eliminar localmente
             await bdLocal.pedidos.delete(id);
-            queryClient.invalidateQueries({ queryKey: ['pedidos-activos', idMeseroActual] });
+
+            // Eliminar del servidor
+            try {
+                await fetch(`${API_BASE_URL}/api/pedidos/${id}`, {
+                    method: 'DELETE'
+                });
+            } catch (err) {
+                console.error("No se pudo eliminar del servidor:", err);
+            }
+
+            // Refrescar vistas
+            queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
             queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
             queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
         }
@@ -103,8 +116,8 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                             </div>
                         )}
 
-                        {/* Botones de acción */}
-                        <div className="absolute top-3 right-3 z-10 flex items-center gap-1">
+                        {/* Botones de acción (arriba a la derecha solo en PC, en móvil van abajo) */}
+                        <div className="hidden sm:flex absolute top-3 right-3 z-10 items-center gap-1">
                             {puedeEditar && (
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
                                     onClick={(e) => handleEditar(e, pedido)} title="Editar pedido">
@@ -135,7 +148,7 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                             </div>
 
                             {/* Resumen */}
-                            <div className="flex-1 min-w-0 pr-20">
+                            <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                     <Badge variant={status.badge as any} className="uppercase text-[10px] tracking-wide">
                                         {status.label}
@@ -157,18 +170,34 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                                     </div>
                                 </div>
 
-                                <div className="flex gap-2 mt-2">
-                                    {puedeEditar && (
-                                        <span className="text-[10px] text-blue-500 flex items-center gap-0.5">
-                                            <Pencil className="w-2.5 h-2.5" /> Editar
-                                        </span>
-                                    )}
-                                    <span className="text-[10px] text-green-600 flex items-center gap-0.5 ml-1">
-                                        <CheckCircle2 className="w-2.5 h-2.5" /> Cobrar
-                                    </span>
-                                </div>
+                                {pedido.notas && (
+                                    <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-2 rounded border border-orange-100 flex items-start gap-1">
+                                        <span className="font-bold shrink-0">Notas:</span>
+                                        <span className="italic">{pedido.notas}</span>
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
+
+                        {/* Fila Inferior para botones de acción SOLAMENTE EN MÓVIL */}
+                        <div className="sm:hidden flex items-center justify-end gap-2 border-t bg-slate-50/50 p-2">
+                            {puedeEditar && (
+                                <Button variant="outline" size="sm" className="h-9 px-3 text-muted-foreground hover:text-blue-600 bg-white"
+                                    onClick={(e) => handleEditar(e, pedido)}>
+                                    <Pencil className="h-4 w-4 mr-1.5" /> Editar
+                                </Button>
+                            )}
+                            {puedeCobrar && (
+                                <Button variant="outline" size="sm" className="h-9 px-3 text-green-700 border-green-200 hover:bg-green-50 bg-white"
+                                    onClick={(e) => handleCobrar(e, pedido)}>
+                                    <DollarSign className="h-4 w-4 mr-1" /> Cobrar
+                                </Button>
+                            )}
+                            <Button variant="outline" size="icon" className="h-9 w-9 text-red-500 hover:text-red-600 hover:bg-red-50 bg-white border-red-100"
+                                onClick={(e) => handleDelete(e, pedido.id)}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </Card>
                 );
             })}

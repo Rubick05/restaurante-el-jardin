@@ -56,7 +56,7 @@ export default function SelectorFichas({ onSelect, fichaActual }: Props) {
                             variant={esActual ? "default" : ocupada ? "outline" : "secondary"}
                             disabled={ocupada && !esActual}
                             onClick={() => onSelect(numero)}
-                            className={`h-16 text-2xl font-black transition-all ${ocupada && !esActual ? "opacity-30 cursor-not-allowed" : ""
+                            className={`h-16 text-2xl font-black transition-all ${ocupada && !esActual ? "opacity-50 bg-slate-200 text-slate-400 cursor-not-allowed border-dashed" : ""
                                 } ${esActual ? "ring-2 ring-orange-500 bg-orange-600" : ""}`}
                         >
                             <Hash className="w-4 h-4 mr-1" />
@@ -71,7 +71,7 @@ export default function SelectorFichas({ onSelect, fichaActual }: Props) {
                     <span>Disponible</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-muted border rounded opacity-30"></div>
+                    <div className="w-4 h-4 bg-slate-200 border border-dashed rounded opacity-50"></div>
                     <span>Ocupada</span>
                 </div>
                 {fichaActual && (
