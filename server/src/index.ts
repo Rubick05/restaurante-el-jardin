@@ -4,7 +4,7 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { pool } from './bd/pool';
+import { pool, inicializarBaseDeDatos } from './bd/pool';
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config();
@@ -63,6 +63,10 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3001;
-httpServer.listen(PORT, () => {
-    console.log(`🚀 Servidor El Jardín en http://localhost:${PORT}`);
+
+// Inicializar BD y luego arrancar el servidor
+inicializarBaseDeDatos().then(() => {
+    httpServer.listen(PORT, () => {
+        console.log(`🚀 Servidor El Jardín en http://localhost:${PORT}`);
+    });
 });
