@@ -54,10 +54,29 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
     // Usar la version live si existe, sino la prop original
     const pedidoVivo = pedidoActual ?? pedidoExistente;
 
-    // Cargar menú desde Dexie
+    // Cargar menú: primero del servidor (con imágenes), luego IndexedDB como fallback
     const { data: menu = [] } = useQuery({
         queryKey: ['menu'],
-        queryFn: () => bdLocal.elementosMenu.where('disponible').equals(1).toArray()
+        queryFn: async () => {
+            try {
+                const apiUrl = import.meta.env.VITE_API_URL;
+                if (apiUrl) {
+                    const res = await fetch(`${apiUrl}/api/menu`);
+                    if (res.ok) {
+                        const itemsServidor = await res.json();
+                        // Sincronizar en IndexedDB local para que otras pistas también los tengan
+                        for (const item of itemsServidor) {
+                            await bdLocal.elementosMenu.put(item);
+                        }
+                        return itemsServidor.filter((i: any) => i.disponible);
+                    }
+                }
+            } catch {
+                // Sin red: usar IndexedDB local
+            }
+            return bdLocal.elementosMenu.where('disponible').equals(1).toArray();
+        },
+        staleTime: 30_000, // 30 segundos
     });
 
     // Solo estas 4 categorías son válidas — se filtra cualquier otra (días de la semana, etc.)

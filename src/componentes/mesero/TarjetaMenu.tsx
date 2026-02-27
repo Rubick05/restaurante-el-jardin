@@ -12,9 +12,9 @@ export function TarjetaMenu({ item, onAdd }: Props) {
     return (
         <Card className={`overflow-hidden flex flex-col h-full border-2 border-primary/20 shadow-md ${!item.disponible ? 'opacity-60 grayscale' : 'hover:shadow-lg hover:border-primary/40 transition-all'}`}>
             <div className="aspect-video bg-muted relative border-b border-primary/10">
-                {item.url_imagen ? (
+                {(item.url_imagen || item.imagen_base64) ? (
                     <img
-                        src={item.url_imagen}
+                        src={item.imagen_base64 || item.url_imagen}
                         alt={item.nombre}
                         className="w-full h-full object-cover"
                         loading="lazy"
