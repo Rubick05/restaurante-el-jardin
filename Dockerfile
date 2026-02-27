@@ -5,6 +5,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+# Cache bust: 2026-02-27-v2
 RUN npm run build
 
 # Build Backend
