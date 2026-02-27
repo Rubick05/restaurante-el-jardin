@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { bdLocal, ElementoMenu } from '@/lib/bd/bd-local';
-import { Switch } from '@/componentes/ui/switch'; // Assuming shadcn switch exists or standard checkbox
 import { apiMenu } from '@/lib/api/menu';
 import { motorSincronizacion } from '@/lib/bd/motor-sincronizacion';
 import { useContextoRestaurante } from '@/hooks/useContextoRestaurante';

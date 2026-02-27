@@ -7,13 +7,13 @@ interface OpcionesCliente extends RequestInit {
 
 export async function clienteHttp<T>(endpoint: string, opciones: OpcionesCliente = {}): Promise<T> {
     const { token, tenantId, ...customConfig } = opciones;
-    const headers: HeadersInit = {
+    const headers: Record<string, string> = {
         'Content-Type': 'application/json',
-        ...customConfig.headers,
+        ...(customConfig.headers as Record<string, string>),
     };
 
     if (token) {
-        headers.Authorization = `Bearer ${token}`;
+        headers['Authorization'] = `Bearer ${token}`;
     }
 
     if (tenantId) {
