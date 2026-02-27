@@ -48,7 +48,7 @@ export default function ReportesVentas() {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            ${ventas?.reduce((acc, curr) => acc + curr.total, 0).toFixed(2) || '0.00'}
+                            Bs {Number(ventas?.reduce((acc, curr) => acc + (curr.total || 0), 0)).toFixed(2) || '0.00'}
                         </div>
                     </CardContent>
                 </Card>

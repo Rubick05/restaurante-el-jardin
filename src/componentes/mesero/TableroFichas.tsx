@@ -153,7 +153,7 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                                 <div className="flex items-center justify-between mt-2">
                                     <div className="text-xs text-slate-500">{pedido.items?.length} items</div>
                                     <div className="font-bold text-green-700 text-sm bg-green-50 px-2 py-0.5 rounded">
-                                        Bs {pedido.total.toFixed(2)}
+                                        Bs {Number(pedido.total || 0).toFixed(2)}
                                     </div>
                                 </div>
 

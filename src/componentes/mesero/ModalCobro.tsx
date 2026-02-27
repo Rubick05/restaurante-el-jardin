@@ -105,7 +105,7 @@ export function ModalCobro({ open, onOpenChange, pedido, onCobrado }: Props) {
 
     const imprimirRecibo = () => {
         const lineas = items.map(
-            i => `${String(i.cantidad).padEnd(4)} ${i.nombre_item.slice(0, 20).padEnd(20)} Bs ${i.subtotal.toFixed(2)}`
+            i => `${String(i.cantidad).padEnd(4)} ${i.nombre_item.slice(0, 20).padEnd(20)} Bs ${Number(i.subtotal).toFixed(2)}`
         ).join("\n");
 
         const contenido = `
@@ -120,10 +120,10 @@ NIT/CI: ${nit || "0"}
 CANT DETALLE              SUBTOTAL
 ${lineas}
 --------------------------------
-PLATOS:   Bs ${subtotalPlatos.toFixed(2)}
-BEBIDAS:  Bs ${subtotalBebidas.toFixed(2)}
+PLATOS:   Bs ${Number(subtotalPlatos).toFixed(2)}
+BEBIDAS:  Bs ${Number(subtotalBebidas).toFixed(2)}
 --------------------------------
-TOTAL:    Bs ${total.toFixed(2)}
+TOTAL:    Bs ${Number(total).toFixed(2)}
 Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
 --------------------------------
 ¡Gracias por su visita!
@@ -197,13 +197,13 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                                                 <span className="font-bold text-slate-700">{item.cantidad}×</span>{" "}
                                                 {item.nombre_item}
                                             </span>
-                                            <span className="font-mono text-slate-700">Bs {item.subtotal.toFixed(2)}</span>
+                                            <span className="font-mono text-slate-700">Bs {Number(item.subtotal).toFixed(2)}</span>
                                         </div>
                                     ))}
                                 </div>
                                 <div className="bg-orange-50/50 px-4 py-2 flex justify-between text-sm font-semibold border-t">
                                     <span>Subtotal platos</span>
-                                    <span>Bs {subtotalPlatos.toFixed(2)}</span>
+                                    <span>Bs {Number(subtotalPlatos).toFixed(2)}</span>
                                 </div>
                             </div>
                         )}
@@ -222,13 +222,13 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                                                 <span className="font-bold text-slate-700">{item.cantidad}×</span>{" "}
                                                 {item.nombre_item}
                                             </span>
-                                            <span className="font-mono text-slate-700">Bs {item.subtotal.toFixed(2)}</span>
+                                            <span className="font-mono text-slate-700">Bs {Number(item.subtotal).toFixed(2)}</span>
                                         </div>
                                     ))}
                                 </div>
                                 <div className="bg-blue-50/50 px-4 py-2 flex justify-between text-sm font-semibold border-t">
                                     <span>Subtotal bebidas</span>
-                                    <span>Bs {subtotalBebidas.toFixed(2)}</span>
+                                    <span>Bs {Number(subtotalBebidas).toFixed(2)}</span>
                                 </div>
                             </div>
                         )}
@@ -236,7 +236,7 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                         {/* ── Total ── */}
                         <div className="bg-slate-900 text-white rounded-xl px-5 py-4 flex justify-between items-center">
                             <span className="text-lg font-bold">TOTAL A PAGAR</span>
-                            <span className="text-3xl font-black">Bs {total.toFixed(2)}</span>
+                            <span className="text-3xl font-black">Bs {Number(total).toFixed(2)}</span>
                         </div>
 
                         {/* ── Tipo de Documento ── */}
@@ -325,7 +325,7 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                                     </div>
                                 )}
                                 <p className="text-sm text-muted-foreground text-center">Muestra este QR al cliente</p>
-                                <p className="font-bold text-blue-700 text-lg">Bs {total.toFixed(2)}</p>
+                                <p className="font-bold text-blue-700 text-lg">Bs {Number(total).toFixed(2)}</p>
                             </div>
                         )}
                     </div>
@@ -351,7 +351,7 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                             ) : (
                                 <>
                                     <CheckCircle2 className="w-5 h-5 mr-2" />
-                                    Confirmar Cobro · Bs ${total.toFixed(2)}
+                                    Confirmar Cobro · Bs {Number(total).toFixed(2)}
                                 </>
                             )}
                         </Button>

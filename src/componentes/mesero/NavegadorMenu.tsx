@@ -442,7 +442,7 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                                             </div>
 
                                             {/* Precio */}
-                                            <span className="font-mono text-sm text-slate-600">Bs ${item.subtotal.toFixed(2)}</span>
+                                            <span className="font-mono text-sm text-slate-600">Bs {Number(item.subtotal).toFixed(2)}</span>
 
                                             {/* Botón Entregar — solo si está LISTO */}
                                             {estaListo && (
@@ -462,7 +462,7 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                             </div>
                             <div className="mt-3 pt-3 border-t flex justify-between font-bold">
                                 <span>Total Actual:</span>
-                                <span className="text-green-700">Bs ${pedidoVivo.total.toFixed(2)}</span>
+                                <span className="text-green-700">Bs {Number(pedidoVivo.total).toFixed(2)}</span>
                             </div>
                         </CardContent>
                     </Card>

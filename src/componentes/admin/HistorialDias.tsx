@@ -72,7 +72,7 @@ export default function HistorialDias() {
                         <CardContent className="p-4 flex items-center gap-3">
                             <TrendingUp className="w-8 h-8 text-green-500" />
                             <div>
-                                <div className="text-2xl font-bold">Bs {totalGeneral.toFixed(2)}</div>
+                                <div className="text-2xl font-bold">Bs {Number(totalGeneral || 0).toFixed(2)}</div>
                                 <div className="text-xs text-muted-foreground">Total Acumulado</div>
                             </div>
                         </CardContent>
@@ -130,7 +130,7 @@ export default function HistorialDias() {
                                     <div className="flex items-center gap-3">
                                         <div className="text-right">
                                             <div className="font-bold text-green-700 text-lg">
-                                                Bs {dia.total_recaudado.toFixed(2)}
+                                                Bs {Number(dia.total_recaudado || 0).toFixed(2)}
                                             </div>
                                             <div className="text-xs text-muted-foreground">recaudado</div>
                                         </div>
@@ -176,7 +176,7 @@ export default function HistorialDias() {
                                                         <td className="p-2.5">{nombreMesero(p.id_mesero)}</td>
                                                         <td className="p-2.5 text-muted-foreground">{p.items?.length ?? 0}</td>
                                                         <td className="p-2.5 text-right font-bold text-green-700">
-                                                            Bs {p.total.toFixed(2)}
+                                                            Bs {Number(p.total || 0).toFixed(2)}
                                                         </td>
                                                         <td className="p-2.5 text-center">
                                                             <Badge className={
@@ -194,7 +194,7 @@ export default function HistorialDias() {
                                                 <tr className="bg-green-50 border-t-2 border-green-200">
                                                     <td colSpan={5} className="p-2.5 font-bold text-right">TOTAL DEL DÍA:</td>
                                                     <td className="p-2.5 text-right font-black text-green-700 text-base">
-                                                        Bs {dia.total_recaudado.toFixed(2)}
+                                                        Bs {Number(dia.total_recaudado || 0).toFixed(2)}
                                                     </td>
                                                     <td></td>
                                                 </tr>

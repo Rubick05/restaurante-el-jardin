@@ -47,7 +47,7 @@ export default function ResumenDia() {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Ingresos Totales</CardTitle>
-                        <span className="text-2xl font-bold text-green-600">Bs ${resumen?.total.toFixed(2)}</span>
+                        <span className="text-2xl font-bold text-green-600">Bs {Number(resumen?.total || 0).toFixed(2)}</span>
                     </CardHeader>
                     <CardContent>
                         <p className="text-xs text-muted-foreground">+ del día de hoy</p>
@@ -87,7 +87,7 @@ export default function ResumenDia() {
                                         </td>
                                         <td className="p-3">#{p.numero_pedido.slice(0, 8)}</td>
                                         <td className="p-3 uppercase text-xs">{p.tipo_pedido} / {p.datos_facturacion?.tipo || 'Recibo'}</td>
-                                        <td className="p-3 text-right font-mono">Bs ${p.total.toFixed(2)}</td>
+                                        <td className="p-3 text-right font-mono">Bs {Number(p.total).toFixed(2)}</td>
                                     </tr>
                                 ))}
                                 {resumen?.pedidos.length === 0 && (

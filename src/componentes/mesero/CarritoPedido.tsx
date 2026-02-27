@@ -42,7 +42,7 @@ export function CarritoPedido({ items, onUpdateQuantity, onSubmit, procesando, n
                         <div key={item.id_elemento_menu} className="flex gap-3 items-center bg-secondary/30 p-2 rounded-lg">
                             <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate">{item.nombre}</p>
-                                <p className="text-sm text-muted-foreground">Bs ${item.precio.toFixed(2)} x {item.cantidad}</p>
+                                <p className="text-sm text-muted-foreground">Bs {Number(item.precio).toFixed(2)} x {item.cantidad}</p>
                             </div>
 
                             <div className="flex items-center gap-1">
@@ -71,7 +71,7 @@ export function CarritoPedido({ items, onUpdateQuantity, onSubmit, procesando, n
 
             <div className="flex justify-between items-center mb-4 text-lg font-bold">
                 <span>Total</span>
-                <span>Bs ${total.toFixed(2)}</span>
+                <span>Bs {Number(total).toFixed(2)}</span>
             </div>
 
             <div className="mb-4">

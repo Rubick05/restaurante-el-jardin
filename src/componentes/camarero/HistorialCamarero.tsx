@@ -78,7 +78,7 @@ export default function HistorialCamarero() {
                     <CardContent className="p-4 flex items-center gap-3">
                         <DollarSign className="w-8 h-8 text-green-500" />
                         <div>
-                            <div className="text-2xl font-bold">Bs {totalGanado.toFixed(2)}</div>
+                            <div className="text-2xl font-bold">Bs {Number(totalGanado || 0).toFixed(2)}</div>
                             <div className="text-xs text-muted-foreground">Total Cobrado</div>
                         </div>
                     </CardContent>
@@ -137,7 +137,7 @@ export default function HistorialCamarero() {
                                                 </span>
                                                 <div className="ml-auto flex items-center gap-3">
                                                     <span className="font-bold text-green-700">
-                                                        Bs {pedido.total.toFixed(2)}
+                                                        Bs {Number(pedido.total || 0).toFixed(2)}
                                                     </span>
                                                     <Badge className={`text-xs border ${badge.className}`}>
                                                         {badge.label}
@@ -147,7 +147,7 @@ export default function HistorialCamarero() {
                                         );
                                     })}
                                     <div className="px-4 py-2 text-right text-sm font-bold text-green-700 bg-green-50/50">
-                                        Total del día: Bs {pedidosDia.reduce((acc, p) => acc + p.total, 0).toFixed(2)}
+                                        Total del día: Bs {Number(pedidosDia.reduce((acc, p) => acc + (p.total || 0), 0)).toFixed(2)}
                                     </div>
                                 </div>
                             </CardContent>
