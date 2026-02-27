@@ -23,7 +23,7 @@ export default function ReportesVentas() {
 
             // Agrupar por día
             const agrupado = pedidosFinalizados.reduce((acc, curr) => {
-                const fecha = format(new Dte(curr.creado_en), 'yyyy-MM-dd');
+                const fecha = format(new Date(curr.creado_en), 'yyyy-MM-dd');
                 if (!acc[fecha]) acc[fecha] = 0;
                 acc[fecha] += curr.total;
                 return acc;

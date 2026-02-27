@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -48,7 +48,7 @@ export function ModalPago({ open, onOpenChange, items, total, onConfirmarPago, p
             CANT   DETALLE       SUBTOTAL
             ${items.map(i => `${i.cantidad}      ${i.nombre.slice(0, 15).padEnd(15)} ${i.precio * i.cantidad}`).join('\n')}
             --------------------------------
-            TOTAL: $${total.toFixed(2)}
+            TOTAL: $Bs ${total.toFixed(2)}
             --------------------------------
             Gracias por su visita!
         `;
@@ -76,7 +76,7 @@ export function ModalPago({ open, onOpenChange, items, total, onConfirmarPago, p
                     <div className="bg-muted/30 p-4 rounded-lg space-y-2">
                         <div className="flex justify-between font-bold text-xl border-b pb-2">
                             <span>Total a Pagar</span>
-                            <span>${total.toFixed(2)}</span>
+                            <span>Bs ${total.toFixed(2)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground pt-2">
                             {items.length} items en la orden
@@ -171,3 +171,4 @@ export function ModalPago({ open, onOpenChange, items, total, onConfirmarPago, p
         </Dialog>
     );
 }
+

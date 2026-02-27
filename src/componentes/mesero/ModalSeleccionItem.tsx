@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+﻿import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -50,7 +50,7 @@ export function ModalSeleccionItem({ open, onOpenChange, item, cantidadInicial =
                             )}
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-primary">${item.precio_actual.toFixed(2)}</p>
+                            <p className="text-2xl font-bold text-primary">Bs ${item.precio_actual.toFixed(2)}</p>
                             <p className="text-sm text-muted-foreground line-clamp-2">{item.descripcion}</p>
                         </div>
                     </div>
@@ -79,7 +79,7 @@ export function ModalSeleccionItem({ open, onOpenChange, item, cantidadInicial =
                     {/* Subtotal */}
                     <div className="text-center">
                         <span className="text-lg font-medium text-muted-foreground mr-2">Subtotal:</span>
-                        <span className="text-2xl font-bold">${(item.precio_actual * cantidad).toFixed(2)}</span>
+                        <span className="text-2xl font-bold">Bs ${(item.precio_actual * cantidad).toFixed(2)}</span>
                     </div>
                 </div>
 
@@ -98,3 +98,4 @@ export function ModalSeleccionItem({ open, onOpenChange, item, cantidadInicial =
         </Dialog>
     );
 }
+

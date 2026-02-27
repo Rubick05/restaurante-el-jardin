@@ -4,25 +4,42 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    /* RUSTIC THEME: EL JARDIN */
+    --background: 48 100% 97%;
+    /* Base crema/pergamino */
+    --foreground: 28 80% 10%;
+    /* Marrón muy oscuro para texto */
+
+    --card: 40 50% 98%;
+    /* Blanco hueso */
+    --card-foreground: 28 80% 10%;
+
+    --popover: 40 50% 98%;
+    --popover-foreground: 28 80% 10%;
+
+    --primary: 28 80% 25%;
+    /* Marrón Madera Profundo (#45220a) */
+    --primary-foreground: 40 100% 97%;
+
+    --secondary: 35 30% 90%;
+    /* Beige Arena */
+    --secondary-foreground: 24 10% 10%;
+
+    --muted: 35 20% 92%;
+    --muted-foreground: 25 20% 40%;
+
+    --accent: 32 90% 45%;
+    /* Naranja Quemado / Terracota (#d95b11) */
+    --accent-foreground: 40 100% 97%;
+
+    --destructive: 0 70% 40%;
+    /* Rojo Ladrillo */
+    --destructive-foreground: 40 100% 97%;
+
+    --border: 30 20% 80%;
+    /* Beige Oscuro */
+    --input: 30 20% 80%;
+    --ring: 28 80% 25%;
     --radius: 0.5rem;
   }
 
@@ -56,5 +73,18 @@
 
   body {
     @apply bg-background text-foreground;
+    /* WOOD TEXTURE SUBTLE */
+    background-color: hsl(var(--background));
+    background-image: linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)), url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v20h2v20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20z' fill='%2378350f' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+    font-family: 'Inter', system-ui, sans-serif;
   }
+}
+
+/* Tipografía Rústica para Títulos */
+h1,
+h2,
+h3,
+h4,
+.font-serif {
+  font-family: 'Playfair Display', 'Times New Roman', serif;
 }

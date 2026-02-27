@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Restaurante El Jardín — Cocina Boliviana Tradicional</title>
+    <meta name="description"
+        content="Restaurante El Jardín — auténtica cocina boliviana. Pique, Charque, Caldos, Planchitas y más. Ven y disfruta." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+</head>
+
+<body>
+
+    <!-- ═══════════════════════════════════════ NAV ═══════════════════════════════════════ -->
+    <nav class="nav" id="nav">
+        <div class="nav-inner">
+            <div class="logo">
+                <span class="logo-icon">🌿</span>
+                <div>
+                    <span class="logo-name">El Jardín</span>
+                    <span class="logo-sub">Cocina Boliviana</span>
+                </div>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#inicio">Inicio</a></li>
+                <li><a href="#nosotros">Nosotros</a></li>
+                <li><a href="#menu">Menú</a></li>
+                <li><a href="#promociones">Promociones</a></li>
+                <li><a href="#contacto">Contacto</a></li>
+            </ul>
+            <button class="nav-toggle" id="navToggle" aria-label="Menú">☰</button>
+        </div>
+    </nav>
+
+    <!-- ══════════════════════════════════════ HERO ══════════════════════════════════════ -->
+    <section class="hero" id="inicio">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <p class="hero-sub">Auténtica Cocina Boliviana</p>
+            <h1 class="hero-title">Restaurante<br /><em>El Jardín</em></h1>
+            <p class="hero-desc">Sabores que conectan con nuestras raíces — Pique, Charque, Caldos, Planchitas y mucho
+                más.</p>
+            <div class="hero-btns">
+                <a href="#menu" class="btn btn-primary">Ver Menú</a>
+                <a href="#contacto" class="btn btn-outline">Ubicación</a>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <span>Bajar</span>
+            <div class="scroll-arrow">↓</div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════ NOSOTROS ═══════════════════════════════════ -->
+    <section class="section" id="nosotros">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Nuestra Historia</span>
+                <h2 class="section-title">Un lugar con sabor a tradición</h2>
+                <p class="section-desc">El Jardín nació con la misión de ofrecer la auténtica comida boliviana en un
+                    ambiente cálido y familiar. Cada plato está preparado con ingredientes frescos y recetas que pasan
+                    de generación en generación.</p>
+            </div>
+            <div class="cards-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🫕</div>
+                    <h3>Recetas Auténticas</h3>
+                    <p>Preparamos cada plato siguiendo tradiciones culinarias bolivianas que nos heredaron nuestras
+                        abuelas.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🌿</div>
+                    <h3>Ingredientes Frescos</h3>
+                    <p>Trabajamos con proveedores locales para garantizar la frescura e ingredientes de calidad en cada
+                        preparación.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">❤️</div>
+                    <h3>Con Cariño</h3>
+                    <p>Cada plato sale con el cariño de quien lo prepara, porque en El Jardín cocinar es un acto de
+                        amor.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ MENÚ ══════════════════════════════════════ -->
+    <section class="section section-dark" id="menu">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Nuestra Carta</span>
+                <h2 class="section-title">Lo que ofrecemos</h2>
+            </div>
+            <div class="menu-tabs">
+                <button class="tab-btn active" data-cat="platos">🍖 Platos Fuertes</button>
+                <button class="tab-btn" data-cat="caldos">🍲 Caldos</button>
+                <button class="tab-btn" data-cat="bebidas">🥤 Bebidas</button>
+            </div>
+            <div class="menu-grid" id="menuGrid">
+                <!-- Platos Fuertes -->
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🥩</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Pique (Media)</span>
+                        <span class="menu-item-price">Bs 80</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🥩</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Pique (Entero)</span>
+                        <span class="menu-item-price">Bs 120</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🍖</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Charque (Media)</span>
+                        <span class="menu-item-price">Bs 80</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🍖</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Charque (Entero)</span>
+                        <span class="menu-item-price">Bs 120</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🥘</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Planchita</span>
+                        <span class="menu-item-price">Bs 80 - 120</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🫕</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Jatun Pampaku</span>
+                        <span class="menu-item-price">Bs 110</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🐣</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Alitas</span>
+                        <span class="menu-item-price">Bs 25</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🐇</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Lambreado de Conejo</span>
+                        <span class="menu-item-price">Bs 80</span>
+                    </div>
+                </div>
+                <!-- Caldos -->
+                <div class="menu-item hidden" data-cat="caldos">
+                    <div class="menu-item-icon">🍲</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Lomito Borracho</span>
+                        <span class="menu-item-price">Bs 30</span>
+                    </div>
+                </div>
+                <div class="menu-item hidden" data-cat="caldos">
+                    <div class="menu-item-icon">🍜</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Kawi</span>
+                        <span class="menu-item-price">Bs 20</span>
+                    </div>
+                </div>
+                <div class="menu-item hidden" data-cat="caldos">
+                    <div class="menu-item-icon">🍜</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Fideos Uchu (Personal)</span>
+                        <span class="menu-item-price">Bs 40</span>
+                    </div>
+                </div>
+                <!-- Bebidas -->
+                <div class="menu-item hidden" data-cat="bebidas">
+                    <div class="menu-item-icon">🥤</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Coca Cola 2L</span>
+                        <span class="menu-item-price">Bs 15</span>
+                    </div>
+                </div>
+                <div class="menu-item hidden" data-cat="bebidas">
+                    <div class="menu-item-icon">🥤</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Coca Cola Personal</span>
+                        <span class="menu-item-price">Bs 8</span>
+                    </div>
+                </div>
+                <div class="menu-item hidden" data-cat="bebidas">
+                    <div class="menu-item-icon">🍺</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Cerveza Huari</span>
+                        <span class="menu-item-price">Bs 20</span>
+                    </div>
+                </div>
+                <div class="menu-item hidden" data-cat="bebidas">
+                    <div class="menu-item-icon">🍺</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Cerveza Paceña</span>
+                        <span class="menu-item-price">Bs 18</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════ PROMOCIONES ══════════════════════════════════ -->
+    <section class="section" id="promociones">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Ofertas y Novedades</span>
+                <h2 class="section-title">Promociones del Mes</h2>
+                <p class="section-desc">Anuncios especiales, combos y eventos del restaurante.</p>
+            </div>
+
+            <!-- Carrusel -->
+            <div class="carousel-wrapper">
+                <div class="carousel" id="carousel">
+                    <div class="carousel-track" id="carouselTrack">
+                        <!-- Las tarjetas se generan dinámicamente desde JS -->
+                    </div>
+                </div>
+
+                <button class="carousel-btn carousel-prev" id="carouselPrev" aria-label="Anterior">‹</button>
+                <button class="carousel-btn carousel-next" id="carouselNext" aria-label="Siguiente">›</button>
+
+                <!-- Dots del carrusel -->
+                <div class="carousel-dots" id="carouselDots"></div>
+            </div>
+
+            <!-- Admin: subir fotos de promoción -->
+            <div class="promo-upload" id="promoUpload">
+                <p class="upload-label">🔑 Modo Administrador</p>
+                <div class="upload-area" id="uploadArea">
+                    <span class="upload-icon">📷</span>
+                    <p>Arrastra fotos aquí o haz clic para subir</p>
+                    <p class="upload-hint">PNG, JPG, WebP — se guardan en el navegador</p>
+                    <input type="file" id="promoInput" accept="image/*" multiple class="upload-input" />
+                </div>
+                <div class="upload-actions">
+                    <button class="btn btn-sm btn-outline" id="clearPromos">Limpiar todas las fotos</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════ CONTACTO ════════════════════════════════════ -->
+    <section class="section section-dark" id="contacto">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">Encuéntranos</span>
+                <h2 class="section-title">Visítanos</h2>
+            </div>
+            <div class="contact-grid">
+                <div class="contact-card">
+                    <div class="contact-icon">📍</div>
+                    <h4>Dirección</h4>
+                    <p>Av. Principal s/n<br />Tu Ciudad, Bolivia</p>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-icon">🕐</div>
+                    <h4>Horario</h4>
+                    <p>Lunes a Domingo<br />11:00 — 22:00 hs</p>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-icon">📞</div>
+                    <h4>Contacto</h4>
+                    <p>+591 xxx xxx xxxx</p>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-icon">📱</div>
+                    <h4>WhatsApp</h4>
+                    <p><a href="https://wa.me/591XXXXXXXX" target="_blank" rel="noopener">Enviar mensaje</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ══════════════════════════════════════ FOOTER ════════════════════════════════════ -->
+    <footer class="footer">
+        <p>© 2025 Restaurante El Jardín · Cocina Boliviana Tradicional</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

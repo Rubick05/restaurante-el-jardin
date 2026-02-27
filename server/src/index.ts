@@ -6,74 +6,63 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { pool } from './bd/pool';
 
-// Intentar cargar .env desde la raíz del proyecto (2 niveles arriba de server/)
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
-// También cargar el local de server/ por si acaso
 dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
-    cors: {
-        origin: "*", // En producción, restringir al dominio de la PWA
-        methods: ["GET", "POST"]
-    }
+    cors: { origin: '*', methods: ['GET', 'POST', 'PATCH', 'DELETE'] }
 });
 
 import pedidosRouter from './rutas/pedidos';
-import sincronizacionRouter from './rutas/sincronizacion';
+import menuRouter from './rutas/menu';
+import historialRouter from './rutas/historial';
 import { inicializarSocket } from './sincronizacion/emisor-tiempo-real';
 
-// Inicializar helper de sockets
 inicializarSocket(io);
 
-// ... (después de cors/json)
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '20mb' })); // limit grande para imágenes base64
 
-// Rutas API
+// ─── API Routes ───
 app.use('/api/pedidos', pedidosRouter);
-app.use('/api/sincronizar', sincronizacionRouter);
+app.use('/api/menu', menuRouter);
+app.use('/api/historial', historialRouter);
 
-// Servir frontend en producción
-if (process.env.NODE_ENV === 'production') {
-    app.use(express.static(path.join(__dirname, '../../dist')));
-
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(__dirname, '../../dist', 'index.html'));
-    });
-}
-
-const PORT = process.env.PORT || 3001;
-
-
-// --- Endpoints Básicos ---
-app.get('/health', (req, res) => {
+// ─── Health check ───
+app.get('/health', (_req, res) => {
     res.json({ status: 'ok', time: new Date().toISOString() });
 });
 
-// Endpoint ejemplo para probar conexión BD
-app.get('/api/test-db', async (req, res) => {
+// ─── DB test ───
+app.get('/api/test-db', async (_req, res) => {
     try {
         const result = await pool.query('SELECT NOW()');
         res.json({ ok: true, server_time: result.rows[0].now });
     } catch (error: any) {
-        console.error(error);
         res.status(500).json({ ok: false, error: error.message });
     }
 });
 
-// --- Manejo de WebSockets (Sincronización) ---
-io.on('connection', (socket) => {
-    console.log('Cliente conectado:', socket.id);
-
-    socket.on('disconnect', () => {
-        console.log('Cliente desconectado:', socket.id);
+// ─── Servir frontend en producción ───
+if (process.env.NODE_ENV === 'production') {
+    const distPath = path.join(__dirname, '../../dist');
+    app.use(express.static(distPath));
+    // SPA fallback — todas las rutas no-API devuelven el index.html
+    app.get('*', (req, res) => {
+        if (req.path.startsWith('/api')) return res.status(404).json({ error: 'Not found' });
+        res.sendFile(path.join(distPath, 'index.html'));
     });
+}
 
-    // Aquí manejaremos eventos de sync más adelante
+// ─── Socket.io ───
+io.on('connection', (socket) => {
+    console.log('📱 Cliente conectado:', socket.id);
+    socket.on('disconnect', () => console.log('📴 Cliente desconectado:', socket.id));
 });
 
+const PORT = process.env.PORT || 3001;
 httpServer.listen(PORT, () => {
-    console.log(`🚀 Servidor Backend corriendo en h http://localhost:${PORT}`);
+    console.log(`🚀 Servidor El Jardín en http://localhost:${PORT}`);
 });

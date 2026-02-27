@@ -4,10 +4,13 @@ import TableroFichas from "./TableroFichas"; // Ahora es la Lista de Pedidos
 import { Button } from "@/componentes/ui/button";
 import { PlusCircle, UtensilsCrossed } from "lucide-react";
 import { Pedido } from "@/lib/bd/bd-local";
+import { ModalCobro } from "./ModalCobro";
 
 export default function VistaMesero() {
     const [modo, setModo] = useState<"lista" | "menu">("lista");
     const [pedidoSeleccionado, setPedidoSeleccionado] = useState<Pedido | null>(null);
+    const [pedidoACobrar, setPedidoACobrar] = useState<Pedido | null>(null);
+    const [modalCobroAbierto, setModalCobroAbierto] = useState(false);
 
     const irANuevoPedido = () => {
         setPedidoSeleccionado(null);
@@ -22,6 +25,16 @@ export default function VistaMesero() {
     const volverALista = () => {
         setModo("lista");
         setPedidoSeleccionado(null);
+    };
+
+    const abrirCobro = (pedido: Pedido) => {
+        setPedidoACobrar(pedido);
+        setModalCobroAbierto(true);
+    };
+
+    const cerrarCobro = () => {
+        setModalCobroAbierto(false);
+        setPedidoACobrar(null);
     };
 
     if (modo === "menu") {
@@ -53,9 +66,12 @@ export default function VistaMesero() {
                 </Button>
             </header>
 
-            {/* Contenido: Lista de Pedidos (Antes TableroFichas) */}
+            {/* Contenido: Lista de Pedidos */}
             <div className="flex-1 overflow-y-auto p-2">
-                <TableroFichas onPedidoSelect={irAEditarPedido} />
+                <TableroFichas
+                    onPedidoSelect={irAEditarPedido}
+                    onCobrarPedido={abrirCobro}
+                />
             </div>
 
             {/* Botón Flotante (Móvil) */}
@@ -68,6 +84,16 @@ export default function VistaMesero() {
                     <PlusCircle className="w-8 h-8" />
                 </Button>
             </div>
+
+            {/* Modal de Cobro */}
+            {pedidoACobrar && (
+                <ModalCobro
+                    open={modalCobroAbierto}
+                    onOpenChange={(open) => { if (!open) cerrarCobro(); }}
+                    pedido={pedidoACobrar}
+                    onCobrado={cerrarCobro}
+                />
+            )}
         </div>
     );
 }
