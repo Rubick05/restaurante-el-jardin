@@ -65,10 +65,10 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                     if (res.ok) {
                         const itemsServidor = await res.json();
                         // Sincronizar en IndexedDB local para que otras pistas también los tengan
-                        for (const item of itemsServidor) {
+                        for (const item of itemsServidor as ElementoMenu[]) {
                             await bdLocal.elementosMenu.put(item);
                         }
-                        return itemsServidor.filter((i: any) => i.disponible);
+                        return (itemsServidor as ElementoMenu[]).filter((i: ElementoMenu) => i.disponible);
                     }
                 }
             } catch {
@@ -83,8 +83,8 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
     const ORDEN_CATEGORIAS = ['Plato Fuerte', 'Caldos', 'Refrescos', 'Cervezas'];
     const categorias = useMemo(() => {
         // Solo mostrar categorías que estén en la lista válida
-        const cats = ORDEN_CATEGORIAS.filter(cat =>
-            menu.some(i => i.categoria === cat)
+        const cats = ORDEN_CATEGORIAS.filter((cat: string) =>
+            menu.some((i: ElementoMenu) => i.categoria === cat)
         );
         return ["Todos", ...cats];
     }, [menu]);
@@ -544,7 +544,7 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                                     Sin resultados
                                 </div>
                             ) : (
-                                itemsFiltrados.map(item => (
+                                itemsFiltrados.map((item: ElementoMenu) => (
                                     <TarjetaMenu
                                         key={item.id}
                                         item={item}
