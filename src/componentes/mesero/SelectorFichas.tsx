@@ -35,7 +35,7 @@ export default function SelectorFichas({ onSelect, fichaActual }: Props) {
     const fichasOcupadas = new Set(
         pedidosActivos
             .filter(p => p.numero_letrero)
-            .map(p => p.numero_letrero!)
+            .map(p => String(p.numero_letrero))
     );
 
     const fichas = Array.from({ length: 30 }, (_, i) => (i + 1).toString());

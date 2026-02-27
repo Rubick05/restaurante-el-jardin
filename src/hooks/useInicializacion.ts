@@ -56,8 +56,8 @@ export function normalizarPedidos(pedidos: any[]): any[] {
             ...it,
             cantidad: Number(it.cantidad ?? 1),
             precio_unitario: Number(it.precio_unitario ?? 0),
-            subtotal: Number(it.subtotal ?? 0),
         })),
+        sincronizado: true,
     }));
 }
 
