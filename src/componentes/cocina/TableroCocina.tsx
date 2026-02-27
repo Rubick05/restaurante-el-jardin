@@ -182,7 +182,7 @@ export default function TableroCocina() {
     );
 
     return (
-        <div className="h-[calc(100vh-6rem)] p-4 flex flex-col gap-3">
+        <div className="flex flex-col gap-3 h-[calc(100vh-7rem)] p-2 sm:p-4">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <h2 className="text-xl font-bold font-serif flex items-center gap-2">
@@ -216,54 +216,55 @@ export default function TableroCocina() {
                 &nbsp;·&nbsp; Refrescos y Cervezas → el mesero los sirve directamente
             </div>
 
-            {/* Kanban */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 overflow-hidden">
+            {/* Kanban — scroll horizontal en móvil, 3 columnas en desktop */}
+            <div className="flex-1 overflow-hidden">
+                <div className="flex md:grid md:grid-cols-3 gap-3 h-full overflow-x-auto pb-2 snap-x snap-mandatory">
 
-                {/* PENDIENTES */}
-                <div className="bg-slate-50 rounded-lg p-4 flex flex-col overflow-hidden border">
-                    <h3 className="font-bold text-slate-700 mb-3 flex items-center justify-between shrink-0">
-                        <span className="flex items-center gap-2">
-                            <UtensilsCrossed className="w-4 h-4" /> PENDIENTES
-                        </span>
-                        <Badge variant="secondary">{columnas.pendiente.length}</Badge>
-                    </h3>
-                    <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-                        {columnas.pendiente.length === 0
-                            ? <p className="text-center text-muted-foreground text-sm py-10 opacity-40">Sin pedidos pendientes</p>
-                            : columnas.pendiente.map(renderItem)}
+                    {/* PENDIENTES */}
+                    <div className="bg-slate-50 rounded-lg p-3 sm:p-4 flex flex-col overflow-hidden border snap-start shrink-0 w-[82vw] md:w-auto min-w-0">
+                        <h3 className="font-bold text-slate-700 mb-3 flex items-center justify-between shrink-0">
+                            <span className="flex items-center gap-2">
+                                <UtensilsCrossed className="w-4 h-4" /> PENDIENTES
+                            </span>
+                            <Badge variant="secondary">{columnas.pendiente.length}</Badge>
+                        </h3>
+                        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                            {columnas.pendiente.length === 0
+                                ? <p className="text-center text-muted-foreground text-sm py-10 opacity-40">Sin pedidos pendientes</p>
+                                : columnas.pendiente.map(renderItem)}
+                        </div>
+                    </div>
+
+                    {/* EN PREPARACIÓN */}
+                    <div className="bg-blue-50/60 rounded-lg p-3 sm:p-4 flex flex-col overflow-hidden border border-blue-200 snap-start shrink-0 w-[82vw] md:w-auto min-w-0">
+                        <h3 className="font-bold text-blue-700 mb-3 flex items-center justify-between shrink-0">
+                            <span className="flex items-center gap-2">
+                                <ChefHat className="w-4 h-4" /> EN PREPARACIÓN
+                            </span>
+                            <Badge className="bg-blue-200 text-blue-800">{columnas.en_proceso.length}</Badge>
+                        </h3>
+                        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                            {columnas.en_proceso.length === 0
+                                ? <p className="text-center text-muted-foreground text-sm py-10 opacity-40">Sin items en proceso</p>
+                                : columnas.en_proceso.map(renderItem)}
+                        </div>
+                    </div>
+
+                    {/* LISTO */}
+                    <div className="bg-green-50/60 rounded-lg p-3 sm:p-4 flex flex-col overflow-hidden border border-green-200 snap-start shrink-0 w-[82vw] md:w-auto min-w-0">
+                        <h3 className="font-bold text-green-700 mb-3 flex items-center justify-between shrink-0">
+                            <span className="flex items-center gap-2">
+                                <PackageCheck className="w-4 h-4" /> LISTO PARA ENTREGAR
+                            </span>
+                            <Badge className="bg-green-200 text-green-800">{columnas.listo.length}</Badge>
+                        </h3>
+                        <div className="flex-1 overflow-y-auto space-y-3 pr-1">
+                            {columnas.listo.length === 0
+                                ? <p className="text-center text-muted-foreground text-sm py-10 opacity-40">Nada listo aún</p>
+                                : columnas.listo.map(renderItem)}
+                        </div>
                     </div>
                 </div>
-
-                {/* EN PREPARACIÓN */}
-                <div className="bg-blue-50/60 rounded-lg p-4 flex flex-col overflow-hidden border border-blue-200">
-                    <h3 className="font-bold text-blue-700 mb-3 flex items-center justify-between shrink-0">
-                        <span className="flex items-center gap-2">
-                            <ChefHat className="w-4 h-4" /> EN PREPARACIÓN
-                        </span>
-                        <Badge className="bg-blue-200 text-blue-800">{columnas.en_proceso.length}</Badge>
-                    </h3>
-                    <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-                        {columnas.en_proceso.length === 0
-                            ? <p className="text-center text-muted-foreground text-sm py-10 opacity-40">Sin items en proceso</p>
-                            : columnas.en_proceso.map(renderItem)}
-                    </div>
-                </div>
-
-                {/* LISTO */}
-                <div className="bg-green-50/60 rounded-lg p-4 flex flex-col overflow-hidden border border-green-200">
-                    <h3 className="font-bold text-green-700 mb-3 flex items-center justify-between shrink-0">
-                        <span className="flex items-center gap-2">
-                            <PackageCheck className="w-4 h-4" /> LISTO PARA ENTREGAR
-                        </span>
-                        <Badge className="bg-green-200 text-green-800">{columnas.listo.length}</Badge>
-                    </h3>
-                    <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-                        {columnas.listo.length === 0
-                            ? <p className="text-center text-muted-foreground text-sm py-10 opacity-40">Nada listo aún</p>
-                            : columnas.listo.map(renderItem)}
-                    </div>
-                </div>
-
             </div>
         </div>
     );
