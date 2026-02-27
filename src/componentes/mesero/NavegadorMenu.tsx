@@ -1,7 +1,7 @@
 ﻿import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { bdLocal, ElementoMenu, Pedido } from '@/lib/bd/bd-local';
-import { API_BASE_URL, normalizarMenu } from '@/hooks/useInicializacion';
+import { API_BASE_URL, normalizarMenu, normalizarPedidos } from '@/hooks/useInicializacion';
 import { useAuth } from '@/lib/auth/contexto-auth';
 import { TarjetaMenu } from './TarjetaMenu';
 import { CarritoPedido, ItemCarrito } from './CarritoPedido';
@@ -328,9 +328,12 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                     body: JSON.stringify(nuevoPedido),
                 });
                 if (res.ok) {
-                    const pedidoGuardado = await res.json();
-                    // Actualizar cache local con la versión del servidor
-                    await bdLocal.pedidos.put(pedidoGuardado.pedido ?? pedidoGuardado);
+                    const dataRes = await res.json();
+                    const rawPedido = dataRes.pedido ?? dataRes;
+                    const [pedidoGuardado] = normalizarPedidos([rawPedido]);
+
+                    // Actualizar cache local con la versión normalizada
+                    await bdLocal.pedidos.put(pedidoGuardado);
                     await bdLocal.pedidos.update(nuevoPedido.id, { sincronizado: true });
                 }
             } catch {

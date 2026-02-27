@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query';
-import { bdLocal } from '@/lib/bd/bd-local';
+import { bdLocal, Pedido } from '@/lib/bd/bd-local';
 import { Button } from '@/componentes/ui/button';
 import { Hash } from 'lucide-react';
+import { API_BASE_URL, normalizarPedidos } from '@/hooks/useInicializacion';
 
 interface Props {
     onSelect: (numero: string) => void;
@@ -11,14 +12,24 @@ interface Props {
 export default function SelectorFichas({ onSelect, fichaActual }: Props) {
     // Obtener fichas ocupadas
     const { data: pedidosActivos = [] } = useQuery({
-        queryKey: ['fichas-ocupadas'],
-        queryFn: async () => {
-            // Usar la misma lógica robusta que en NavegadorMenu
+        queryKey: ['pedidos-activos'],
+        queryFn: async (): Promise<Pedido[]> => {
+            // Intentar cargar desde servidor primero
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/pedidos`);
+                if (res.ok) {
+                    const data = normalizarPedidos(await res.json());
+                    // Guardar en local para mantener sincronía
+                    await bdLocal.pedidos.bulkPut(data as Pedido[]);
+                    return data.filter((p: Pedido) => p.estado !== 'pagado' && p.estado !== 'cancelado');
+                }
+            } catch { /* offline fallback */ }
+
             return await bdLocal.pedidos
                 .filter(p => p.estado !== 'pagado' && p.estado !== 'cancelado')
                 .toArray();
         },
-        refetchInterval: 2000 // Actualizar más frecuentemente
+        refetchInterval: 5000 // Actualizar status letreros cada 5 seg
     });
 
     const fichasOcupadas = new Set(
