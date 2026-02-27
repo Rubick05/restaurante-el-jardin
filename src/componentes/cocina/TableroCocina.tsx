@@ -5,6 +5,7 @@ import { Card, CardContent } from '@/componentes/ui/card';
 import { Badge } from '@/componentes/ui/badge';
 import { Clock, ChefHat, PackageCheck, RefreshCw, UtensilsCrossed } from 'lucide-react';
 import { format } from 'date-fns';
+import { API_BASE_URL } from '@/hooks/useInicializacion';
 
 // Categorías que prepara la COCINA
 const CATEGORIAS_COCINA = ['Plato Fuerte', 'Caldos'];
@@ -35,6 +36,15 @@ export default function TableroCocina() {
     const { data: itemsCocina = [], isFetching, isError, refetch } = useQuery({
         queryKey: ['items-cocina'],
         queryFn: async () => {
+            // Cargar pedidos desde servidor primero para sincronizar
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/pedidos`);
+                if (res.ok) {
+                    const pedidosServidor = await res.json();
+                    await bdLocal.pedidos.bulkPut(pedidosServidor);
+                }
+            } catch { /* offline: usar IndexedDB local */ }
+
             console.log("=== INICIANDO CARGA TABLERO COCINA ===");
             const todos = await bdLocal.pedidos.toArray();
             console.log(`1. Pedidos totales en BD: ${todos.length}`);

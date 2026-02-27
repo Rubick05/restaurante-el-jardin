@@ -12,6 +12,7 @@ import ResumenPedidosDia from '@/componentes/admind/ResumenPedidosDia';
 import HistorialCamarero from '@/componentes/camarero/HistorialCamarero';
 import PantallaLogin from '@/componentes/auth/PantallaLogin';
 import { useSocketSync } from '@/hooks/useSocketSync';
+import { useInicializacion } from '@/hooks/useInicializacion';
 
 function RutaProtegida({
   elemento,
@@ -152,10 +153,16 @@ const router = createBrowserRouter([
 ]);
 
 
+function AppInterna() {
+  useSocketSync();
+  useInicializacion();
+  return <RouterProvider router={router} />;
+}
+
 function App() {
   return (
     <ProveedorAuth>
-      <RouterProvider router={router} />
+      <AppInterna />
     </ProveedorAuth>
   );
 }

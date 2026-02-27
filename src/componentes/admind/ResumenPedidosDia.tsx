@@ -8,6 +8,7 @@ import { Calendar, DollarSign, Hash, MapPin, X, UtensilsCrossed, UserCircle, Ref
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState } from 'react';
+import { API_BASE_URL } from '@/hooks/useInicializacion';
 
 function nombreMesero(idMesero: string): string {
     const usuario = USUARIOS_SISTEMA.find(u => u.id === idMesero);
@@ -23,17 +24,14 @@ export default function ResumenPedidosDia() {
         queryFn: async (): Promise<Pedido[]> => {
             // Intentar cargar desde servidor primero
             try {
-                const apiUrl = import.meta.env.VITE_API_URL;
-                if (apiUrl) {
-                    const res = await fetch(`${apiUrl}/api/pedidos?hoy=true`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        // Sincronizar en IndexedDB local
-                        for (const p of data as Pedido[]) {
-                            await bdLocal.pedidos.put(p);
-                        }
-                        return (data as Pedido[]).sort((a, b) => a.numero_ficha - b.numero_ficha);
+                const res = await fetch(`${API_BASE_URL}/api/pedidos?hoy=true`);
+                if (res.ok) {
+                    const data = await res.json();
+                    // Sincronizar en IndexedDB local
+                    for (const p of data as Pedido[]) {
+                        await bdLocal.pedidos.put(p);
                     }
+                    return (data as Pedido[]).sort((a, b) => a.numero_ficha - b.numero_ficha);
                 }
             } catch {
                 // Sin red: usar IndexedDB local
@@ -57,7 +55,7 @@ export default function ResumenPedidosDia() {
         if (!confirm('¿Cerrar el día? Se guardará el resumen para el historial y todos los pedidos quedarán archivados.')) return;
         setProcesando(true);
         try {
-            const apiUrl = import.meta.env.VITE_API_URL;
+            const apiUrl = API_BASE_URL;
 
             if (apiUrl) {
                 // Cerrar vía servidor

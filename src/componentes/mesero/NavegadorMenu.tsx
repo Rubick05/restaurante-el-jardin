@@ -1,6 +1,7 @@
 ﻿import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { bdLocal, ElementoMenu, Pedido } from '@/lib/bd/bd-local';
+import { API_BASE_URL } from '@/hooks/useInicializacion';
 import { useAuth } from '@/lib/auth/contexto-auth';
 import { TarjetaMenu } from './TarjetaMenu';
 import { CarritoPedido, ItemCarrito } from './CarritoPedido';
@@ -54,29 +55,23 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
     // Usar la version live si existe, sino la prop original
     const pedidoVivo = pedidoActual ?? pedidoExistente;
 
-    // Cargar menú: primero del servidor (con imágenes), luego IndexedDB como fallback
+    // Cargar menú: del servidor (con imágenes) → IndexedDB como fallback
     const { data: menu = [] } = useQuery({
         queryKey: ['menu'],
         queryFn: async () => {
             try {
-                const apiUrl = import.meta.env.VITE_API_URL;
-                if (apiUrl) {
-                    const res = await fetch(`${apiUrl}/api/menu`);
-                    if (res.ok) {
-                        const itemsServidor = await res.json();
-                        // Sincronizar en IndexedDB local para que otras pistas también los tengan
-                        for (const item of itemsServidor as ElementoMenu[]) {
-                            await bdLocal.elementosMenu.put(item);
-                        }
-                        return (itemsServidor as ElementoMenu[]).filter((i: ElementoMenu) => i.disponible);
-                    }
+                const res = await fetch(`${API_BASE_URL}/api/menu`);
+                if (res.ok) {
+                    const itemsServidor = await res.json() as ElementoMenu[];
+                    await bdLocal.elementosMenu.bulkPut(itemsServidor);
+                    return itemsServidor.filter((i: ElementoMenu) => i.disponible);
                 }
             } catch {
                 // Sin red: usar IndexedDB local
             }
             return bdLocal.elementosMenu.where('disponible').equals(1).toArray();
         },
-        staleTime: 30_000, // 30 segundos
+        staleTime: 30_000,
     });
 
     // Solo estas 4 categorías son válidas — se filtra cualquier otra (días de la semana, etc.)
