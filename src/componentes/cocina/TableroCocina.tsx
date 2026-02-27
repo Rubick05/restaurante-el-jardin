@@ -136,6 +136,22 @@ export default function TableroCocina() {
             actualizado_en: new Date().toISOString(),
         });
 
+        // ── Sincronizar con servidor ──
+        try {
+            await fetch(`${API_BASE_URL}/api/pedidos/${item.pedidoId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    estado: nuevoEstadoPedido,
+                    item_id: item.itemIndex.toString(),
+                    estado_item: nuevoEstado,
+                    items: itemsActualizados,
+                }),
+            });
+        } catch {
+            // Offline — cambios guardados local, se verán en próxima sync
+        }
+
         queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
         queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
         queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });

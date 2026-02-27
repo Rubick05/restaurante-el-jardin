@@ -6,6 +6,7 @@ import { Input } from '@/componentes/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/componentes/ui/card';
 import { Plus, Pencil, Trash2, Save, X, ImagePlus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { API_BASE_URL } from '@/hooks/useInicializacion';
 
 export default function GestionMenu() {
   const queryClient = useQueryClient();
@@ -15,8 +16,20 @@ export default function GestionMenu() {
   const inputImagenRef = useRef<HTMLInputElement>(null);
 
   const { data: menu = [] } = useQuery({
-    queryKey: ['menu'], // 🔥 IMPORTANTE: Mismo key que usa el Mesero
-    queryFn: () => bdLocal.elementosMenu.toArray()
+    queryKey: ['menu'],
+    queryFn: async () => {
+      // Siempre cargar desde servidor para que el admin vea los datos reales
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/menu`);
+        if (res.ok) {
+          const items = await res.json() as ElementoMenu[];
+          await bdLocal.elementosMenu.bulkPut(items);
+          return items;
+        }
+      } catch { /* offline */ }
+      return bdLocal.elementosMenu.toArray();
+    },
+    staleTime: 10_000,
   });
 
   const iniciarEdicion = (item?: ElementoMenu) => {
@@ -41,38 +54,45 @@ export default function GestionMenu() {
     if (!formulario.nombre || !formulario.precio_actual) return;
 
     try {
-      if (esNuevo) {
-        await bdLocal.elementosMenu.add({
-          id: uuidv4(),
-          id_restaurante: 'demo-tenant',
-          nombre: formulario.nombre,
-          categoria: formulario.categoria || 'General',
-          precio_actual: Number(formulario.precio_actual),
-          disponible: formulario.disponible ?? true,
-          descripcion: formulario.descripcion,
-          actualizado_en: new Date().toISOString(),
-          url_imagen: formulario.url_imagen,
-          imagen_base64: formulario.imagen_base64,
-        } as ElementoMenu);
-      } else {
-        await bdLocal.elementosMenu.update(editandoId!, {
-          ...formulario,
-          precio_actual: Number(formulario.precio_actual), // Asegurar número
-          actualizado_en: new Date().toISOString()
-        });
-      }
+      const elemento: ElementoMenu = {
+        id: esNuevo ? uuidv4() : editandoId!,
+        id_restaurante: 'demo-tenant',
+        nombre: formulario.nombre!,
+        categoria: formulario.categoria || 'General',
+        precio_actual: Number(formulario.precio_actual),
+        disponible: formulario.disponible ?? true,
+        descripcion: formulario.descripcion,
+        actualizado_en: new Date().toISOString(),
+        url_imagen: formulario.url_imagen,
+        imagen_base64: formulario.imagen_base64,
+      } as ElementoMenu;
+
+      // ── Guardar en SERVIDOR primero ──
+      const res = await fetch(`${API_BASE_URL}/api/menu`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(elemento),
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const guardado = await res.json() as ElementoMenu;
+
+      // Cache local
+      await bdLocal.elementosMenu.put(guardado);
 
       queryClient.invalidateQueries({ queryKey: ['menu'] });
       setEditandoId(null);
       setEsNuevo(false);
     } catch (e) {
       console.error(e);
-      alert('Error al guardar');
+      alert('Error al guardar en el servidor. Verifica la conexión.');
     }
   };
 
   const eliminar = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este plato?')) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/menu/${id}`, { method: 'DELETE' });
+    } catch { /* offline */ }
     await bdLocal.elementosMenu.delete(id);
     queryClient.invalidateQueries({ queryKey: ['menu'] });
   };

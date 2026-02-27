@@ -318,24 +318,30 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                 sincronizado: false
             };
 
-            await bdLocal.pedidos.add(nuevoPedido);
+            // ── Guardar pedido: SERVIDOR primero, IndexedDB como cache ──
+            await bdLocal.pedidos.put(nuevoPedido); // cache local inmediato
 
-            // Sincronización (cola)
-            await bdLocal.colaSincronizacion.add({
-                id: uuidv4(),
-                id_restaurante: nuevoPedido.id_restaurante,
-                tipo_entidad: 'pedido',
-                id_entidad: nuevoPedido.id,
-                operacion: 'crear',
-                carga_util: nuevoPedido,
-                timestamp_cliente: new Date().toISOString(),
-                procesado: false,
-                conteo_reintentos: 0
-            });
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/pedidos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(nuevoPedido),
+                });
+                if (res.ok) {
+                    const pedidoGuardado = await res.json();
+                    // Actualizar cache local con la versión del servidor
+                    await bdLocal.pedidos.put(pedidoGuardado.pedido ?? pedidoGuardado);
+                    await bdLocal.pedidos.update(nuevoPedido.id, { sincronizado: true });
+                }
+            } catch {
+                // Sin red — el pedido quedó en IndexedDB, se sincronizará después
+                console.warn('Sin conexión al crear pedido — guardado solo local');
+            }
 
             // Invalidar queries
             await queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
             await queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
+            await queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
 
             alert(`✅ Pedido Creado - Ficha #${siguienteNumeroFicha} - Letrero ${numeroLetrero}`);
             setItemsNuevos([]);
