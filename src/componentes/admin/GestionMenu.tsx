@@ -6,7 +6,7 @@ import { Input } from '@/componentes/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/componentes/ui/card';
 import { Plus, Pencil, Trash2, Save, X, ImagePlus } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { API_BASE_URL } from '@/hooks/useInicializacion';
+import { API_BASE_URL, normalizarMenu } from '@/hooks/useInicializacion';
 
 export default function GestionMenu() {
   const queryClient = useQueryClient();

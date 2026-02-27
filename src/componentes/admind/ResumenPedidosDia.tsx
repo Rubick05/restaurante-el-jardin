@@ -8,7 +8,7 @@ import { Calendar, DollarSign, Hash, MapPin, X, UtensilsCrossed, UserCircle, Ref
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState } from 'react';
-import { API_BASE_URL } from '@/hooks/useInicializacion';
+import { API_BASE_URL, normalizarPedidos } from '@/hooks/useInicializacion';
 
 function nombreMesero(idMesero: string): string {
     const usuario = USUARIOS_SISTEMA.find(u => u.id === idMesero);
@@ -26,7 +26,7 @@ export default function ResumenPedidosDia() {
             try {
                 const res = await fetch(`${API_BASE_URL}/api/pedidos?hoy=true`);
                 if (res.ok) {
-                    const data = await res.json();
+                    const data = normalizarPedidos(await res.json());
                     // Sincronizar en IndexedDB local
                     for (const p of data as Pedido[]) {
                         await bdLocal.pedidos.put(p);
@@ -223,7 +223,7 @@ export default function ResumenPedidosDia() {
                                                         </div>
                                                     </td>
                                                     <td className="p-3 text-sm text-muted-foreground">{pedido.items?.length || 0} items</td>
-                                                    <td className="p-3 text-right font-bold text-green-700">Bs {pedido.total.toFixed(2)}</td>
+                                                    <td className="p-3 text-right font-bold text-green-700">Bs {Number(pedido.total || 0).toFixed(2)}</td>
                                                     <td className="p-3 text-center">
                                                         <Badge className={`text-xs border ${estado.className}`}>{estado.label}</Badge>
                                                     </td>
@@ -259,7 +259,7 @@ export default function ResumenPedidosDia() {
                                                     <span>· {format(new Date(pedido.creado_en), 'HH:mm')}</span>
                                                     <span>· {pedido.items?.length || 0} items</span>
                                                 </div>
-                                                <span className="font-bold text-green-700">Bs {pedido.total.toFixed(2)}</span>
+                                                <span className="font-bold text-green-700">Bs {Number(pedido.total || 0).toFixed(2)}</span>
                                             </div>
                                         </div>
                                     );

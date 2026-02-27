@@ -34,6 +34,33 @@ export const API_BASE_URL = getApiUrl();
  * Sincroniza datos del servidor → IndexedDB.
  * Se ejecuta al montar la app y cada 30 segundos.
  */
+/** Normaliza campos numéricos del menú que PostgreSQL devuelve como strings */
+export function normalizarMenu(items: any[]): any[] {
+    return items.map(i => ({
+        ...i,
+        precio_actual: Number(i.precio_actual ?? 0),
+        disponible: Boolean(i.disponible),
+    }));
+}
+
+/** Normaliza campos numéricos de pedidos que PostgreSQL devuelve como strings */
+export function normalizarPedidos(pedidos: any[]): any[] {
+    return pedidos.map(p => ({
+        ...p,
+        total: Number(p.total ?? 0),
+        subtotal: Number(p.subtotal ?? 0),
+        impuesto: Number(p.impuesto ?? 0),
+        numero_ficha: Number(p.numero_ficha ?? 0),
+        version: Number(p.version ?? 1),
+        items: (p.items ?? []).map((it: any) => ({
+            ...it,
+            cantidad: Number(it.cantidad ?? 1),
+            precio_unitario: Number(it.precio_unitario ?? 0),
+            subtotal: Number(it.subtotal ?? 0),
+        })),
+    }));
+}
+
 export function useInicializacion() {
     const queryClient = useQueryClient();
     const sincronizandoRef = useRef(false);
@@ -50,8 +77,7 @@ export function useInicializacion() {
                 signal: AbortSignal.timeout(8000)
             });
             if (resMenu.ok) {
-                const items = await resMenu.json();
-                // Guardar todos en IndexedDB (put hace upsert)
+                const items = normalizarMenu(await resMenu.json());
                 await bdLocal.elementosMenu.bulkPut(items);
                 queryClient.invalidateQueries({ queryKey: ['menu'] });
             }
@@ -61,7 +87,7 @@ export function useInicializacion() {
                 signal: AbortSignal.timeout(8000)
             });
             if (resPedidos.ok) {
-                const pedidos = await resPedidos.json();
+                const pedidos = normalizarPedidos(await resPedidos.json());
                 await bdLocal.pedidos.bulkPut(pedidos);
                 queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
                 queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
@@ -69,7 +95,6 @@ export function useInicializacion() {
             }
 
         } catch (err) {
-            // Sin red o servidor no disponible — IndexedDB local como fallback
             console.warn('Sincronización inicial falló (modo offline):', err);
         } finally {
             sincronizandoRef.current = false;

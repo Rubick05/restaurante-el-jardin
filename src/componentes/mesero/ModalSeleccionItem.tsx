@@ -43,14 +43,14 @@ export function ModalSeleccionItem({ open, onOpenChange, item, cantidadInicial =
                     {/* Imagen y Precio */}
                     <div className="flex gap-4 items-center">
                         <div className="w-24 h-24 bg-slate-200 rounded-lg overflow-hidden shrink-0">
-                            {item.url_imagen ? (
-                                <img src={item.url_imagen} alt={item.nombre} className="w-full h-full object-cover" />
+                            {(item.imagen_base64 || item.url_imagen) ? (
+                                <img src={item.imagen_base64 || item.url_imagen} alt={item.nombre} className="w-full h-full object-cover" />
                             ) : (
                                 <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">Sin img</div>
                             )}
                         </div>
                         <div>
-                            <p className="text-2xl font-bold text-primary">Bs ${item.precio_actual.toFixed(2)}</p>
+                            <p className="text-2xl font-bold text-primary">Bs {Number(item.precio_actual).toFixed(2)}</p>
                             <p className="text-sm text-muted-foreground line-clamp-2">{item.descripcion}</p>
                         </div>
                     </div>
@@ -79,7 +79,7 @@ export function ModalSeleccionItem({ open, onOpenChange, item, cantidadInicial =
                     {/* Subtotal */}
                     <div className="text-center">
                         <span className="text-lg font-medium text-muted-foreground mr-2">Subtotal:</span>
-                        <span className="text-2xl font-bold">Bs ${(item.precio_actual * cantidad).toFixed(2)}</span>
+                        <span className="text-2xl font-bold">Bs {(Number(item.precio_actual) * cantidad).toFixed(2)}</span>
                     </div>
                 </div>
 

@@ -1,7 +1,7 @@
 ﻿import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { bdLocal, ElementoMenu, Pedido } from '@/lib/bd/bd-local';
-import { API_BASE_URL } from '@/hooks/useInicializacion';
+import { API_BASE_URL, normalizarMenu } from '@/hooks/useInicializacion';
 import { useAuth } from '@/lib/auth/contexto-auth';
 import { TarjetaMenu } from './TarjetaMenu';
 import { CarritoPedido, ItemCarrito } from './CarritoPedido';
@@ -62,7 +62,7 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
             try {
                 const res = await fetch(`${API_BASE_URL}/api/menu`);
                 if (res.ok) {
-                    const itemsServidor = await res.json() as ElementoMenu[];
+                    const itemsServidor = normalizarMenu(await res.json()) as ElementoMenu[];
                     await bdLocal.elementosMenu.bulkPut(itemsServidor);
                     return itemsServidor.filter((i: ElementoMenu) => i.disponible);
                 }
