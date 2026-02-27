@@ -57,6 +57,21 @@ export function useSocketSync() {
             queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
         });
 
+        socket.on('pedido:eliminado', async (data: { id: string }) => {
+            if (data?.id) {
+                // Eliminar físicamente de IndexedDB local
+                try {
+                    const { bdLocal } = await import('@/lib/bd/bd-local');
+                    await bdLocal.pedidos.delete(data.id);
+                } catch (e) {
+                    console.error('Error borrando pedido local en tiempo real', e);
+                }
+            }
+            queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
+            queryClient.invalidateQueries({ queryKey: ['pedidos-cocina'] });
+            queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
+        });
+
         // ── Eventos de Menú ─────────────────────────────────────
         socket.on('menu:actualizado', () => {
             queryClient.invalidateQueries({ queryKey: ['menu'] });

@@ -88,6 +88,18 @@ export function useInicializacion() {
             });
             if (resPedidos.ok) {
                 const pedidos = normalizarPedidos(await resPedidos.json());
+
+                // Detectar pedidos que el servidor ya eliminó para borrarlos localmente
+                const idsServidor = new Set(pedidos.map((p: any) => p.id));
+                const locales = await bdLocal.pedidos.toArray();
+                const aBorrar = locales
+                    .filter(p => !idsServidor.has(p.id) && p.sincronizado === true)
+                    .map(p => p.id);
+
+                if (aBorrar.length > 0) {
+                    await bdLocal.pedidos.bulkDelete(aBorrar);
+                }
+
                 await bdLocal.pedidos.bulkPut(pedidos);
                 queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
                 queryClient.invalidateQueries({ queryKey: ['items-cocina'] });

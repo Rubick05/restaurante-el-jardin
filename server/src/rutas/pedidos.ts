@@ -364,4 +364,33 @@ router.post('/cerrar-dia', async (req, res) => {
   }
 });
 
+// ──────────────────────────────────────────────────────────────────
+// DELETE /api/pedidos/:id
+// Elimina un pedido permanentemente
+// ──────────────────────────────────────────────────────────────────
+router.delete('/:id', async (req, res) => {
+  const { id } = req.params;
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Mover a cancelado o simplemente eliminar.
+    // Para eliminar permanentemente (y sus items por ON DELETE CASCADE):
+    await client.query('DELETE FROM pedidos WHERE id = $1', [id]);
+
+    await client.query('COMMIT');
+
+    // Emitir evento para que las cocinas y otras tablets lo remuevan en vivo
+    emisorTiempoReal.notificarCambio('demo-tenant', 'pedido', 'eliminado', { id });
+
+    res.json({ ok: true, mensaje: 'Pedido eliminado correctamente' });
+  } catch (error: any) {
+    await client.query('ROLLBACK');
+    console.error('Error DELETE /api/pedidos:', error);
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
 export default router;
