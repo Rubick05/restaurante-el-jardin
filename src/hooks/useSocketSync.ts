@@ -87,6 +87,20 @@ export function useSocketSync() {
             queryClient.invalidateQueries({ queryKey: ['resumen-dia'] });
         });
 
+        // ── Limpieza masiva de pedidos (solo pruebas) ─────────
+        socket.on('pedido:todos_eliminados', async () => {
+            try {
+                const { bdLocal } = await import('@/lib/bd/bd-local');
+                await bdLocal.pedidos.clear();
+            } catch (e) {
+                console.error('Error limpiando pedidos locales', e);
+            }
+            queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
+            queryClient.invalidateQueries({ queryKey: ['pedidos-cocina'] });
+            queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
+            queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
+        });
+
         return () => {
             socket?.disconnect();
             socket = null;

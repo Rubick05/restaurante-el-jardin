@@ -417,6 +417,29 @@ router.post('/cerrar-dia', async (req, res) => {
 });
 
 // ──────────────────────────────────────────────────────────────────
+// DELETE /api/pedidos/todos
+// Limpieza masiva de pedidos (solo para pruebas / desarrollo)
+// ──────────────────────────────────────────────────────────────────
+router.delete('/todos', async (_req, res) => {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    await client.query('DELETE FROM items_pedido');
+    await client.query('DELETE FROM pedidos');
+    await client.query('COMMIT');
+
+    emisorTiempoReal.notificarCambio('demo-tenant', 'pedido', 'todos_eliminados', {});
+
+    res.json({ ok: true, mensaje: 'Todos los pedidos eliminados' });
+  } catch (error: any) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: error.message });
+  } finally {
+    client.release();
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────
 // DELETE /api/pedidos/:id
 // Elimina un pedido permanentemente
 // ──────────────────────────────────────────────────────────────────
