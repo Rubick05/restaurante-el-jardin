@@ -20,6 +20,7 @@ const vaACocina = (categoria?: string): boolean => {
 
 interface ItemExtendido {
     pedidoId: string;
+    itemId?: string;
     numeroFicha: number;
     numeroLetrero: string;
     itemIndex: number;
@@ -80,6 +81,7 @@ export default function TableroCocina() {
                     console.log(`      => ACEPTADO PARA COCINA`);
                     items.push({
                         pedidoId: pedido.id,
+                        itemId: item.id,
                         numeroFicha: pedido.numero_ficha,
                         numeroLetrero: pedido.numero_letrero ?? '?',
                         itemIndex: i,
@@ -143,7 +145,7 @@ export default function TableroCocina() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     estado: nuevoEstadoPedido,
-                    item_id: item.itemIndex.toString(),
+                    item_id: item.itemId, // Usamos el UUID real del servidor, NO el index "0" "1"
                     estado_item: nuevoEstado,
                     items: itemsActualizados,
                 }),
