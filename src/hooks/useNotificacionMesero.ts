@@ -9,10 +9,7 @@
  */
 
 import { useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
 import { useAuth } from '@/lib/auth/contexto-auth';
-
-const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 // Genera un sonido de timbre suave con Web Audio API (sin archivos externos)
 function tocarSonido() {
@@ -55,101 +52,68 @@ function vibrar() {
     }
 }
 
-let socketNotif: Socket | null = null;
-
-export function useNotificacionMesero() {
+export function useNotificacionMesero(pedidosActivos: any[]) {
     const { usuarioActual } = useAuth();
     const notificadosRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         // Solo activo para camareros
         if (!usuarioActual || usuarioActual.rol !== 'camarero') return;
-        if (!API_URL) return;
+        if (!pedidosActivos || pedidosActivos.length === 0) return;
 
-        socketNotif = io(API_URL, {
-            transports: ['websocket', 'polling'],
-            reconnectionAttempts: 5,
-        });
+        let sonar = false;
 
-        const procesarActualizacion = (data: any) => {
-            const pedido = data?.pedido ?? data;
-            if (!pedido) return;
-
-            const items: any[] = pedido.items ?? [];
-            const idMesero = pedido.id_mesero;
-
+        pedidosActivos.forEach(pedido => {
             // Solo notificar si el pedido es de este mesero
-            if (idMesero !== usuarioActual.id) return;
+            if (pedido.id_mesero !== usuarioActual.id) return;
 
-            // Verificar si hay items recién "listos" que aún no se notificaron
+            // Verificar si el pedido entero está 'listo'
+            if (pedido.estado === 'listo') {
+                const claveGlobal = `${pedido.id}-GLOBAL-LISTO`;
+                if (!notificadosRef.current.has(claveGlobal)) {
+                    notificadosRef.current.add(claveGlobal);
+                    sonar = true;
+                    const fichaNum = pedido.numero_ficha ?? '?';
+                    const msg = `✅ Ficha #${fichaNum}: ¡TODOS los platos listos!`;
+                    if ('Notification' in window && Notification.permission === 'granted') {
+                        new Notification('¡Pedido Completo Listo! ✅', { body: msg, icon: '/icon-192.png' });
+                    }
+                    console.info('🔔', msg);
+                }
+            }
+
+            // Verificar ítems individuales
+            const items = pedido.items ?? [];
             for (const item of items) {
-                if (item.estado_item === 'listo' || item.estado_item === 'entregado') {
+                if (item.estado_item === 'listo') {
                     const clave = `${pedido.id}-${item.id}`;
                     if (!notificadosRef.current.has(clave)) {
                         notificadosRef.current.add(clave);
-
-                        // Disparar notificación una sola vez
-                        tocarSonido();
-                        vibrar();
-
-                        // Mostrar notificación nativa del navegador si hay permiso
+                        sonar = true;
                         const fichaNum = pedido.numero_ficha ?? '?';
-                        const msg = `🍽️ Ficha #${fichaNum}: "${item.nombre_item}" listo para entregar`;
-
+                        const msg = `🍽️ Ficha #${fichaNum}: "${item.nombre_item}" está listo en cocina`;
                         if ('Notification' in window && Notification.permission === 'granted') {
                             new Notification('¡Plato Listo! 🔔', { body: msg, icon: '/icon-192.png' });
                         }
                         console.info('🔔', msg);
                     }
                 }
-            }
-
-            // Si el pedido entero está en estado 'listo', notificación especial
-            if (pedido.estado === 'listo') {
-                const claveGlobal = `${pedido.id}-GLOBAL-LISTO`;
-                if (!notificadosRef.current.has(claveGlobal)) {
-                    notificadosRef.current.add(claveGlobal);
-                    tocarSonido();
-                    vibrar();
-
-                    const msg = `✅ Ficha #${pedido.numero_ficha ?? '?'}: ¡TODOS los platos listos!`;
-                    if ('Notification' in window && Notification.permission === 'granted') {
-                        new Notification('¡Pedido Completo Listo! ✅', { body: msg, icon: '/icon-192.png' });
-                    }
-                }
-            }
-        };
-
-        socketNotif.on('pedido:actualizado', procesarActualizacion);
-        socketNotif.on('pedido:item_actualizado', (data: any) => {
-            // data = { id_pedido, item }
-            const item = data?.item;
-            const pedidoId = data?.id_pedido;
-            if (!item || !pedidoId) return;
-
-            if (item.estado_item === 'listo') {
-                const clave = `${pedidoId}-${item.id}`;
-                if (!notificadosRef.current.has(clave)) {
-                    notificadosRef.current.add(clave);
-                    tocarSonido();
-                    vibrar();
-
-                    const msg = `🍽️ "${item.nombre_item ?? 'Plato'}" está listo en la cocina`;
-                    if ('Notification' in window && Notification.permission === 'granted') {
-                        new Notification('¡Plato Listo! 🔔', { body: msg, icon: '/icon-192.png' });
-                    }
+                // Si está entregado, solo lo marcamos para no notificarlo en el futuro
+                if (item.estado_item === 'entregado') {
+                    notificadosRef.current.add(`${pedido.id}-${item.id}`);
                 }
             }
         });
 
-        // Solicitar permisos de notificación al conectarse
+        if (sonar) {
+            tocarSonido();
+            vibrar();
+        }
+
+        // Solicitar permisos de notificación al arrancar por si acaso
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();
         }
 
-        return () => {
-            socketNotif?.disconnect();
-            socketNotif = null;
-        };
-    }, [usuarioActual]);
+    }, [pedidosActivos, usuarioActual]);
 }

@@ -7,6 +7,7 @@ import { Clock, Trash2, Utensils, Pencil, DollarSign, CheckCircle2 } from 'lucid
 import { Button } from '@/componentes/ui/button';
 import { format } from 'date-fns';
 import { API_BASE_URL } from '@/hooks/useInicializacion';
+import { useNotificacionMesero } from '@/hooks/useNotificacionMesero';
 
 interface Props {
     onPedidoSelect: (pedido: Pedido) => void;
@@ -38,6 +39,9 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
         refetchInterval: 3000,
         enabled: !!idMeseroActual,
     });
+
+    // ── NOTIFICACIONES (Vibración / Sonido) ────────────────────────
+    useNotificacionMesero(pedidos);
 
     const handleDelete = async (e: React.MouseEvent, id: string) => {
         e.stopPropagation();
@@ -206,8 +210,8 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                                         <span
                                             key={i.id}
                                             className={`px-2 py-0.5 rounded-md text-[11px] uppercase tracking-wider ${i.estado_item === 'listo'
-                                                    ? 'bg-green-500 text-white font-black animate-pulse shadow-sm shadow-green-300 ring-2 ring-green-400 ring-offset-1 flex items-center gap-1'
-                                                    : 'text-slate-600 bg-slate-100 font-medium whitespace-nowrap'
+                                                ? 'bg-green-500 text-white font-black animate-pulse shadow-sm shadow-green-300 ring-2 ring-green-400 ring-offset-1 flex items-center gap-1'
+                                                : 'text-slate-600 bg-slate-100 font-medium whitespace-nowrap'
                                                 }`}
                                         >
                                             {i.cantidad}× {i.nombre_item}

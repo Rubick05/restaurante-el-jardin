@@ -5,10 +5,8 @@ import { Button } from "@/componentes/ui/button";
 import { PlusCircle, UtensilsCrossed } from "lucide-react";
 import { Pedido } from "@/lib/bd/bd-local";
 import { ModalCobro } from "./ModalCobro";
-import { useNotificacionMesero } from "@/hooks/useNotificacionMesero";
 
 export default function VistaMesero() {
-    useNotificacionMesero(); // 🔔 Escucha WebSocket y notifica con sonido + vibración
     const [modo, setModo] = useState<"lista" | "menu">("lista");
     const [pedidoSeleccionado, setPedidoSeleccionado] = useState<Pedido | null>(null);
     const [pedidoACobrar, setPedidoACobrar] = useState<Pedido | null>(null);

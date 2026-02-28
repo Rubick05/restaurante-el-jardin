@@ -38,21 +38,48 @@ export function useSocketSync() {
         });
 
         // ── Eventos de Pedidos ──────────────────────────────────
-        socket.on('pedido:nuevo', () => {
+        socket.on('pedido:nuevo', async (pedido: any) => {
+            if (pedido?.id) {
+                try {
+                    const { bdLocal } = await import('@/lib/bd/bd-local');
+                    await bdLocal.pedidos.put({ ...pedido, sincronizado: true });
+                } catch (e) { console.error('Error guardando pedido nuevo', e); }
+            }
             queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
             queryClient.invalidateQueries({ queryKey: ['pedidos-cocina'] });
             queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
             queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
         });
 
-        socket.on('pedido:actualizado', () => {
+        socket.on('pedido:actualizado', async (pedido: any) => {
+            if (pedido?.id) {
+                try {
+                    const { bdLocal } = await import('@/lib/bd/bd-local');
+                    const local = await bdLocal.pedidos.get(pedido.id);
+                    await bdLocal.pedidos.put({ ...local, ...pedido, sincronizado: true });
+                } catch (e) { console.error('Error actualizando pedido local', e); }
+            }
             queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
             queryClient.invalidateQueries({ queryKey: ['pedidos-cocina'] });
             queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
             queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
         });
 
-        socket.on('pedido:item_actualizado', () => {
+        socket.on('pedido:item_actualizado', async (data: any) => {
+            const id_pedido = data?.id_pedido;
+            const item = data?.item;
+            if (id_pedido && item) {
+                try {
+                    const { bdLocal } = await import('@/lib/bd/bd-local');
+                    const pedidoLocal = await bdLocal.pedidos.get(id_pedido);
+                    if (pedidoLocal) {
+                        const nuevosItems = pedidoLocal.items?.map(it =>
+                            it.id === item.id ? { ...it, ...item } : it
+                        ) ?? [];
+                        await bdLocal.pedidos.update(id_pedido, { items: nuevosItems, actualizado_en: new Date().toISOString() });
+                    }
+                } catch (e) { console.error('Error actualizando item local', e); }
+            }
             queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
             queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
         });
