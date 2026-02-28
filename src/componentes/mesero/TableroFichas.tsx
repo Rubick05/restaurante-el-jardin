@@ -146,8 +146,9 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                     >
                         {/* Alerta visual cuando está listo */}
                         {esListo && (
-                            <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[10px] font-bold px-3 py-0.5 rounded-full shadow animate-bounce">
-                                ¡LISTO PARA ENTREGAR!
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[11px] font-black px-4 py-1 rounded-full shadow-lg shadow-green-300/50 flex items-center gap-1.5 ring-4 ring-white animate-bounce">
+                                <CheckCircle2 className="w-4 h-4" />
+                                ¡PEDIDO COMPLETO LISTO!
                             </div>
                         )}
 
@@ -200,8 +201,19 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                                     </span>
                                 </div>
 
-                                <div className="text-sm font-medium text-slate-700 line-clamp-2 my-1">
-                                    {pedido.items?.map(i => `${i.cantidad}× ${i.nombre_item}`).join(', ')}
+                                <div className="text-sm font-medium my-2 flex flex-wrap gap-1.5">
+                                    {pedido.items?.map(i => (
+                                        <span
+                                            key={i.id}
+                                            className={`px-2 py-0.5 rounded-md text-[11px] uppercase tracking-wider ${i.estado_item === 'listo'
+                                                    ? 'bg-green-500 text-white font-black animate-pulse shadow-sm shadow-green-300 ring-2 ring-green-400 ring-offset-1 flex items-center gap-1'
+                                                    : 'text-slate-600 bg-slate-100 font-medium whitespace-nowrap'
+                                                }`}
+                                        >
+                                            {i.cantidad}× {i.nombre_item}
+                                            {i.estado_item === 'listo' && <CheckCircle2 className="w-3 h-3 inline" />}
+                                        </span>
+                                    ))}
                                 </div>
 
                                 <div className="flex items-center justify-between mt-2">

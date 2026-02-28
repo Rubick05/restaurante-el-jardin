@@ -31,8 +31,20 @@ export default function HistorialDias() {
 
     const handleEliminarDia = async (id: string) => {
         if (!confirm('¿Eliminar este registro histórico? Esta acción no se puede deshacer.')) return;
-        await bdLocal.diasCerrados.delete(id);
-        queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
+
+        try {
+            const API_BASE_URL = import.meta.env.VITE_API_URL || window.location.origin;
+            const res = await fetch(`${API_BASE_URL}/api/historial/${id}`, { method: 'DELETE' });
+
+            if (res.ok) {
+                await bdLocal.diasCerrados.delete(id);
+                queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
+            } else {
+                alert('No se pudo borrar el registro del servidor. Verifica tu conexión.');
+            }
+        } catch {
+            alert('Error de red al intentar borrar del servidor.');
+        }
     };
 
     const totalGeneral = dias.reduce((acc, d) => acc + d.total_recaudado, 0);
