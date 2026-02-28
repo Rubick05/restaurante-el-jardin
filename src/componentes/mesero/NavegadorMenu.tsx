@@ -321,6 +321,8 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
             // ── Guardar pedido: SERVIDOR primero, IndexedDB como cache ──
             await bdLocal.pedidos.put(nuevoPedido); // cache local inmediato
 
+            let fichaConfirmada = siguienteNumeroFicha;
+
             try {
                 const res = await fetch(`${API_BASE_URL}/api/pedidos`, {
                     method: 'POST',
@@ -332,13 +334,15 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                     const rawPedido = dataRes.pedido ?? dataRes;
                     const [pedidoGuardado] = normalizarPedidos([rawPedido]);
 
+                    fichaConfirmada = pedidoGuardado.numero_ficha; // El número definitivo que asignó la BD
+
                     // Actualizar cache local con la versión normalizada
                     await bdLocal.pedidos.put(pedidoGuardado);
                     await bdLocal.pedidos.update(nuevoPedido.id, { sincronizado: true });
                 }
             } catch {
                 // Sin red — el pedido quedó en IndexedDB, se sincronizará después
-                console.warn('Sin conexión al crear pedido — guardado solo local');
+                console.warn('Sin conexión al crear pedido — guardado solo local con ficha provisoria');
             }
 
             // Invalidar queries
@@ -346,7 +350,7 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
             await queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
             await queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
 
-            alert(`✅ Pedido Creado - Ficha #${siguienteNumeroFicha} - Letrero ${numeroLetrero}`);
+            alert(`✅ Pedido Creado - Ficha #${fichaConfirmada} - Letrero ${numeroLetrero}`);
             setItemsNuevos([]);
             setNotaCliente("");
             if (onVolver) onVolver();

@@ -167,14 +167,20 @@ router.post('/', async (req, res) => {
       items, subtotal, total, estado, notas, creado_en
     } = req.body;
 
-    // Calcular siguiente número de ficha si no viene
-    let ficha = numero_ficha;
-    if (!ficha) {
+    // Generación Centralizada de Número de Ficha (A prueba de concurrencia)
+    const resPrev = await client.query(`SELECT numero_ficha FROM pedidos WHERE id = $1`, [id]);
+
+    let ficha;
+    if (resPrev.rows.length > 0) {
+      // Si el pedido ya existía (ej. reintento de red), conservamos su ficha oficial
+      ficha = resPrev.rows[0].numero_ficha;
+    } else {
+      // Pedido nuevo: calculamos concurrente desde la base de datos la siguiente ficha
       const r = await client.query(`
-                SELECT COALESCE(MAX(numero_ficha), 0) + 1 AS siguiente
-                FROM pedidos
-                WHERE DATE(creado_en AT TIME ZONE 'America/La_Paz') = CURRENT_DATE AT TIME ZONE 'America/La_Paz'
-            `);
+            SELECT COALESCE(MAX(numero_ficha), 0) + 1 AS siguiente
+            FROM pedidos
+            WHERE DATE(creado_en AT TIME ZONE 'America/La_Paz') = DATE(NOW() AT TIME ZONE 'America/La_Paz')
+        `);
       ficha = r.rows[0].siguiente;
     }
 
