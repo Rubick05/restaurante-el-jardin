@@ -55,7 +55,7 @@ router.get('/', async (req, res) => {
                        ) ORDER BY i.creado_en) AS items
                 FROM pedidos p
                 LEFT JOIN items_pedido i ON i.id_pedido = p.id
-                WHERE DATE(p.creado_en AT TIME ZONE 'America/La_Paz') = CURRENT_DATE AT TIME ZONE 'America/La_Paz'
+                WHERE DATE(p.creado_en AT TIME ZONE 'America/La_Paz') = DATE(NOW() AT TIME ZONE 'America/La_Paz')
                 GROUP BY p.id
                 ORDER BY p.creado_en ASC
             `;
