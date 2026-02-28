@@ -106,6 +106,28 @@ export function useInicializacion() {
                 queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
             }
 
+            // ── 3. Sincronizar Historial de Días Cerrados ────────────────────
+            const resHistorial = await fetch(`${base}/api/historial`, {
+                signal: AbortSignal.timeout(8000)
+            });
+            if (resHistorial.ok) {
+                const diasHistorial = await resHistorial.json();
+
+                // Formatear si es necesario (el backend envía snake_case alineado con dbLocal)
+                const diasNormalizados = diasHistorial.map((d: any) => ({
+                    id: d.id,
+                    fecha: d.fecha,
+                    total_recaudado: Number(d.total_recaudado ?? 0),
+                    total_pedidos: Number(d.total_pedidos ?? 0),
+                    total_items: Number(d.total_items ?? 0),
+                    pedidos_snapshot: typeof d.pedidos_snapshot === 'string' ? d.pedidos_snapshot : JSON.stringify(d.pedidos_snapshot),
+                    cerrado_en: d.cerrado_en
+                }));
+
+                await bdLocal.diasCerrados.bulkPut(diasNormalizados);
+                queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
+            }
+
         } catch (err) {
             console.warn('Sincronización inicial falló (modo offline):', err);
         } finally {

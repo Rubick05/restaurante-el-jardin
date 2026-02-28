@@ -11,7 +11,7 @@ const router = Router();
 // ──────────────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
   try {
-    const { fecha, todos } = req.query;
+    const { fecha, todos, hoy } = req.query;
 
     let sql = '';
     let params: any[] = [];
@@ -38,8 +38,29 @@ router.get('/', async (req, res) => {
                 ORDER BY p.numero_ficha ASC
             `;
       params = [fecha];
+    } else if (hoy === 'true') {
+      // Pedidos del día de hoy (incluyendo pagados, para admin)
+      sql = `
+                SELECT p.*,
+                       json_agg(json_build_object(
+                           'id', i.id,
+                           'id_elemento_menu', i.id_elemento_menu,
+                           'nombre_item', i.nombre_item,
+                           'categoria', i.categoria,
+                           'cantidad', i.cantidad,
+                           'precio_unitario', i.precio_unitario,
+                           'subtotal', i.subtotal,
+                           'estado_item', i.estado_item,
+                           'instrucciones', i.instrucciones
+                       ) ORDER BY i.creado_en) AS items
+                FROM pedidos p
+                LEFT JOIN items_pedido i ON i.id_pedido = p.id
+                WHERE DATE(p.creado_en AT TIME ZONE 'America/La_Paz') = CURRENT_DATE AT TIME ZONE 'America/La_Paz'
+                GROUP BY p.id
+                ORDER BY p.creado_en ASC
+            `;
     } else if (todos === 'true') {
-      // Todos los pedidos (para admin)
+      // Todos los pedidos (para admin general)
       sql = `
                 SELECT p.*,
                        json_agg(json_build_object(
