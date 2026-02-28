@@ -71,17 +71,30 @@ export function ModalCobro({ open, onOpenChange, pedido, onCobrado }: Props) {
         setProcesando(true);
 
         try {
-            // Actualizar estado del pedido a 'pagado'
-            await bdLocal.pedidos.update(pedido.id, {
-                estado: "pagado",
+            // Actualizar localmente
+            const datosUpdate = {
+                estado: "pagado" as const,
                 actualizado_en: new Date().toISOString(),
-                sincronizado: false,
                 datos_facturacion: {
-                    tipo: tipoDoc,
+                    tipo: tipoDoc as any,
                     nit_ci: nit || undefined,
                     razon_social: razonSocial || undefined,
                 },
-            });
+            };
+
+            await bdLocal.pedidos.update(pedido.id, datosUpdate);
+
+            // Sincronizar inmediatamente con el servidor
+            try {
+                const { API_BASE_URL } = await import('@/hooks/useInicializacion');
+                await fetch(`${API_BASE_URL}/api/pedidos/${pedido.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(datosUpdate),
+                });
+            } catch (error) {
+                console.warn("Cobro local guardado, modo offline activo.", error);
+            }
 
             // Invalidar queries para refrescar vistas
             queryClient.invalidateQueries({ queryKey: ["pedidos-activos"] });

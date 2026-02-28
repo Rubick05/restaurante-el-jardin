@@ -61,6 +61,40 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
         }
     };
 
+    const handleEntregar = async (e: React.MouseEvent, pedido: Pedido) => {
+        e.stopPropagation();
+
+        // Marcar el pedido y todos sus items como entregados
+        const itemsEntregados = (pedido.items || []).map(it => ({
+            ...it,
+            estado_item: "entregado" as const
+        }));
+
+        const updateData = {
+            estado: "entregado" as const,
+            items: itemsEntregados,
+            actualizado_en: new Date().toISOString()
+        };
+
+        // 1. Actualizar localmente
+        await bdLocal.pedidos.update(pedido.id, updateData);
+
+        // 2. Sincronizar con servidor
+        try {
+            await fetch(`${API_BASE_URL}/api/pedidos/${pedido.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updateData),
+            });
+        } catch (err) {
+            console.warn("Entregado local guardado, offline", err);
+        }
+
+        queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
+        queryClient.invalidateQueries({ queryKey: ['pedidos-cocina'] });
+        queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
+    };
+
     const handleEditar = (e: React.MouseEvent, pedido: Pedido) => {
         e.stopPropagation();
         onPedidoSelect(pedido);
@@ -101,6 +135,7 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                 const status = getStatusInfo(pedido.estado);
                 const puedeEditar = ['pendiente', 'en_proceso', 'listo', 'entregado'].includes(pedido.estado);
                 const puedeCobrar = true;
+                const puedeEntregar = ['listo', 'en_proceso', 'pendiente'].includes(pedido.estado);
                 const esListo = pedido.estado === 'listo';
 
                 return (
@@ -118,6 +153,12 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
 
                         {/* Botones de acción (arriba a la derecha solo en PC, en móvil van abajo) */}
                         <div className="hidden sm:flex absolute top-3 right-3 z-10 items-center gap-1">
+                            {puedeEntregar && (
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-orange-600 hover:bg-orange-50"
+                                    onClick={(e) => handleEntregar(e, pedido)} title="Marcar como entregado">
+                                    <CheckCircle2 className="h-4 w-4" />
+                                </Button>
+                            )}
                             {puedeEditar && (
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
                                     onClick={(e) => handleEditar(e, pedido)} title="Editar pedido">
@@ -180,7 +221,13 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                         </CardContent>
 
                         {/* Fila Inferior para botones de acción SOLAMENTE EN MÓVIL */}
-                        <div className="sm:hidden flex items-center justify-end gap-2 border-t bg-slate-50/50 p-2">
+                        <div className="sm:hidden flex items-center justify-end gap-2 border-t bg-slate-50/50 p-2 overflow-x-auto">
+                            {puedeEntregar && (
+                                <Button variant="outline" size="sm" className="h-9 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 bg-white"
+                                    onClick={(e) => handleEntregar(e, pedido)}>
+                                    <CheckCircle2 className="h-4 w-4 mr-1.5" /> Entregar
+                                </Button>
+                            )}
                             {puedeEditar && (
                                 <Button variant="outline" size="sm" className="h-9 px-3 text-muted-foreground hover:text-blue-600 bg-white"
                                     onClick={(e) => handleEditar(e, pedido)}>
@@ -193,7 +240,7 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                                     <DollarSign className="h-4 w-4 mr-1" /> Cobrar
                                 </Button>
                             )}
-                            <Button variant="outline" size="icon" className="h-9 w-9 text-red-500 hover:text-red-600 hover:bg-red-50 bg-white border-red-100"
+                            <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50 bg-white border-red-100"
                                 onClick={(e) => handleDelete(e, pedido.id)}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>

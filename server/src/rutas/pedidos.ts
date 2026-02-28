@@ -282,27 +282,52 @@ router.patch('/:id', async (req, res) => {
       valores.push(JSON.stringify(datos_facturacion));
     }
 
-    if (campos.length === 0) {
+    const { items: nuevosItems } = req.body;
+    if (campos.length === 0 && !nuevosItems && estado !== 'entregado' && estado !== 'pagado') {
       return res.status(400).json({ error: 'Nada que actualizar' });
     }
 
-    campos.push(`actualizado_en = NOW()`);
-    valores.push(id);
+    let pedidoActualizado = null;
 
-    const r = await pool.query(`
-            UPDATE pedidos SET ${campos.join(', ')}
-            WHERE id = $${idx}
-            RETURNING *
-        `, valores);
+    if (campos.length > 0) {
+      campos.push(`actualizado_en = NOW()`);
+      valores.push(id);
 
-    if (r.rows.length === 0) {
-      return res.status(404).json({ error: 'Pedido no encontrado' });
+      const r = await pool.query(`
+                UPDATE pedidos SET ${campos.join(', ')}
+                WHERE id = $${idx}
+                RETURNING *
+            `, valores);
+
+      if (r.rows.length === 0) {
+        return res.status(404).json({ error: 'Pedido no encontrado' });
+      }
+      pedidoActualizado = r.rows[0];
+    } else {
+      const r = await pool.query(`SELECT * FROM pedidos WHERE id = $1`, [id]);
+      pedidoActualizado = r.rows[0];
     }
 
-    // Emitir cambio en tiempo real
-    emisorTiempoReal.notificarCambio('demo-tenant', 'pedido', 'actualizado', r.rows[0]);
+    // Si el pedido se entrega o se paga, todos sus items deben marcarse entregados
+    if (estado === 'entregado' || estado === 'pagado') {
+      await pool.query(`UPDATE items_pedido SET estado_item = 'entregado' WHERE id_pedido = $1`, [id]);
+    } else if (nuevosItems && Array.isArray(nuevosItems)) {
+      // Actualización explícita de un array de items
+      for (const it of nuevosItems) {
+        if (it.estado_item && (it.id || it.itemId)) {
+          await pool.query(`UPDATE items_pedido SET estado_item = $1 WHERE id = $2`, [it.estado_item, it.id || it.itemId]);
+        }
+      }
+    }
 
-    return res.json({ ok: true, pedido: r.rows[0] });
+    // Adjuntar items actualizados a la respuesta
+    const rItems = await pool.query(`SELECT * FROM items_pedido WHERE id_pedido = $1`, [id]);
+    pedidoActualizado.items = rItems.rows;
+
+    // Emitir cambio en tiempo real
+    emisorTiempoReal.notificarCambio('demo-tenant', 'pedido', 'actualizado', pedidoActualizado);
+
+    return res.json({ ok: true, pedido: pedidoActualizado });
 
   } catch (error: any) {
     console.error('Error PATCH /api/pedidos:', error);
