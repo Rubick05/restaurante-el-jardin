@@ -25,6 +25,7 @@ export interface Pedido {
     version: number;
     sincronizado: boolean;
     items?: {
+        id?: string;
         id_elemento_menu: string;
         nombre_item: string;
         cantidad: number;
