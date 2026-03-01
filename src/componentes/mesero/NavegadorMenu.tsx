@@ -64,12 +64,12 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                 if (res.ok) {
                     const itemsServidor = normalizarMenu(await res.json()) as ElementoMenu[];
                     await bdLocal.elementosMenu.bulkPut(itemsServidor);
-                    return itemsServidor.filter((i: ElementoMenu) => i.disponible);
+                    return itemsServidor; // Se devuelven todos; TarjetaMenu se encarga de mostrar visualmente los no disponibles
                 }
             } catch {
                 // Sin red: usar IndexedDB local
             }
-            return bdLocal.elementosMenu.where('disponible').equals(1).toArray();
+            return bdLocal.elementosMenu.toArray();
         },
         staleTime: 30_000,
     });

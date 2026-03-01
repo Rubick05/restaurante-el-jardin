@@ -285,7 +285,21 @@ export default function GestionMenu() {
                         className="sr-only peer"
                         checked={item.disponible}
                         onChange={async (e) => {
-                          await bdLocal.elementosMenu.update(item.id, { disponible: e.target.checked });
+                          const nuevaDispo = e.target.checked;
+                          // Actualización local para UI instantánea
+                          await bdLocal.elementosMenu.update(item.id, { disponible: nuevaDispo });
+
+                          // Sincronización con el servidor
+                          try {
+                            await fetch(`${API_BASE_URL}/api/menu/${item.id}`, {
+                              method: 'PATCH',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ disponible: nuevaDispo }),
+                            });
+                          } catch (err) {
+                            console.warn("Fallo al sincronizar disponibilidad de menú", err);
+                          }
+
                           queryClient.invalidateQueries({ queryKey: ['menu'] });
                         }}
                       />
