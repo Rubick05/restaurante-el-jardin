@@ -99,21 +99,6 @@ export default function ResumenPedidosDia() {
         }
     };
 
-    const limpiarPedidos = async () => {
-        if (!confirm('⚠️ PELIGRO: ¿Está seguro de ELIMINAR TODOS LOS PEDIDOS actuales? Esta acción es solo para limpieza de pruebas y NO SE PUEDE DESHACER.')) return;
-        setProcesando(true);
-        try {
-            const res = await fetch(`${API_BASE_URL}/api/pedidos/todos`, { method: 'DELETE' });
-            if (!res.ok) throw new Error('Error al limpiar');
-            alert('✅ Todos los pedidos han sido eliminados de la base de datos.');
-            // El socket se encargará de limpiar el indexedDB y refrescar las queries
-        } catch (e) {
-            console.error(e);
-            alert('❌ Ocurrió un error al limpiar los pedidos.');
-        } finally {
-            setProcesando(false);
-        }
-    };
 
     const getEstadoBadge = (estado: string) => {
         const map: Record<string, { label: string; className: string }> = {
@@ -141,16 +126,7 @@ export default function ResumenPedidosDia() {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={limpiarPedidos}
-                        disabled={procesando}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 border-red-200"
-                        title="Eliminar todos los pedidos (Pruebas)"
-                    >
-                        Limpiar Pedidos
-                    </Button>
+
                     <Button
                         variant="outline"
                         size="sm"

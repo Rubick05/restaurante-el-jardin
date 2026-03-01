@@ -106,21 +106,6 @@ export default function GestionMenu() {
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-bold tracking-tight text-primary font-serif">Gestión del Menú</h2>
         <div className="flex gap-2">
-          <Button
-            variant="destructive"
-            onClick={async () => {
-              const paso1 = confirm('⚠️ ATENCIÓN: ¿Borrar TODOS los pedidos del día?\n\nEl menú NO se borrará. No se puede deshacer.');
-              if (!paso1) return;
-              await bdLocal.pedidos.clear();
-              await bdLocal.colaSincronizacion.clear();
-              queryClient.clear();
-              alert('✅ Pedidos borrados. La página se recargará.');
-              window.location.reload();
-            }}
-          >
-            <Trash2 className="w-4 h-4 mr-2" /> Borrar Pedidos del Día
-          </Button>
-
           <Button onClick={() => iniciarEdicion()} className="bg-primary text-primary-foreground hover:bg-primary/90">
             <Plus className="w-4 h-4 mr-2" /> Nuevo Plato
           </Button>
