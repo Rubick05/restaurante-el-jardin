@@ -64,25 +64,6 @@ export function useSocketSync() {
             queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
         });
 
-        socket.on('pedido:item_actualizado', async (data: any) => {
-            const id_pedido = data?.id_pedido;
-            const item = data?.item;
-            if (id_pedido && item) {
-                try {
-                    const { bdLocal } = await import('@/lib/bd/bd-local');
-                    const pedidoLocal = await bdLocal.pedidos.get(id_pedido);
-                    if (pedidoLocal) {
-                        const nuevosItems = pedidoLocal.items?.map(it =>
-                            it.id === item.id ? { ...it, ...item } : it
-                        ) ?? [];
-                        await bdLocal.pedidos.update(id_pedido, { items: nuevosItems, actualizado_en: new Date().toISOString() });
-                    }
-                } catch (e) { console.error('Error actualizando item local', e); }
-            }
-            queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
-            queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
-        });
-
         socket.on('pedido:eliminado', async (data: { id: string }) => {
             if (data?.id) {
                 // Eliminar físicamente de IndexedDB local

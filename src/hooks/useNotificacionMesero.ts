@@ -8,8 +8,10 @@
  * Se instala dentro de VistaMesero para que solo los camareros reciban alertas.
  */
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAuth } from '@/lib/auth/contexto-auth';
+
+const notificadosGlobal = new Set<string>();
 
 // Genera un sonido de timbre suave con Web Audio API (sin archivos externos)
 function tocarSonido() {
@@ -73,7 +75,6 @@ function enviarNotificacionNativa(titulo: string, opciones: NotificationOptions)
 
 export function useNotificacionMesero(pedidosActivos: any[]) {
     const { usuarioActual } = useAuth();
-    const notificadosRef = useRef<Set<string>>(new Set());
 
     useEffect(() => {
         // Solo activo para camareros
@@ -89,8 +90,8 @@ export function useNotificacionMesero(pedidosActivos: any[]) {
             // Verificar si el pedido entero está 'listo'
             if (pedido.estado === 'listo') {
                 const claveGlobal = `${pedido.id}-GLOBAL-LISTO`;
-                if (!notificadosRef.current.has(claveGlobal)) {
-                    notificadosRef.current.add(claveGlobal);
+                if (!notificadosGlobal.has(claveGlobal)) {
+                    notificadosGlobal.add(claveGlobal);
                     sonar = true;
                     const fichaNum = pedido.numero_ficha ?? '?';
                     const msg = `✅ Ficha #${fichaNum}: ¡TODOS los platos listos!`;
@@ -104,8 +105,8 @@ export function useNotificacionMesero(pedidosActivos: any[]) {
             for (const item of items) {
                 if (item.estado_item === 'listo') {
                     const clave = `${pedido.id}-${item.id}`;
-                    if (!notificadosRef.current.has(clave)) {
-                        notificadosRef.current.add(clave);
+                    if (!notificadosGlobal.has(clave)) {
+                        notificadosGlobal.add(clave);
                         sonar = true;
                         const fichaNum = pedido.numero_ficha ?? '?';
                         const msg = `🍽️ Ficha #${fichaNum}: "${item.nombre_item}" está listo en cocina`;
@@ -115,7 +116,7 @@ export function useNotificacionMesero(pedidosActivos: any[]) {
                 }
                 // Si está entregado, solo lo marcamos para no notificarlo en el futuro
                 if (item.estado_item === 'entregado') {
-                    notificadosRef.current.add(`${pedido.id}-${item.id}`);
+                    notificadosGlobal.add(`${pedido.id}-${item.id}`);
                 }
             }
         });

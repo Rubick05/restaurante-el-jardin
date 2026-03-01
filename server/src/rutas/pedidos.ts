@@ -286,11 +286,15 @@ router.patch('/:id', async (req, res) => {
         return res.status(404).json({ error: 'Item no encontrado' });
       }
 
-      // Emitir cambio de item en tiempo real
-      emisorTiempoReal.notificarCambio('demo-tenant', 'pedido', 'item_actualizado', {
-        id_pedido: id,
-        item: r.rows[0]
-      });
+      // Obtener el pedido completo actualizado para emitirlo y evitar desincronizaciones
+      const rPedido = await pool.query(`SELECT * FROM pedidos WHERE id = $1`, [id]);
+      const rItems = await pool.query(`SELECT * FROM items_pedido WHERE id_pedido = $1`, [id]);
+
+      if (rPedido.rows.length > 0) {
+        const pedidoCompleto = rPedido.rows[0];
+        pedidoCompleto.items = rItems.rows;
+        emisorTiempoReal.notificarCambio('demo-tenant', 'pedido', 'actualizado', pedidoCompleto);
+      }
 
       return res.json({ ok: true, item: r.rows[0] });
     }
