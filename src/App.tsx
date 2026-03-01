@@ -6,6 +6,7 @@ import VistaMesero from "@/componentes/mesero/VistaMesero";
 import TableroCocina from "@/componentes/cocina/TableroCocina";
 import HistorialEntregas from "@/componentes/cocina/HistorialEntregas";
 import GestionMenu from "@/componentes/admin/GestionMenu";
+import GestionPromociones from "@/componentes/admin/GestionPromociones";
 import GestionQR from "@/componentes/admin/GestionQR";
 import HistorialDias from "@/componentes/admin/HistorialDias";
 import ResumenPedidosDia from '@/componentes/admind/ResumenPedidosDia';
@@ -98,6 +99,15 @@ const router = createBrowserRouter([
         element: (
           <RutaProtegida
             elemento={<GestionMenu />}
+            rolesPermitidos={['administrador']}
+          />
+        ),
+      },
+      {
+        path: "admin/promociones",
+        element: (
+          <RutaProtegida
+            elemento={<GestionPromociones />}
             rolesPermitidos={['administrador']}
           />
         ),

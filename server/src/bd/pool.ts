@@ -32,6 +32,15 @@ export async function inicializarBaseDeDatos() {
                 actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
 
+            CREATE TABLE IF NOT EXISTS promociones (
+                id              TEXT        PRIMARY KEY,
+                titulo          TEXT        NOT NULL,
+                tipo_media      TEXT        NOT NULL DEFAULT 'imagen',
+                media_base64    TEXT        NOT NULL,
+                activa          BOOLEAN     NOT NULL DEFAULT TRUE,
+                creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
             CREATE TABLE IF NOT EXISTS pedidos (
                 id              TEXT        PRIMARY KEY,
                 id_restaurante  TEXT        NOT NULL DEFAULT 'demo-tenant',
