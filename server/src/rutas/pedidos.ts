@@ -431,25 +431,29 @@ router.post('/cerrar-dia', async (req, res) => {
 
 // ──────────────────────────────────────────────────────────────────
 // DELETE /api/pedidos/todos
-// Limpieza masiva de pedidos (solo para pruebas / desarrollo)
+// Endpoint de PRUEBAS desactivado en producción por seguridad
 // ──────────────────────────────────────────────────────────────────
 router.delete('/todos', async (_req, res) => {
+  /*
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-    await client.query('DELETE FROM items_pedido');
-    await client.query('DELETE FROM pedidos');
+    await client.query('TRUNCATE TABLE items_pedido RESTART IDENTITY CASCADE');
+    await client.query('TRUNCATE TABLE pedidos RESTART IDENTITY CASCADE');
     await client.query('COMMIT');
 
     emisorTiempoReal.notificarCambio('demo-tenant', 'pedido', 'todos_eliminados', {});
 
-    res.json({ ok: true, mensaje: 'Todos los pedidos eliminados' });
+    res.json({ ok: true, mensaje: 'Base de datos de pedidos limpiada' });
   } catch (error: any) {
     await client.query('ROLLBACK');
+    console.error('Error limpiando BD:', error);
     res.status(500).json({ error: error.message });
   } finally {
     client.release();
   }
+  */
+  return res.status(403).json({ error: 'Endpoint de pruebas deshabilitado en producción' });
 });
 
 // ──────────────────────────────────────────────────────────────────

@@ -122,21 +122,6 @@ export default function LayoutPrincipal() {
 
             {/* Footer usuario */}
             <div className="p-4 border-t space-y-2">
-                <Button
-                    variant="destructive"
-                    className="w-full justify-center gap-2 text-xs font-bold shadow-sm mb-2 hover:bg-red-700"
-                    onClick={async () => {
-                        if (!confirm('⚠️ PELIGRO: ¿Borrar TODOS los pedidos de la base de datos ahora mismo? (Sirve para pruebas)')) return;
-                        try {
-                            const API_BASE_URL = import.meta.env.VITE_API_URL || window.location.origin;
-                            const res = await fetch(`${API_BASE_URL}/api/pedidos/todos`, { method: 'DELETE' });
-                            if (res.ok) alert('✅ Base de datos limpia de pedidos');
-                        } catch (e) { alert('❌ Error al limpiar base de datos'); }
-                    }}
-                >
-                    🧹 Limpiar DB (Pruebas)
-                </Button>
-
                 <div className="flex items-center gap-2 px-2">
                     <UserCircle className="w-5 h-5 text-muted-foreground shrink-0" />
                     <div className="min-w-0">
