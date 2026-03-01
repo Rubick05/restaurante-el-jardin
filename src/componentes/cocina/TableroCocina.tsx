@@ -147,7 +147,7 @@ export default function TableroCocina() {
                     estado: nuevoEstadoPedido,
                     item_id: item.itemId, // Usamos el UUID real del servidor, NO el index "0" "1"
                     estado_item: nuevoEstado,
-                    items: itemsActualizados,
+                    nuevosItems: itemsActualizados,
                 }),
             });
         } catch {

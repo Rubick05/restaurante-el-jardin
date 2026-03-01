@@ -76,7 +76,7 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
 
         const updateData = {
             estado: "entregado" as const,
-            items: itemsEntregados,
+            nuevosItems: itemsEntregados,
             actualizado_en: new Date().toISOString()
         };
 
