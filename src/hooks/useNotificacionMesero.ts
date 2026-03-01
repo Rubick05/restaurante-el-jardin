@@ -46,9 +46,28 @@ function tocarSonido() {
 }
 
 // Vibración en móviles: patrón dot-dot-dash
+// Vibración en móviles: patrón dot-dot-dash
 function vibrar() {
     if ('vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200, 100, 400]);
+        try {
+            navigator.vibrate([200, 100, 200, 100, 400]);
+        } catch (e) { console.warn('Vibration failed', e); }
+    }
+}
+
+// Envío seguro de notificaciones nativas (maneja Desktop vs Mobile PWA)
+function enviarNotificacionNativa(titulo: string, opciones: NotificationOptions) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+    try {
+        new Notification(titulo, opciones);
+    } catch (e) {
+        // Fallback para móviles / PWA donde new Notification lanza "Illegal constructor"
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.showNotification(titulo, opciones);
+            }).catch(err => console.warn("Error mostrando notif con SW:", err));
+        }
     }
 }
 
@@ -75,9 +94,7 @@ export function useNotificacionMesero(pedidosActivos: any[]) {
                     sonar = true;
                     const fichaNum = pedido.numero_ficha ?? '?';
                     const msg = `✅ Ficha #${fichaNum}: ¡TODOS los platos listos!`;
-                    if ('Notification' in window && Notification.permission === 'granted') {
-                        new Notification('¡Pedido Completo Listo! ✅', { body: msg, icon: '/icon-192.png' });
-                    }
+                    enviarNotificacionNativa('¡Pedido Completo Listo! ✅', { body: msg, icon: '/icon-192.png' });
                     console.info('🔔', msg);
                 }
             }
@@ -92,9 +109,7 @@ export function useNotificacionMesero(pedidosActivos: any[]) {
                         sonar = true;
                         const fichaNum = pedido.numero_ficha ?? '?';
                         const msg = `🍽️ Ficha #${fichaNum}: "${item.nombre_item}" está listo en cocina`;
-                        if ('Notification' in window && Notification.permission === 'granted') {
-                            new Notification('¡Plato Listo! 🔔', { body: msg, icon: '/icon-192.png' });
-                        }
+                        enviarNotificacionNativa('¡Plato Listo! 🔔', { body: msg, icon: '/icon-192.png' });
                         console.info('🔔', msg);
                     }
                 }
