@@ -13,8 +13,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
-
-const API_URL = import.meta.env.VITE_API_URL ?? '';
+import { API_BASE_URL } from './useInicializacion';
 
 let socket: Socket | null = null;
 
@@ -22,9 +21,9 @@ export function useSocketSync() {
     const queryClient = useQueryClient();
 
     useEffect(() => {
-        if (!API_URL) return; // offline mode — no hay servidor
+        if (!API_BASE_URL) return; // offline mode — no hay servidor
 
-        socket = io(API_URL, {
+        socket = io(API_BASE_URL, {
             transports: ['websocket', 'polling'],
             reconnectionAttempts: 5,
         });
