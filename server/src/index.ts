@@ -18,19 +18,17 @@ const io = new Server(httpServer, {
 import pedidosRouter from './rutas/pedidos';
 import menuRouter from './rutas/menu';
 import historialRouter from './rutas/historial';
-import promocionesRouter from './rutas/promociones';
 import { inicializarSocket } from './sincronizacion/emisor-tiempo-real';
 
 inicializarSocket(io);
 
 app.use(cors());
-app.use(express.json({ limit: '50mb' })); // Limit incrementado para permitir videos cortos en base64
+app.use(express.json({ limit: '20mb' })); // limit grande para imágenes base64
 
 // ─── API Routes ───
 app.use('/api/pedidos', pedidosRouter);
 app.use('/api/menu', menuRouter);
 app.use('/api/historial', historialRouter);
-app.use('/api/promociones', promocionesRouter);
 
 // ─── Health check ───
 app.get('/health', (_req, res) => {

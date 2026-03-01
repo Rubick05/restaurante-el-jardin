@@ -4,9 +4,9 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Restaurante El Jardín Tradición K'ochala</title>
+    <title>Restaurante El Jardín — Cocina Boliviana Tradicional</title>
     <meta name="description"
-        content="Restaurante El Jardín Tradición K'ochala. Pique, Charque, Caldos, Planchitas y más. Ven y disfruta." />
+        content="Restaurante El Jardín — auténtica cocina boliviana. Pique, Charque, Caldos, Planchitas y más. Ven y disfruta." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link
         href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Inter:wght@300;400;500;600&display=swap"
@@ -23,7 +23,7 @@
                 <span class="logo-icon">🌿</span>
                 <div>
                     <span class="logo-name">El Jardín</span>
-                    <span class="logo-sub">Tradición K'ochala</span>
+                    <span class="logo-sub">Cocina Boliviana</span>
                 </div>
             </div>
             <ul class="nav-links">
@@ -102,8 +102,114 @@
                 <button class="tab-btn" data-cat="bebidas">🥤 Bebidas</button>
             </div>
             <div class="menu-grid" id="menuGrid">
-                <!-- Los platos se cargarán dinámicamente desde el servidor -->
-                <div class="menu-loading">Cargando menú...</div>
+                <!-- Platos Fuertes -->
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🥩</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Pique (Media)</span>
+                        <span class="menu-item-price">Bs 80</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🥩</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Pique (Entero)</span>
+                        <span class="menu-item-price">Bs 120</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🍖</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Charque (Media)</span>
+                        <span class="menu-item-price">Bs 80</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🍖</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Charque (Entero)</span>
+                        <span class="menu-item-price">Bs 120</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🥘</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Planchita</span>
+                        <span class="menu-item-price">Bs 80 - 120</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🫕</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Jatun Pampaku</span>
+                        <span class="menu-item-price">Bs 110</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🐣</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Alitas</span>
+                        <span class="menu-item-price">Bs 25</span>
+                    </div>
+                </div>
+                <div class="menu-item" data-cat="platos">
+                    <div class="menu-item-icon">🐇</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Lambreado de Conejo</span>
+                        <span class="menu-item-price">Bs 80</span>
+                    </div>
+                </div>
+                <!-- Caldos -->
+                <div class="menu-item hidden" data-cat="caldos">
+                    <div class="menu-item-icon">🍲</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Lomito Borracho</span>
+                        <span class="menu-item-price">Bs 30</span>
+                    </div>
+                </div>
+                <div class="menu-item hidden" data-cat="caldos">
+                    <div class="menu-item-icon">🍜</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Kawi</span>
+                        <span class="menu-item-price">Bs 20</span>
+                    </div>
+                </div>
+                <div class="menu-item hidden" data-cat="caldos">
+                    <div class="menu-item-icon">🍜</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Fideos Uchu (Personal)</span>
+                        <span class="menu-item-price">Bs 40</span>
+                    </div>
+                </div>
+                <!-- Bebidas -->
+                <div class="menu-item hidden" data-cat="bebidas">
+                    <div class="menu-item-icon">🥤</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Coca Cola 2L</span>
+                        <span class="menu-item-price">Bs 15</span>
+                    </div>
+                </div>
+                <div class="menu-item hidden" data-cat="bebidas">
+                    <div class="menu-item-icon">🥤</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Coca Cola Personal</span>
+                        <span class="menu-item-price">Bs 8</span>
+                    </div>
+                </div>
+                <div class="menu-item hidden" data-cat="bebidas">
+                    <div class="menu-item-icon">🍺</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Cerveza Huari</span>
+                        <span class="menu-item-price">Bs 20</span>
+                    </div>
+                </div>
+                <div class="menu-item hidden" data-cat="bebidas">
+                    <div class="menu-item-icon">🍺</div>
+                    <div class="menu-item-info">
+                        <span class="menu-item-name">Cerveza Paceña</span>
+                        <span class="menu-item-price">Bs 18</span>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -122,7 +228,6 @@
                 <div class="carousel" id="carousel">
                     <div class="carousel-track" id="carouselTrack">
                         <!-- Las tarjetas se generan dinámicamente desde JS -->
-                        <div class="carousel-loading">Cargando promociones...</div>
                     </div>
                 </div>
 
@@ -131,6 +236,20 @@
 
                 <!-- Dots del carrusel -->
                 <div class="carousel-dots" id="carouselDots"></div>
+            </div>
+
+            <!-- Admin: subir fotos de promoción -->
+            <div class="promo-upload" id="promoUpload">
+                <p class="upload-label">🔑 Modo Administrador</p>
+                <div class="upload-area" id="uploadArea">
+                    <span class="upload-icon">📷</span>
+                    <p>Arrastra fotos aquí o haz clic para subir</p>
+                    <p class="upload-hint">PNG, JPG, WebP — se guardan en el navegador</p>
+                    <input type="file" id="promoInput" accept="image/*" multiple class="upload-input" />
+                </div>
+                <div class="upload-actions">
+                    <button class="btn btn-sm btn-outline" id="clearPromos">Limpiar todas las fotos</button>
+                </div>
             </div>
         </div>
     </section>
@@ -146,22 +265,22 @@
                 <div class="contact-card">
                     <div class="contact-icon">📍</div>
                     <h4>Dirección</h4>
-                    <p>Final Av. Melchor Perez de Olguin<br />Cochabamba, Bolivia</p>
+                    <p>Av. Principal s/n<br />Tu Ciudad, Bolivia</p>
                 </div>
                 <div class="contact-card">
                     <div class="contact-icon">🕐</div>
                     <h4>Horario</h4>
-                    <p>Jueves-Sabado-Domingo<br />11:00 AM — 23:00 PM</p>
+                    <p>Lunes a Domingo<br />11:00 — 22:00 hs</p>
                 </div>
                 <div class="contact-card">
                     <div class="contact-icon">📞</div>
                     <h4>Contacto</h4>
-                    <p>+591 69420202</p>
+                    <p>+591 xxx xxx xxxx</p>
                 </div>
                 <div class="contact-card">
                     <div class="contact-icon">📱</div>
                     <h4>WhatsApp</h4>
-                    <p><a href="https://wa.me/59169420202" target="_blank" rel="noopener">Enviar mensaje</a></p>
+                    <p><a href="https://wa.me/591XXXXXXXX" target="_blank" rel="noopener">Enviar mensaje</a></p>
                 </div>
             </div>
         </div>
