@@ -274,6 +274,11 @@ router.patch('/:id', async (req, res) => {
     const { estado, item_id, estado_item, datos_facturacion } = req.body;
 
     if (item_id && estado_item) {
+      // Actualizar estado general del pedido si venía en el body (TableroCocina recalcula estado y lo manda)
+      if (estado) {
+        await pool.query(`UPDATE pedidos SET estado = $1, actualizado_en = NOW() WHERE id = $2`, [estado, id]);
+      }
+
       // Actualizar estado de un item individual
       const r = await pool.query(`
                 UPDATE items_pedido
@@ -313,8 +318,9 @@ router.patch('/:id', async (req, res) => {
       valores.push(JSON.stringify(datos_facturacion));
     }
 
-    const { items: nuevosItems } = req.body;
-    if (campos.length === 0 && !nuevosItems && estado !== 'entregado' && estado !== 'pagado') {
+    const arrayItems = req.body.nuevosItems || req.body.items;
+
+    if (campos.length === 0 && !arrayItems && estado !== 'entregado' && estado !== 'pagado') {
       return res.status(400).json({ error: 'Nada que actualizar' });
     }
 
@@ -342,9 +348,9 @@ router.patch('/:id', async (req, res) => {
     // Si el pedido se entrega o se paga, marcar todos sus items entregados
     if (estado === 'entregado' || estado === 'pagado') {
       await pool.query(`UPDATE items_pedido SET estado_item = 'entregado', actualizado_en = NOW() WHERE id_pedido = $1`, [id]);
-    } else if (nuevosItems && Array.isArray(nuevosItems)) {
+    } else if (arrayItems && Array.isArray(arrayItems)) {
       // Actualización explícita de un array de items
-      for (const it of nuevosItems) {
+      for (const it of arrayItems) {
         if (it.estado_item && (it.id || it.itemId)) {
           await pool.query(
             `UPDATE items_pedido SET estado_item = $1, actualizado_en = NOW() WHERE id = $2`,
