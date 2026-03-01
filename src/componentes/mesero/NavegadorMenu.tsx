@@ -148,13 +148,30 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
             it => (it.estado_item as string) === 'entregado'
         );
 
+        const nuevoEstadoPedido = todosEntregados ? 'entregado' : pedidoVivo.estado;
+
         await bdLocal.pedidos.update(pedidoVivo.id, {
             items: itemsActualizados,
             // 'entregado' = platos servidos, pendiente de cobro
-            estado: todosEntregados ? 'entregado' : pedidoVivo.estado,
+            estado: nuevoEstadoPedido,
             actualizado_en: new Date().toISOString(),
-            sincronizado: false,
+            sincronizado: false, // se marca temporalmente hasta que el socket re-confirme
         });
+
+        // Hacemos que el Servidor sepa de este cambio individual
+        try {
+            await fetch(`${API_BASE_URL}/api/pedidos/${pedidoVivo.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    estado: nuevoEstadoPedido,
+                    nuevosItems: itemsActualizados,
+                    items: itemsActualizados
+                }),
+            });
+        } catch (e) {
+            console.warn("Fallo al entregar item en servidor:", e);
+        }
 
         queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
         queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
