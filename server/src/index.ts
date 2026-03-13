@@ -26,11 +26,15 @@ import { inicializarCronDiario } from './sincronizacion/cron-diario';
 inicializarSocket(io);
 inicializarCronDiario();
 
-// Configuración de CORS permitiendo orígenes de Vercel y locales
+// Respuestas Preflight (OPTIONS) globales para toda la app
+app.options('*', cors());
+
+// Configuración de CORS principal
 app.use(cors({
     origin: ['https://jardin-web-flax.vercel.app', 'http://localhost:5173'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
+    credentials: true, // Si usas tokens u otros métodos que lo requieran
 }));
 
 // Aumentamos el límite a 50mb para soportar videos e imágenes en base64
