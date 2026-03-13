@@ -28,11 +28,8 @@ inicializarCronDiario();
 
 // Configuración de CORS permitiendo orígenes de Vercel y locales
 app.use(cors({
-    origin: function (origin, callback) {
-        // Permitimos cualquier origen temporalmente para facilitar la integración con Vercel
-        callback(null, true);
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    origin: ['https://jardin-web-flax.vercel.app', 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
 
