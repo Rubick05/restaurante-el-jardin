@@ -12,7 +12,12 @@ export const pool = new Pool({
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined
 });
 
-import { USUARIOS_SISTEMA } from '../../src/lib/auth/usuarios';
+const USUARIOS_INICIALES = [
+    { id: 'admin-01', nombre: 'Administrador', usuario: 'admin', password: 'admin123', rol: 'administrador' },
+    { id: 'cocina-01', nombre: 'Cocina', usuario: 'cocina', password: 'cocina123', rol: 'cocinero' },
+    { id: 'cam-01', nombre: 'Camarero 1', usuario: 'cam1', password: 'cam123', rol: 'camarero' },
+    { id: 'cam-02', nombre: 'Camarero 2', usuario: 'cam2', password: 'cam456', rol: 'camarero' },
+];
 
 // ─── Auto-migración: crea las tablas si no existen al iniciar ─────────────────
 export async function inicializarBaseDeDatos() {
@@ -105,9 +110,9 @@ export async function inicializarBaseDeDatos() {
         const resUsuarios = await client.query('SELECT COUNT(*) FROM usuarios');
         if (parseInt(resUsuarios.rows[0].count) === 0) {
             console.log('👤 Cargando usuarios iniciales...');
-            for (const u of USUARIOS_SISTEMA) {
+            for (const u of USUARIOS_INICIALES) {
                 await client.query(
-                    \`INSERT INTO usuarios (id, nombre, usuario, password, rol) VALUES ($1, $2, $3, $4, $5)\`,
+                    `INSERT INTO usuarios (id, nombre, usuario, password, rol) VALUES ($1, $2, $3, $4, $5)`,
                     [u.id, u.nombre, u.usuario, u.password, u.rol]
                 );
             }

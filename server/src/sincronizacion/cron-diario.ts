@@ -31,7 +31,7 @@ export function inicializarCronDiario() {
 
             // Evitamos guardar un registro "vacío" si no hubo pedidos ese día
             if (pedidos.length === 0) {
-                console.log(\`⏰ [CRON-DIARIO] No hubo pedidos el \${fechaCierre}, omitiendo guardado.\`);
+                console.log(`⏰ [CRON-DIARIO] No hubo pedidos el ${fechaCierre}, omitiendo guardado.`);
                 await client.query('COMMIT');
                 return;
             }
@@ -57,8 +57,8 @@ export function inicializarCronDiario() {
 
             // Emitir evento para actualizar UIs activas
             emisorTiempoReal.notificarCambio('demo-tenant', 'dia', 'cerrado', { fecha: fechaCierre, total });
-            
-            console.log(\`✅ [CRON-DIARIO] Día \${fechaCierre} cerrado correctamente. Total: Bs \${total}\`);
+
+            console.log(`✅ [CRON-DIARIO] Día ${fechaCierre} cerrado correctamente. Total: Bs ${total}`);
         } catch (error) {
             await client.query('ROLLBACK');
             console.error('❌ [CRON-DIARIO] Error al cerrar el día:', error);
@@ -68,7 +68,7 @@ export function inicializarCronDiario() {
     }, {
         scheduled: true,
         timezone: "America/La_Paz"
-    });
+    } as any);
 
     console.log('⏰ Cronjob diario configurado (Se ejecutará a las 00:00 America/La_Paz)');
 }
