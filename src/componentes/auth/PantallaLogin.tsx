@@ -17,20 +17,18 @@ export default function PantallaLogin() {
         return <Navigate to="/" replace />;
     }
 
-    const handleSubmit = (e: FormEvent) => {
+    const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setError('');
         setCargando(true);
 
-        setTimeout(() => {
-            const resultado = login(usuario, password);
-            if (resultado.exito) {
-                navigate('/', { replace: true });
-            } else {
-                setError(resultado.error || 'Credenciales incorrectas');
-                setCargando(false);
-            }
-        }, 300);
+        const resultado = await login(usuario, password);
+        if (resultado.exito) {
+            navigate('/', { replace: true });
+        } else {
+            setError(resultado.error || 'Credenciales incorrectas');
+            setCargando(false);
+        }
     };
 
     return (

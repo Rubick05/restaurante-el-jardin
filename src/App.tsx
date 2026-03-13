@@ -11,6 +11,9 @@ import HistorialDias from "@/componentes/admin/HistorialDias";
 import ResumenPedidosDia from '@/componentes/admind/ResumenPedidosDia';
 import HistorialCamarero from '@/componentes/camarero/HistorialCamarero';
 import PantallaLogin from '@/componentes/auth/PantallaLogin';
+import VistaLanding from '@/componentes/admin/VistaLanding';
+import GestionPromociones from '@/componentes/admin/GestionPromociones';
+import GestionUsuarios from '@/componentes/admin/GestionUsuarios';
 import { useSocketSync } from '@/hooks/useSocketSync';
 import { useInicializacion } from '@/hooks/useInicializacion';
 
@@ -111,6 +114,24 @@ const router = createBrowserRouter([
           />
         ),
       },
+      {
+        path: "admin/promociones",
+        element: (
+          <RutaProtegida
+            elemento={<GestionPromociones />}
+            rolesPermitidos={['administrador']}
+          />
+        ),
+      },
+      {
+        path: "admin/usuarios",
+        element: (
+          <RutaProtegida
+            elemento={<GestionUsuarios />}
+            rolesPermitidos={['administrador']}
+          />
+        ),
+      },
 
       // ── UTILIDADES ────────────────────────────────────────
       { path: "semilla", element: <PaginaSemilla /> },
@@ -144,6 +165,16 @@ const router = createBrowserRouter([
         element: (
           <RutaProtegida
             elemento={<HistorialDias />}
+            rolesPermitidos={['administrador']}
+          />
+        ),
+      },
+      // ── WEB PÚBLICA (admin) ───────────────────────────────
+      {
+        path: "admin/web",
+        element: (
+          <RutaProtegida
+            elemento={<VistaLanding />}
             rolesPermitidos={['administrador']}
           />
         ),

@@ -18,9 +18,13 @@ const io = new Server(httpServer, {
 import pedidosRouter from './rutas/pedidos';
 import menuRouter from './rutas/menu';
 import historialRouter from './rutas/historial';
+import promocionesRouter from './rutas/promociones';
+import usuariosRouter from './rutas/usuarios';
 import { inicializarSocket } from './sincronizacion/emisor-tiempo-real';
+import { inicializarCronDiario } from './sincronizacion/cron-diario';
 
 inicializarSocket(io);
+inicializarCronDiario();
 
 app.use(cors());
 app.use(express.json({ limit: '20mb' })); // limit grande para imágenes base64
@@ -29,6 +33,8 @@ app.use(express.json({ limit: '20mb' })); // limit grande para imágenes base64
 app.use('/api/pedidos', pedidosRouter);
 app.use('/api/menu', menuRouter);
 app.use('/api/historial', historialRouter);
+app.use('/api/promociones', promocionesRouter);
+app.use('/api/usuarios', usuariosRouter);
 
 // ─── Health check ───
 app.get('/health', (_req, res) => {

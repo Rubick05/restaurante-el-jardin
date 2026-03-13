@@ -1,12 +1,12 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UsuarioApp } from '@/lib/auth/tipos-auth';
-import { autenticarUsuario } from '@/lib/auth/usuarios';
+import { api } from '@/lib/api/cliente';
 
 const CLAVE_SESION = 'restaurante_sesion_usuario';
 
 interface ContextoAuthType {
     usuarioActual: UsuarioApp | null;
-    login: (usuario: string, password: string) => { exito: boolean; error?: string };
+    login: (usuario: string, password: string) => Promise<{ exito: boolean; error?: string }>;
     logout: () => void;
     cargando: boolean;
 }
@@ -32,14 +32,19 @@ export function ProveedorAuth({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    const login = (usuario: string, password: string): { exito: boolean; error?: string } => {
-        const encontrado = autenticarUsuario(usuario, password);
-        if (!encontrado) {
+    const login = async (usuario: string, password: string): Promise<{ exito: boolean; error?: string }> => {
+        try {
+            const res: any = await api.post('/usuarios/login', { usuario, password });
+
+            if (res.ok && res.usuario) {
+                setUsuarioActual(res.usuario);
+                localStorage.setItem(CLAVE_SESION, JSON.stringify(res.usuario));
+                return { exito: true };
+            }
             return { exito: false, error: 'Usuario o contraseña incorrectos' };
+        } catch (error: any) {
+            return { exito: false, error: error.message || 'Error de conexión' };
         }
-        setUsuarioActual(encontrado);
-        localStorage.setItem(CLAVE_SESION, JSON.stringify(encontrado));
-        return { exito: true };
     };
 
     const logout = () => {

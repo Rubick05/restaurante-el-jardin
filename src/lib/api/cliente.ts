@@ -42,3 +42,10 @@ export async function clienteHttp<T>(endpoint: string, opciones: OpcionesCliente
         return null as T;
     }
 }
+
+export const api = {
+    get: <T>(endpoint: string, opciones?: OpcionesCliente) => clienteHttp<T>(endpoint, { ...opciones, method: 'GET' }),
+    post: <T>(endpoint: string, data: any, opciones?: OpcionesCliente) => clienteHttp<T>(endpoint, { ...opciones, method: 'POST', body: JSON.stringify(data) }),
+    put: <T>(endpoint: string, data: any, opciones?: OpcionesCliente) => clienteHttp<T>(endpoint, { ...opciones, method: 'PUT', body: JSON.stringify(data) }),
+    delete: <T>(endpoint: string, opciones?: OpcionesCliente) => clienteHttp<T>(endpoint, { ...opciones, method: 'DELETE' }),
+};

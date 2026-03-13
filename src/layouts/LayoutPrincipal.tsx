@@ -13,6 +13,9 @@ import {
     History,
     Menu,
     X,
+    MonitorSmartphone,
+    Image,
+    Users
 } from "lucide-react";
 import { Button } from "@/componentes/ui/button";
 import { useAuth } from "@/lib/auth/contexto-auth";
@@ -116,6 +119,9 @@ export default function LayoutPrincipal() {
                         <NavLink to="/admin" icon={Settings} label="Gestión Menú" />
                         <NavLink to="/admin/qr" icon={QrCode} label="Gestión QR" />
                         <NavLink to="/admin/historial-dias" icon={History} label="Historial Días" />
+                        <NavLink to="/admin/web" icon={MonitorSmartphone} label="Web Pública" />
+                        <NavLink to="/admin/promociones" icon={Image} label="Gestionar Web" />
+                        <NavLink to="/admin/usuarios" icon={Users} label="Gestión Usuarios" />
                     </>
                 )}
             </nav>
