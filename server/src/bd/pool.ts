@@ -79,16 +79,7 @@ export async function inicializarBaseDeDatos() {
                 cerrado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
 
-            CREATE TABLE IF NOT EXISTS promociones (
-                id              TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
-                tipo            TEXT        NOT NULL CHECK (tipo IN ('imagen', 'video')),
-                datos_base64    TEXT        NOT NULL,
-                badge           TEXT,
-                titulo          TEXT,
-                subtitulo       TEXT,
-                orden           INTEGER     NOT NULL DEFAULT 0,
-                creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW()
-            );
+
 
             CREATE TABLE IF NOT EXISTS usuarios (
                 id              TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
@@ -103,7 +94,7 @@ export async function inicializarBaseDeDatos() {
             CREATE INDEX IF NOT EXISTS idx_pedidos_creado ON pedidos(creado_en);
             CREATE INDEX IF NOT EXISTS idx_items_pedido   ON items_pedido(id_pedido);
             CREATE INDEX IF NOT EXISTS idx_menu_disponible ON elementos_menu(disponible);
-            CREATE INDEX IF NOT EXISTS idx_promociones_orden ON promociones(orden);
+
         `);
 
         // Insertar usuarios por defecto si la tabla está vacía

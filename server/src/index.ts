@@ -18,7 +18,7 @@ const io = new Server(httpServer, {
 import pedidosRouter from './rutas/pedidos';
 import menuRouter from './rutas/menu';
 import historialRouter from './rutas/historial';
-import promocionesRouter from './rutas/promociones';
+
 import usuariosRouter from './rutas/usuarios';
 import { inicializarSocket } from './sincronizacion/emisor-tiempo-real';
 import { inicializarCronDiario } from './sincronizacion/cron-diario';
@@ -42,7 +42,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use('/api/pedidos', pedidosRouter);
 app.use('/api/menu', menuRouter);
 app.use('/api/historial', historialRouter);
-app.use('/api/promociones', promocionesRouter);
+
 app.use('/api/usuarios', usuariosRouter);
 
 // ─── Health check ───
