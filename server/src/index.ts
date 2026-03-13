@@ -26,8 +26,19 @@ import { inicializarCronDiario } from './sincronizacion/cron-diario';
 inicializarSocket(io);
 inicializarCronDiario();
 
-app.use(cors());
-app.use(express.json({ limit: '20mb' })); // limit grande para imágenes base64
+// Configuración de CORS permitiendo orígenes de Vercel y locales
+app.use(cors({
+    origin: function (origin, callback) {
+        // Permitimos cualquier origen temporalmente para facilitar la integración con Vercel
+        callback(null, true);
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    credentials: true
+}));
+
+// Aumentamos el límite a 50mb para soportar videos e imágenes en base64
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // ─── API Routes ───
 app.use('/api/pedidos', pedidosRouter);
