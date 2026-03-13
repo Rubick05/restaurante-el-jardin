@@ -26,15 +26,12 @@ import { inicializarCronDiario } from './sincronizacion/cron-diario';
 inicializarSocket(io);
 inicializarCronDiario();
 
-// Respuestas Preflight (OPTIONS) globales para toda la app
-app.options('*', cors());
-
-// Configuración de CORS principal
+// Configuración de CORS global ultra-permisiva para APIs públicas (Promociones)
 app.use(cors({
-    origin: ['https://jardin-web-flax.vercel.app', 'http://localhost:5173'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID'],
-    credentials: true, // Si usas tokens u otros métodos que lo requieran
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Tenant-ID']
+    // Nota: 'credentials: true' requiere 'origin' explícito (no '*'), como es API pública, lo quitamos por ahora.
 }));
 
 // Aumentamos el límite a 50mb para soportar videos e imágenes en base64
