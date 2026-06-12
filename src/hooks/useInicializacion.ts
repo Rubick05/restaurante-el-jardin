@@ -25,7 +25,7 @@ function getApiUrl(): string {
     }
 
     // 3. Desarrollo local
-    return 'http://localhost:3000';
+    return 'http://localhost:3001';
 }
 
 export const API_BASE_URL = getApiUrl();

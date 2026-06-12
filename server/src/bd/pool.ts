@@ -9,7 +9,7 @@ const connectionString = process.env.DATABASE_URL;
 
 export const pool = new Pool({
     connectionString,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined
+    ssl: connectionString?.includes('localhost') ? false : { rejectUnauthorized: false }
 });
 
 const USUARIOS_INICIALES = [
@@ -95,6 +95,19 @@ export async function inicializarBaseDeDatos() {
             CREATE INDEX IF NOT EXISTS idx_items_pedido   ON items_pedido(id_pedido);
             CREATE INDEX IF NOT EXISTS idx_menu_disponible ON elementos_menu(disponible);
 
+            CREATE TABLE IF NOT EXISTS promociones (
+                id              TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+                titulo          TEXT        NOT NULL,
+                subtitulo       TEXT,
+                badge           TEXT,
+                tipo            TEXT        NOT NULL DEFAULT 'imagen',
+                imagen_url      TEXT,
+                imagen_base64   TEXT,
+                fecha_inicio    DATE        NOT NULL DEFAULT CURRENT_DATE,
+                fecha_fin       DATE,
+                orden           INTEGER     NOT NULL DEFAULT 1,
+                creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
         `);
 
         // Insertar usuarios por defecto si la tabla está vacía

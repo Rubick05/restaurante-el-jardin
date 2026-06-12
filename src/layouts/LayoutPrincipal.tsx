@@ -119,7 +119,7 @@ export default function LayoutPrincipal() {
                         <NavLink to="/admin" icon={Settings} label="Gestión Menú" />
                         <NavLink to="/admin/qr" icon={QrCode} label="Gestión QR" />
                         <NavLink to="/admin/historial-dias" icon={History} label="Historial Días" />
-                        <NavLink to="/admin/web" icon={MonitorSmartphone} label="Web Pública" />
+                        <NavLink to="/admin/web" icon={Image} label="Publicar Promos" />
 
                         <NavLink to="/admin/usuarios" icon={Users} label="Gestión Usuarios" />
                     </>

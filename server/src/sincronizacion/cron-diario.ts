@@ -12,6 +12,16 @@ export function inicializarCronDiario() {
         try {
             await client.query('BEGIN');
 
+            // Limpiar promociones vencidas (donde fecha_fin es de ayer o más antigua)
+            const resPromo = await client.query(`
+                DELETE FROM promociones 
+                WHERE fecha_fin IS NOT NULL AND fecha_fin < CURRENT_DATE
+                RETURNING id;
+            `);
+            if (resPromo.rowCount && resPromo.rowCount > 0) {
+                console.log(`🧹 [CRON-DIARIO] Eliminadas ${resPromo.rowCount} promociones expiradas.`);
+            }
+
             // Aseguramos que 'hoy' usa la fecha de Bolivia para el cierre que corresponde al día que acaba de terminar
             // (Ej: A las 00:00 de hoy, se cierra el día de "ayer")
             const hoyResult = await client.query(`SELECT (NOW() AT TIME ZONE 'America/La_Paz' - INTERVAL '1 MINUTE')::date AS ayer`);
