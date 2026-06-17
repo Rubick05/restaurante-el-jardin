@@ -125,6 +125,8 @@ export async function inicializarBaseDeDatos() {
                 valor           JSONB       NOT NULL,
                 actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
+
+            ALTER TABLE elementos_menu ADD COLUMN IF NOT EXISTS costo NUMERIC(10,2) NOT NULL DEFAULT 0;
         `);
 
         // Insertar usuarios por defecto si la tabla está vacía

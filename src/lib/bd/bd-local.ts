@@ -59,6 +59,7 @@ export interface ElementoMenu {
     url_imagen?: string;
     imagen_base64?: string;  // Imagen subida por el admin (base64)
     precio_actual: number;
+    costo?: number;
     disponible: boolean;
     actualizado_en: string;
 }

@@ -21,7 +21,7 @@ interface Props {
 
 export function ModalPago({ open, onOpenChange, items, total, onConfirmarPago, procesando }: Props) {
     const [metodoPago, setMetodoPago] = useState<'efectivo' | 'qr' | null>(null);
-    const [tipoDocumento, setTipoDocumento] = useState<'recibo' | 'factura'>('recibo');
+    const tipoDocumento = 'recibo';
     const [nit, setNit] = useState('');
     const [razonSocial, setRazonSocial] = useState('');
     const [qrImagen, setQrImagen] = useState<string | null>(null);
@@ -35,37 +35,152 @@ export function ModalPago({ open, onOpenChange, items, total, onConfirmarPago, p
 
     const handleConfirmar = () => {
         if (metodoPago) {
-            if (tipoDocumento === 'recibo') {
-                imprimirRecibo();
-            }
+            imprimirRecibo();
             onConfirmarPago(metodoPago);
         }
     };
 
     const imprimirRecibo = () => {
-        const contenido = `
-            RESTAURANTE EL JARDÍN
-            ${tipoDocumento === 'factura' ? 'FACTURA' : 'RECIBO DE VENTA'}
-            --------------------------------
-            Fecha: ${new Date().toLocaleString()}
-            Cliente: ${razonSocial || 'S/N'}
-            NIT/CI: ${nit || '0'}
-            --------------------------------
-            CANT   DETALLE       SUBTOTAL
-            ${items.map(i => `${i.cantidad}      ${i.nombre.slice(0, 15).padEnd(15)} ${i.precio * i.cantidad}`).join('\n')}
-            --------------------------------
-            TOTAL: Bs ${Number(total).toFixed(2)}
-            --------------------------------
-            Gracias por su visita!
+        const lineas = items.map(
+            i => `
+            <tr>
+                <td style="padding: 4px 0; font-size: 13px; font-weight: bold;">${i.cantidad}x</td>
+                <td style="padding: 4px 0; font-size: 13px;">${i.nombre}</td>
+                <td style="padding: 4px 0; text-align: right; font-family: monospace; font-size: 13px;">Bs ${Number(i.precio * i.cantidad).toFixed(2)}</td>
+            </tr>`
+        ).join("");
+
+        const logoSvg = `
+            <svg width="70" height="70" viewBox="0 0 100 100" fill="none" stroke="#f59e0b" stroke-width="2.5" style="margin: 0 auto; display: block;">
+                <!-- Leaf / Garden logo -->
+                <path d="M50 15 C30 35, 30 65, 50 85 C70 65, 70 35, 50 15 Z" fill="rgba(245, 158, 11, 0.05)" />
+                <path d="M50 15 L50 85" stroke-dasharray="2 2" />
+                <path d="M50 35 C42 40, 42 50, 50 55" />
+                <path d="M50 45 C58 50, 58 60, 50 65" />
+            </svg>
+        `;
+
+        const htmlContenido = `
+            <html>
+            <head>
+                <title>Recibo Ficha</title>
+                <style>
+                    body {
+                        font-family: 'Courier New', Courier, monospace;
+                        color: #000;
+                        padding: 10px;
+                        max-width: 300px;
+                        margin: 0 auto;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 12px;
+                        border-bottom: 1px dashed #000;
+                        padding-bottom: 8px;
+                    }
+                    .header h2 {
+                        margin: 5px 0 2px 0;
+                        font-size: 18px;
+                        font-weight: bold;
+                        letter-spacing: 1px;
+                    }
+                    .header p {
+                        margin: 0;
+                        font-size: 10px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+                    .info {
+                        font-size: 12px;
+                        margin-bottom: 10px;
+                        line-height: 1.4;
+                    }
+                    .table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 10px;
+                    }
+                    .table th {
+                        border-bottom: 1px solid #000;
+                        font-size: 11px;
+                        text-align: left;
+                        padding-bottom: 4px;
+                        text-transform: uppercase;
+                    }
+                    .totales {
+                        border-top: 1px dashed #000;
+                        padding-top: 6px;
+                        margin-top: 6px;
+                        font-size: 12px;
+                    }
+                    .total-grande {
+                        font-size: 14px;
+                        font-weight: bold;
+                        display: flex;
+                        justify-content: space-between;
+                        margin-top: 5px;
+                        border-top: 1px solid #000;
+                        padding-top: 5px;
+                    }
+                    .footer-text {
+                        text-align: center;
+                        font-size: 11px;
+                        margin-top: 18px;
+                        border-top: 1px dashed #000;
+                        padding-top: 8px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    ${logoSvg}
+                    <h2>EL JARDÍN</h2>
+                    <p>Peña - Restaurant</p>
+                </div>
+                <div class="info">
+                    <strong>RECIBO DE VENTA</strong><br>
+                    Fecha: ${new Date().toLocaleString("es-BO")}<br>
+                    Cliente: ${razonSocial.trim() || "PÚBLICO GENERAL"}<br>
+                    NIT/CI: ${nit.trim() || "0"}
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Cant</th>
+                            <th style="width: 60%;">Detalle</th>
+                            <th style="width: 25%; text-align: right;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${lineas}
+                    </tbody>
+                </table>
+                <div class="totales">
+                    <div class="total-grande">
+                        <span>TOTAL A PAGAR:</span>
+                        <span>Bs ${Number(total).toFixed(2)}</span>
+                    </div>
+                </div>
+                <div class="info" style="margin-top: 8px; font-size: 11px;">
+                    Método Pago: ${metodoPago === "qr" ? "Código QR" : "Efectivo"}
+                </div>
+                <div class="footer-text">
+                    ¡Gracias por su visita!<br>
+                    Cochabamba, Bolivia
+                </div>
+            </body>
+            </html>
         `;
 
         const ventana = window.open('', 'PRINT', 'height=600,width=400');
         if (ventana) {
-            ventana.document.write(`<html><head><title>Imprimir</title></head><body><pre>${contenido}</pre></body></html>`);
+            ventana.document.write(htmlContenido);
             ventana.document.close();
             ventana.focus();
-            ventana.print();
-            ventana.close();
+            setTimeout(() => {
+                ventana.print();
+                ventana.close();
+            }, 250);
         }
     };
 
@@ -88,44 +203,31 @@ export function ModalPago({ open, onOpenChange, items, total, onConfirmarPago, p
                         </div>
                     </div>
 
-                    {/* Datos de Facturación */}
-                    <div className="space-y-3 border border-border p-3 rounded-lg bg-muted/20">
-                        <h4 className="font-semibold text-sm text-foreground">Documento</h4>
-                        <div className="flex gap-2 mb-2">
-                            <Button
-                                size="sm"
-                                variant={tipoDocumento === 'recibo' ? 'default' : 'outline'}
-                                onClick={() => setTipoDocumento('recibo')}
-                                className="flex-1 font-semibold"
-                            >
-                                Recibo
-                            </Button>
-                            <Button
-                                size="sm"
-                                variant={tipoDocumento === 'factura' ? 'default' : 'outline'}
-                                onClick={() => setTipoDocumento('factura')}
-                                className="flex-1 font-semibold"
-                            >
-                                Factura
-                            </Button>
-                        </div>
-
-                        {tipoDocumento === 'factura' && (
-                            <div className="space-y-2 animate-in slide-in-from-top-2">
+                    {/* Datos de Recibo (Facturación Opcional) */}
+                    <div className="space-y-3 border border-border p-4 rounded-lg bg-muted/20">
+                        <h4 className="font-semibold text-sm text-foreground border-b border-border pb-1.5 flex items-center gap-2">
+                            Datos del Recibo
+                        </h4>
+                        <div className="space-y-3">
+                            <div className="space-y-1">
+                                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">NIT / CI (Opcional)</label>
                                 <input
-                                    placeholder="NIT / CI"
-                                    className="w-full p-2 border border-border rounded text-sm bg-background text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+                                    placeholder="Ej: 8329482012"
+                                    className="w-full p-2.5 border border-border rounded-lg text-sm bg-background text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
                                     value={nit}
                                     onChange={e => setNit(e.target.value)}
                                 />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Razón Social / Nombre (Opcional)</label>
                                 <input
-                                    placeholder="Razón Social / Nombre"
-                                    className="w-full p-2 border border-border rounded text-sm bg-background text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
+                                    placeholder="Ej: Juan Pérez"
+                                    className="w-full p-2.5 border border-border rounded-lg text-sm bg-background text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
                                     value={razonSocial}
                                     onChange={e => setRazonSocial(e.target.value)}
                                 />
                             </div>
-                        )}
+                        </div>
                     </div>
 
                     {/* Selección de Método de Pago */}

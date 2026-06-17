@@ -8,12 +8,15 @@ import { Button } from '@/componentes/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/componentes/ui/tabs';
 import { 
     Calendar, DollarSign, Hash, MapPin, X, UtensilsCrossed, 
-    UserCircle, RefreshCw, ChevronDown, ChevronUp, ClipboardList, TrendingUp
+    UserCircle, RefreshCw, ChevronDown, ChevronUp, ClipboardList, TrendingUp,
+    Pencil, Trash2, CheckCircle2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState } from 'react';
 import { API_BASE_URL, normalizarPedidos } from '@/hooks/useInicializacion';
+import NavegadorMenu from '@/componentes/mesero/NavegadorMenu';
+import { ModalCobro } from '@/componentes/mesero/ModalCobro';
 
 function nombreMesero(idMesero: string): string {
     const usuario = USUARIOS_SISTEMA.find(u => u.id === idMesero);
@@ -24,6 +27,8 @@ export default function ResumenPedidosDia() {
     const queryClient = useQueryClient();
     const [procesando, setProcesando] = useState(false);
     const [pedidosExpandidos, setPedidosExpandidos] = useState<Record<string, boolean>>({});
+    const [pedidoAEditar, setPedidoAEditar] = useState<Pedido | null>(null);
+    const [pedidoACobrar, setPedidoACobrar] = useState<Pedido | null>(null);
 
     const togglePedido = (id: string) => {
         setPedidosExpandidos(prev => ({ ...prev, [id]: !prev[id] }));
@@ -138,6 +143,20 @@ export default function ResumenPedidosDia() {
 
     const platosVendidosSorted = Object.entries(resumenPlatos)
         .sort((a, b) => b[1].cantidad - a[1].cantidad);
+
+    if (pedidoAEditar) {
+        return (
+            <div className="p-2 bg-background min-h-screen">
+                <NavegadorMenu
+                    pedidoExistente={pedidoAEditar}
+                    onVolver={() => {
+                        setPedidoAEditar(null);
+                        refetch();
+                    }}
+                />
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">
@@ -325,7 +344,7 @@ export default function ResumenPedidosDia() {
                                                                                     <h5 className="font-medium text-foreground">Información del Pedido</h5>
                                                                                     <div className="grid grid-cols-2 gap-y-1 text-xs text-muted-foreground">
                                                                                         <span>ID Pedido:</span>
-                                                                                        <span className="font-mono text-foreground select-all">{pedido.id}</span>
+                                                                                        <span className="font-mono text-foreground select-all text-[11px]">{pedido.id}</span>
                                                                                         <span>Registrado:</span>
                                                                                         <span className="text-foreground">{format(new Date(pedido.creado_en), 'HH:mm:ss')} hs</span>
                                                                                         <span>Actualizado:</span>
@@ -338,6 +357,92 @@ export default function ResumenPedidosDia() {
                                                                                                 <span className="text-amber-300 font-medium">{pedido.notas}</span>
                                                                                             </>
                                                                                         )}
+                                                                                        {pedido.datos_facturacion?.nit_ci && (
+                                                                                            <>
+                                                                                                <span>NIT/CI Recibo:</span>
+                                                                                                <span className="text-foreground font-bold">{pedido.datos_facturacion.nit_ci}</span>
+                                                                                            </>
+                                                                                        )}
+                                                                                        {pedido.datos_facturacion?.razon_social && (
+                                                                                            <>
+                                                                                                <span>Razón Social:</span>
+                                                                                                <span className="text-foreground font-bold">{pedido.datos_facturacion.razon_social}</span>
+                                                                                            </>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                                {/* Acciones de Control de Administración */}
+                                                                                <div className="p-4 border border-border rounded-lg bg-card text-sm space-y-3">
+                                                                                    <h5 className="font-semibold text-foreground border-b border-border pb-1.5 flex items-center gap-2">
+                                                                                        Acciones del Administrador
+                                                                                    </h5>
+                                                                                    <div className="flex flex-wrap gap-2 pt-1">
+                                                                                        {pedido.estado !== 'pagado' && pedido.estado !== 'cancelado' && (
+                                                                                            <>
+                                                                                                <Button
+                                                                                                    size="sm"
+                                                                                                    variant="outline"
+                                                                                                    className="border-primary/20 hover:bg-primary/10 text-primary font-bold"
+                                                                                                    onClick={() => setPedidoAEditar(pedido)}
+                                                                                                >
+                                                                                                    <Pencil className="w-3.5 h-3.5 mr-1" /> Editar Pedido
+                                                                                                </Button>
+                                                                                                <Button
+                                                                                                    size="sm"
+                                                                                                    variant="default"
+                                                                                                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+                                                                                                    onClick={() => setPedidoACobrar(pedido)}
+                                                                                                >
+                                                                                                    <DollarSign className="w-3.5 h-3.5 mr-1" /> Cobrar y Recibo
+                                                                                                </Button>
+                                                                                                <Button
+                                                                                                    size="sm"
+                                                                                                    variant="secondary"
+                                                                                                    className="font-bold border border-border"
+                                                                                                    onClick={async () => {
+                                                                                                        if (!confirm('¿Marcar todos los platos como entregados?')) return;
+                                                                                                        const itemsEntregados = (pedido.items || []).map(it => ({
+                                                                                                            ...it,
+                                                                                                            estado_item: "entregado" as const
+                                                                                                        }));
+                                                                                                        const updateData = {
+                                                                                                            estado: "entregado" as const,
+                                                                                                            nuevosItems: itemsEntregados,
+                                                                                                            items: itemsEntregados,
+                                                                                                            actualizado_en: new Date().toISOString()
+                                                                                                        };
+                                                                                                        await bdLocal.pedidos.update(pedido.id, updateData);
+                                                                                                        try {
+                                                                                                            await fetch(`${API_BASE_URL}/api/pedidos/${pedido.id}`, {
+                                                                                                                method: 'PATCH',
+                                                                                                                headers: { 'Content-Type': 'application/json' },
+                                                                                                                body: JSON.stringify(updateData),
+                                                                                                            });
+                                                                                                        } catch (err) {
+                                                                                                            console.warn("Fallo al actualizar offline", err);
+                                                                                                        }
+                                                                                                        refetch();
+                                                                                                    }}
+                                                                                                >
+                                                                                                    <CheckCircle2 className="w-3.5 h-3.5 mr-1 text-emerald-400" /> Entregar Todo
+                                                                                                </Button>
+                                                                                            </>
+                                                                                        )}
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            variant="destructive"
+                                                                                            className="font-bold"
+                                                                                            onClick={async () => {
+                                                                                                if (!confirm('¿Eliminar este pedido permanentemente? (Desaparecerá de cocina y reportes)')) return;
+                                                                                                await bdLocal.pedidos.delete(pedido.id);
+                                                                                                try {
+                                                                                                    await fetch(`${API_BASE_URL}/api/pedidos/${pedido.id}`, { method: 'DELETE' });
+                                                                                                } catch {}
+                                                                                                refetch();
+                                                                                            }}
+                                                                                        >
+                                                                                            <Trash2 className="w-3.5 h-3.5 mr-1" /> Eliminar Pedido
+                                                                                        </Button>
                                                                                     </div>
                                                                                 </div>
                                                                             </div>
@@ -421,6 +526,36 @@ export default function ResumenPedidosDia() {
                                                                     <strong>Notas:</strong> {pedido.notas}
                                                                 </div>
                                                             )}
+                                                            {/* Datos facturación en móvil */}
+                                                            {(pedido.datos_facturacion?.nit_ci || pedido.datos_facturacion?.razon_social) && (
+                                                                <div className="p-2.5 border border-border rounded-lg bg-card text-[11px] text-muted-foreground space-y-1">
+                                                                    {pedido.datos_facturacion.nit_ci && <div><strong>NIT/CI Recibo:</strong> <span className="text-foreground font-bold">{pedido.datos_facturacion.nit_ci}</span></div>}
+                                                                    {pedido.datos_facturacion.razon_social && <div><strong>Razón Social:</strong> <span className="text-foreground font-bold">{pedido.datos_facturacion.razon_social}</span></div>}
+                                                                </div>
+                                                            )}
+                                                            {/* Acciones admin en móvil */}
+                                                            <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
+                                                                {pedido.estado !== 'pagado' && pedido.estado !== 'cancelado' && (
+                                                                    <>
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="outline"
+                                                                            className="h-8 px-2.5 border-primary/20 text-primary font-bold text-xs"
+                                                                            onClick={() => setPedidoAEditar(pedido)}
+                                                                        >
+                                                                            <Pencil className="w-3 h-3 mr-1" /> Editar
+                                                                        </Button>
+                                                                        <Button
+                                                                            size="sm"
+                                                                            variant="default"
+                                                                            className="h-8 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs"
+                                                                            onClick={() => setPedidoACobrar(pedido)}
+                                                                        >
+                                                                            <DollarSign className="w-3 h-3 mr-1" /> Cobrar
+                                                                        </Button>
+                                                                    </>
+                                                                )}
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>
@@ -497,6 +632,18 @@ export default function ResumenPedidosDia() {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {pedidoACobrar && (
+                <ModalCobro
+                    open={!!pedidoACobrar}
+                    onOpenChange={(o) => { if (!o) setPedidoACobrar(null); }}
+                    pedido={pedidoACobrar}
+                    onCobrado={() => {
+                        setPedidoACobrar(null);
+                        refetch();
+                    }}
+                />
+            )}
         </div>
     );
 }

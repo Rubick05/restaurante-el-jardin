@@ -87,6 +87,27 @@ export function useSocketSync() {
             queryClient.invalidateQueries({ queryKey: ['menu'] });
         });
 
+        // ── Eventos de Gastos ───────────────────────────────────
+        socket.on('gasto:actualizado', async (gasto: any) => {
+            if (gasto?.id) {
+                try {
+                    const { bdLocal } = await import('@/lib/bd/bd-local');
+                    await bdLocal.gastos.put({ ...gasto, sincronizado: true });
+                } catch (e) { console.error('Error guardando gasto en tiempo real', e); }
+            }
+            queryClient.invalidateQueries({ queryKey: ['gastos'] });
+        });
+
+        socket.on('gasto:eliminado', async (data: { id: string }) => {
+            if (data?.id) {
+                try {
+                    const { bdLocal } = await import('@/lib/bd/bd-local');
+                    await bdLocal.gastos.delete(data.id);
+                } catch (e) { console.error('Error borrando gasto local en tiempo real', e); }
+            }
+            queryClient.invalidateQueries({ queryKey: ['gastos'] });
+        });
+
         // ── Eventos de Día ──────────────────────────────────────
         socket.on('dia:cerrado', () => {
             queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });

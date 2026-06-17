@@ -154,60 +154,62 @@ export default function GestionUsuarios() {
 
             {/* Modal */}
             {modalAbierto && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <form onSubmit={handleGuardar} className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-                        <div className="p-5 border-b">
-                            <h3 className="text-lg font-bold font-serif">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm animate-in fade-in">
+                    <form onSubmit={handleGuardar} className="bg-card rounded-xl shadow-2xl border border-border w-full max-w-md overflow-hidden glow-gold">
+                        <div className="p-5 border-b border-border">
+                            <h3 className="text-lg font-bold font-serif text-primary text-glow-gold">
                                 {editando ? 'Editar Usuario' : 'Nuevo Usuario'}
                             </h3>
                         </div>
 
                         <div className="p-5 space-y-4">
                             {errorForm && (
-                                <div className="p-3 bg-red-50 text-red-700 text-sm rounded-md border border-red-200">
+                                <div className="p-3 bg-destructive/10 text-destructive text-sm rounded-md border border-destructive/20">
                                     {errorForm}
                                 </div>
                             )}
 
                             <div className="space-y-1.5">
-                                <Label htmlFor="nombre">Nombre y Apellido</Label>
+                                <Label htmlFor="nombre" className="text-muted-foreground text-xs uppercase tracking-wider">Nombre y Apellido</Label>
                                 <Input
                                     id="nombre"
                                     value={nombre}
                                     onChange={e => setNombre(e.target.value)}
                                     required
+                                    className="bg-muted/30 border-border text-foreground focus:ring-primary"
                                 />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="usr">Username</Label>
+                                    <Label htmlFor="usr" className="text-muted-foreground text-xs uppercase tracking-wider">Username</Label>
                                     <Input
                                         id="usr"
                                         value={usuario}
                                         onChange={e => setUsuario(e.target.value)}
                                         required
+                                        className="bg-muted/30 border-border text-foreground focus:ring-primary"
                                     />
                                 </div>
                                 <div className="space-y-1.5">
-                                    <Label htmlFor="rol">Rol</Label>
+                                    <Label htmlFor="rol" className="text-muted-foreground text-xs uppercase tracking-wider">Rol</Label>
                                     <select
                                         id="rol"
-                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="flex h-10 w-full rounded-md border border-border bg-muted/30 px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary focus:outline-none"
                                         value={rol}
                                         onChange={e => setRol(e.target.value)}
                                         required
                                     >
-                                        <option value="camarero">Camarero</option>
-                                        <option value="cocinero">Cocina</option>
-                                        <option value="administrador">Administrador</option>
+                                        <option value="camarero" className="bg-card text-foreground">Camarero</option>
+                                        <option value="cocinero" className="bg-card text-foreground">Cocina</option>
+                                        <option value="administrador" className="bg-card text-foreground">Administrador</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <div className="space-y-1.5 pt-2 border-t">
-                                <Label htmlFor="pass" className="flex items-center gap-1.5 text-amber-700">
-                                    <KeyRound className="w-3.5 h-3.5" />
+                            <div className="space-y-1.5 pt-2 border-t border-border">
+                                <Label htmlFor="pass" className="flex items-center gap-1.5 text-primary text-xs uppercase tracking-wider">
+                                    <KeyRound className="w-3.5 h-3.5 text-primary" />
                                     Contraseña {editando && '(Dejar en blanco para mantener actual)'}
                                 </Label>
                                 <Input
@@ -217,15 +219,16 @@ export default function GestionUsuarios() {
                                     onChange={e => setPassword(e.target.value)}
                                     required={!editando}
                                     placeholder={editando ? '••••••••' : 'Indica una contraseña...'}
+                                    className="bg-muted/30 border-border text-foreground focus:ring-primary"
                                 />
                             </div>
                         </div>
 
-                        <div className="p-5 border-t bg-slate-50 flex justify-end gap-3">
-                            <Button type="button" variant="outline" onClick={cerrarModal}>
+                        <div className="p-5 border-t border-border bg-muted/20 flex justify-end gap-3">
+                            <Button type="button" variant="outline" onClick={cerrarModal} className="border-border hover:bg-muted text-foreground">
                                 Cancelar
                             </Button>
-                            <Button type="submit" disabled={mutarGuardar.isPending}>
+                            <Button type="submit" disabled={mutarGuardar.isPending} className="bg-primary hover:bg-primary/95 text-primary-foreground font-bold">
                                 {mutarGuardar.isPending ? 'Guardando...' : 'Guardar Usuario'}
                             </Button>
                         </div>

@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -42,11 +42,11 @@ export function ModalSeleccionItem({ open, onOpenChange, item, cantidadInicial =
                 <div className="flex flex-col gap-6 py-4">
                     {/* Imagen y Precio */}
                     <div className="flex gap-4 items-center">
-                        <div className="w-24 h-24 bg-slate-200 rounded-lg overflow-hidden shrink-0">
+                        <div className="w-24 h-24 bg-muted rounded-lg overflow-hidden shrink-0 border border-border">
                             {(item.imagen_base64 || item.url_imagen) ? (
                                 <img src={item.imagen_base64 || item.url_imagen} alt={item.nombre} className="w-full h-full object-cover" />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center text-xs text-slate-400">Sin img</div>
+                                <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground/50">Sin img</div>
                             )}
                         </div>
                         <div>
@@ -56,11 +56,11 @@ export function ModalSeleccionItem({ open, onOpenChange, item, cantidadInicial =
                     </div>
 
                     {/* Selector Cantidad */}
-                    <div className="flex items-center justify-between bg-slate-100 p-2 rounded-xl">
+                    <div className="flex items-center justify-between bg-secondary p-2 rounded-xl border border-border">
                         <Button
                             variant="outline"
                             size="icon"
-                            className="h-12 w-12 rounded-lg"
+                            className="h-12 w-12 rounded-lg border-border"
                             onClick={() => setCantidad(Math.max(1, cantidad - 1))}
                         >
                             <Minus className="h-6 w-6" />
@@ -69,7 +69,7 @@ export function ModalSeleccionItem({ open, onOpenChange, item, cantidadInicial =
                         <Button
                             variant="outline"
                             size="icon"
-                            className="h-12 w-12 rounded-lg"
+                            className="h-12 w-12 rounded-lg border-border"
                             onClick={() => setCantidad(cantidad + 1)}
                         >
                             <Plus className="h-6 w-6" />

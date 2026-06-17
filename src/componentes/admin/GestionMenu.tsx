@@ -43,6 +43,7 @@ export default function GestionMenu() {
         nombre: '',
         categoria: 'Plato Fuerte',
         precio_actual: 0,
+        costo: 0,
         disponible: true,
         descripcion: ''
       });
@@ -60,6 +61,7 @@ export default function GestionMenu() {
         nombre: formulario.nombre!,
         categoria: formulario.categoria || 'General',
         precio_actual: Number(formulario.precio_actual),
+        costo: Number(formulario.costo || 0),
         disponible: formulario.disponible ?? true,
         descripcion: formulario.descripcion,
         actualizado_en: new Date().toISOString(),
@@ -198,14 +200,23 @@ export default function GestionMenu() {
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2 mt-4">
+              <div className="grid gap-4 md:grid-cols-3 mt-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Precio (Bs)</label>
+                  <label className="text-sm font-medium">Precio Venta (Bs)</label>
                   <Input
                     type="number"
                     placeholder="0.00"
                     value={formulario.precio_actual || ''}
                     onChange={e => setFormulario({ ...formulario, precio_actual: parseFloat(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Costo de Insumos (Bs)</label>
+                  <Input
+                    type="number"
+                    placeholder="0.00"
+                    value={formulario.costo || ''}
+                    onChange={e => setFormulario({ ...formulario, costo: parseFloat(e.target.value) })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -256,6 +267,9 @@ export default function GestionMenu() {
                       <h4 className="font-bold text-foreground truncate">{item.nombre}</h4>
                       <span className="text-sm font-mono text-muted-foreground bg-secondary px-2 rounded">
                         {item.precio_actual} Bs
+                      </span>
+                      <span className="text-xs font-mono text-muted-foreground/80 bg-muted px-2 py-0.5 rounded">
+                        Costo: {item.costo || 0} Bs
                       </span>
                     </div>
                     {item.descripcion && (

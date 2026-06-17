@@ -42,7 +42,7 @@ function esCategoriaBebida(categoria?: string): boolean {
 export function ModalCobro({ open, onOpenChange, pedido, onCobrado }: Props) {
     const queryClient = useQueryClient();
     const [metodoPago, setMetodoPago] = useState<MetodoPago>(null);
-    const [tipoDoc, setTipoDoc] = useState<TipoDoc>("recibo");
+    const tipoDoc = "recibo";
     const [nit, setNit] = useState("");
     const [razonSocial, setRazonSocial] = useState("");
     const [procesando, setProcesando] = useState(false);
@@ -77,8 +77,8 @@ export function ModalCobro({ open, onOpenChange, pedido, onCobrado }: Props) {
                 actualizado_en: new Date().toISOString(),
                 datos_facturacion: {
                     tipo: tipoDoc as any,
-                    nit_ci: nit || undefined,
-                    razon_social: razonSocial || undefined,
+                    nit_ci: nit.trim() || undefined,
+                    razon_social: razonSocial.trim() || undefined,
                 },
             };
 
@@ -102,10 +102,8 @@ export function ModalCobro({ open, onOpenChange, pedido, onCobrado }: Props) {
             queryClient.invalidateQueries({ queryKey: ["resumen-dia"] });
             queryClient.invalidateQueries({ queryKey: ["items-cocina"] });
 
-            // Imprimir recibo si corresponde
-            if (tipoDoc === "recibo") {
-                imprimirRecibo();
-            }
+            // Imprimir recibo
+            imprimirRecibo();
 
             setCobrado(true);
         } catch (err) {
@@ -118,39 +116,156 @@ export function ModalCobro({ open, onOpenChange, pedido, onCobrado }: Props) {
 
     const imprimirRecibo = () => {
         const lineas = items.map(
-            i => `${String(i.cantidad).padEnd(4)} ${i.nombre_item.slice(0, 20).padEnd(20)} Bs ${Number(i.subtotal).toFixed(2)}`
-        ).join("\n");
+            i => `
+            <tr>
+                <td style="padding: 4px 0; font-size: 13px; font-weight: bold;">${i.cantidad}x</td>
+                <td style="padding: 4px 0; font-size: 13px;">${i.nombre_item}</td>
+                <td style="padding: 4px 0; text-align: right; font-family: monospace; font-size: 13px;">Bs ${Number(i.subtotal).toFixed(2)}</td>
+            </tr>`
+        ).join("");
 
-        const contenido = `
-RESTAURANTE EL JARDÍN
-${tipoDoc === "factura" ? "FACTURA" : "RECIBO DE VENTA"}
-Ficha #${pedido.numero_ficha} - Letrero: ${pedido.numero_letrero || "?"}
---------------------------------
-Fecha: ${new Date().toLocaleString("es-BO")}
-Cliente: ${razonSocial || "S/N"}
-NIT/CI: ${nit || "0"}
---------------------------------
-CANT DETALLE              SUBTOTAL
-${lineas}
---------------------------------
-PLATOS:   Bs ${Number(subtotalPlatos).toFixed(2)}
-BEBIDAS:  Bs ${Number(subtotalBebidas).toFixed(2)}
---------------------------------
-TOTAL:    Bs ${Number(total).toFixed(2)}
-Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
---------------------------------
-¡Gracias por su visita!
-        `.trim();
+        const logoSvg = `
+            <svg width="70" height="70" viewBox="0 0 100 100" fill="none" stroke="#f59e0b" stroke-width="2.5" style="margin: 0 auto; display: block;">
+                <!-- Leaf / Garden logo -->
+                <path d="M50 15 C30 35, 30 65, 50 85 C70 65, 70 35, 50 15 Z" fill="rgba(245, 158, 11, 0.05)" />
+                <path d="M50 15 L50 85" stroke-dasharray="2 2" />
+                <path d="M50 35 C42 40, 42 50, 50 55" />
+                <path d="M50 45 C58 50, 58 60, 50 65" />
+            </svg>
+        `;
+
+        const htmlContenido = `
+            <html>
+            <head>
+                <title>Recibo Ficha #${pedido.numero_ficha}</title>
+                <style>
+                    body {
+                        font-family: 'Courier New', Courier, monospace;
+                        color: #000;
+                        padding: 10px;
+                        max-width: 300px;
+                        margin: 0 auto;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 12px;
+                        border-bottom: 1px dashed #000;
+                        padding-bottom: 8px;
+                    }
+                    .header h2 {
+                        margin: 5px 0 2px 0;
+                        font-size: 18px;
+                        font-weight: bold;
+                        letter-spacing: 1px;
+                    }
+                    .header p {
+                        margin: 0;
+                        font-size: 10px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+                    .info {
+                        font-size: 12px;
+                        margin-bottom: 10px;
+                        line-height: 1.4;
+                    }
+                    .table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 10px;
+                    }
+                    .table th {
+                        border-bottom: 1px solid #000;
+                        font-size: 11px;
+                        text-align: left;
+                        padding-bottom: 4px;
+                        text-transform: uppercase;
+                    }
+                    .totales {
+                        border-top: 1px dashed #000;
+                        padding-top: 6px;
+                        margin-top: 6px;
+                        font-size: 12px;
+                    }
+                    .total-grande {
+                        font-size: 14px;
+                        font-weight: bold;
+                        display: flex;
+                        justify-content: space-between;
+                        margin-top: 5px;
+                        border-top: 1px solid #000;
+                        padding-top: 5px;
+                    }
+                    .footer-text {
+                        text-align: center;
+                        font-size: 11px;
+                        margin-top: 18px;
+                        border-top: 1px dashed #000;
+                        padding-top: 8px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    ${logoSvg}
+                    <h2>EL JARDÍN</h2>
+                    <p>Peña - Restaurant</p>
+                </div>
+                <div class="info">
+                    <strong>RECIBO DE VENTA</strong><br>
+                    Ficha: #${pedido.numero_ficha} · Letrero: ${pedido.numero_letrero || "?"}<br>
+                    Fecha: ${new Date().toLocaleString("es-BO")}<br>
+                    Cliente: ${razonSocial.trim() || "PÚBLICO GENERAL"}<br>
+                    NIT/CI: ${nit.trim() || "0"}
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Cant</th>
+                            <th style="width: 60%;">Detalle</th>
+                            <th style="width: 25%; text-align: right;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${lineas}
+                    </tbody>
+                </table>
+                <div class="totales">
+                    ${subtotalPlatos > 0 ? `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                        <span>Subtotal Platos:</span>
+                        <span>Bs ${Number(subtotalPlatos).toFixed(2)}</span>
+                    </div>` : ''}
+                    ${subtotalBebidas > 0 ? `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                        <span>Subtotal Bebidas:</span>
+                        <span>Bs ${Number(subtotalBebidas).toFixed(2)}</span>
+                    </div>` : ''}
+                    <div class="total-grande">
+                        <span>TOTAL A PAGAR:</span>
+                        <span>Bs ${Number(total).toFixed(2)}</span>
+                    </div>
+                </div>
+                <div class="info" style="margin-top: 8px; font-size: 11px;">
+                    Método Pago: ${metodoPago === "qr" ? "Código QR" : "Efectivo"}
+                </div>
+                <div class="footer-text">
+                    ¡Gracias por su visita!<br>
+                    Cochabamba, Bolivia
+                </div>
+            </body>
+            </html>
+        `;
 
         const ventana = window.open("", "PRINT", "height=700,width=400");
         if (ventana) {
-            ventana.document.write(
-                `<html><head><title>Recibo</title><style>body{font-family:monospace;white-space:pre;font-size:13px;padding:16px}</style></head><body>${contenido}</body></html>`
-            );
+            ventana.document.write(htmlContenido);
             ventana.document.close();
             ventana.focus();
-            ventana.print();
-            ventana.close();
+            setTimeout(() => {
+                ventana.print();
+                ventana.close();
+            }, 250);
         }
     };
 
@@ -162,7 +277,6 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
         }
         // Reset state
         setMetodoPago(null);
-        setTipoDoc("recibo");
         setNit("");
         setRazonSocial("");
         setCobrado(false);
@@ -252,45 +366,31 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                             <span className="text-3xl font-black">Bs {Number(total).toFixed(2)}</span>
                         </div>
 
-                        {/* ── Tipo de Documento ── */}
-                        <div className="space-y-2 border border-border rounded-lg p-3 bg-muted/30">
-                            <h4 className="font-semibold text-sm flex items-center gap-2 text-foreground">
-                                <Hash className="w-4 h-4" /> Documento
+                        {/* ── Datos de Recibo (Facturación Opcional) ── */}
+                        <div className="space-y-3 border border-border rounded-lg p-4 bg-muted/30">
+                            <h4 className="font-semibold text-sm flex items-center gap-2 text-foreground border-b border-border pb-1.5">
+                                <Hash className="w-4 h-4 text-primary" /> Datos del Recibo
                             </h4>
-                            <div className="flex gap-2">
-                                <Button
-                                    size="sm"
-                                    variant={tipoDoc === "recibo" ? "default" : "outline"}
-                                    onClick={() => setTipoDoc("recibo")}
-                                    className="flex-1 font-semibold"
-                                >
-                                    Recibo
-                                </Button>
-                                <Button
-                                    size="sm"
-                                    variant={tipoDoc === "factura" ? "default" : "outline"}
-                                    onClick={() => setTipoDoc("factura")}
-                                    className="flex-1 font-semibold"
-                                >
-                                    Factura
-                                </Button>
-                            </div>
-                            {tipoDoc === "factura" && (
-                                <div className="space-y-2 animate-in slide-in-from-top-2 pt-1">
+                            <div className="space-y-3">
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">NIT / CI (Opcional)</label>
                                     <input
-                                        placeholder="NIT / CI"
-                                        className="w-full p-2 border border-border rounded text-sm bg-background text-foreground"
+                                        placeholder="Ej: 8329482012"
+                                        className="w-full p-2.5 border border-border rounded-lg text-sm bg-background text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
                                         value={nit}
                                         onChange={e => setNit(e.target.value)}
                                     />
+                                </div>
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Razón Social / Nombre (Opcional)</label>
                                     <input
-                                        placeholder="Razón Social / Nombre"
-                                        className="w-full p-2 border border-border rounded text-sm bg-background text-foreground"
+                                        placeholder="Ej: Juan Pérez"
+                                        className="w-full p-2.5 border border-border rounded-lg text-sm bg-background text-foreground focus:ring-1 focus:ring-primary focus:outline-none"
                                         value={razonSocial}
                                         onChange={e => setRazonSocial(e.target.value)}
                                     />
                                 </div>
-                            )}
+                            </div>
                         </div>
 
                         {/* ── Método de Pago ── */}

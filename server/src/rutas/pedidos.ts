@@ -273,6 +273,11 @@ router.patch('/:id', async (req, res) => {
     const { id } = req.params;
     const { estado, item_id, estado_item, datos_facturacion } = req.body;
 
+    // Consultar estado anterior y número de ficha
+    const resPrevio = await pool.query('SELECT estado, numero_ficha FROM pedidos WHERE id = $1', [id]);
+    const estadoAnterior = resPrevio.rows[0]?.estado;
+    const numeroFicha = resPrevio.rows[0]?.numero_ficha;
+
     if (item_id && estado_item) {
       // Actualizar estado general del pedido si venía en el body (TableroCocina recalcula estado y lo manda)
       if (estado) {
@@ -299,6 +304,25 @@ router.patch('/:id', async (req, res) => {
         const pedidoCompleto = rPedido.rows[0];
         pedidoCompleto.items = rItems.rows;
         emisorTiempoReal.notificarCambio('demo-tenant', 'pedido', 'actualizado', pedidoCompleto);
+      }
+
+      // Validar si es transición de pago para el pedido general al cambiar items (raro pero posible)
+      if (estado === 'pagado' && estadoAnterior !== 'pagado') {
+        const resCosto = await pool.query(`
+            SELECT SUM(i.cantidad * COALESCE(m.costo, 0)) AS total_costo
+            FROM items_pedido i
+            JOIN elementos_menu m ON i.id_elemento_menu = m.id
+            WHERE i.id_pedido = $1
+        `, [id]);
+        const totalCosto = parseFloat(resCosto.rows[0]?.total_costo || '0');
+        if (totalCosto > 0) {
+          const resGasto = await pool.query(`
+              INSERT INTO gastos (descripcion, monto, categoria, fecha, creado_en, actualizado_en)
+              VALUES ($1, $2, 'Insumos', CURRENT_DATE, NOW(), NOW())
+              RETURNING *
+          `, [`Costo automático - Pedido #${numeroFicha}`, totalCosto]);
+          emisorTiempoReal.notificarCambio('demo-tenant', 'gasto', 'actualizado', resGasto.rows[0]);
+        }
       }
 
       return res.json({ ok: true, item: r.rows[0] });
@@ -364,6 +388,25 @@ router.patch('/:id', async (req, res) => {
     const rItems = await pool.query(`SELECT * FROM items_pedido WHERE id_pedido = $1 ORDER BY creado_en ASC`, [id]);
     pedidoActualizado.items = rItems.rows;
 
+    // Si es transición de pago, registrar el costo como gasto
+    if (estado === 'pagado' && estadoAnterior !== 'pagado') {
+      const resCosto = await pool.query(`
+          SELECT SUM(i.cantidad * COALESCE(m.costo, 0)) AS total_costo
+          FROM items_pedido i
+          JOIN elementos_menu m ON i.id_elemento_menu = m.id
+          WHERE i.id_pedido = $1
+      `, [id]);
+      const totalCosto = parseFloat(resCosto.rows[0]?.total_costo || '0');
+      if (totalCosto > 0) {
+        const resGasto = await pool.query(`
+            INSERT INTO gastos (descripcion, monto, categoria, fecha, creado_en, actualizado_en)
+            VALUES ($1, $2, 'Insumos', CURRENT_DATE, NOW(), NOW())
+            RETURNING *
+        `, [`Costo automático - Pedido #${numeroFicha}`, totalCosto]);
+        emisorTiempoReal.notificarCambio('demo-tenant', 'gasto', 'actualizado', resGasto.rows[0]);
+      }
+    }
+
     // Emitir cambio en tiempo real a todos (sobrescribe la versión del cliente)
     emisorTiempoReal.notificarCambio('demo-tenant', 'pedido', 'actualizado', pedidoActualizado);
 
@@ -398,6 +441,31 @@ router.post('/cerrar-dia', async (req, res) => {
     const pedidos = pedidosResult.rows;
     const total = pedidos.reduce((acc: number, p: any) => acc + parseFloat(p.total), 0);
     const totalItems = pedidos.reduce((acc: number, p: any) => acc + (p.items?.filter((i: any) => i !== null).length || 0), 0);
+
+    // Obtener pedidos que cambiarán a pagado
+    const pedidosAPagarResult = await client.query(`
+        SELECT id, numero_ficha FROM pedidos
+        WHERE estado NOT IN ('pagado', 'cancelado')
+        AND DATE(creado_en AT TIME ZONE 'America/La_Paz') = $1
+    `, [hoy]);
+
+    for (const p of pedidosAPagarResult.rows) {
+        const resCosto = await client.query(`
+            SELECT SUM(i.cantidad * COALESCE(m.costo, 0)) AS total_costo
+            FROM items_pedido i
+            JOIN elementos_menu m ON i.id_elemento_menu = m.id
+            WHERE i.id_pedido = $1
+        `, [p.id]);
+        const totalCosto = parseFloat(resCosto.rows[0]?.total_costo || '0');
+        if (totalCosto > 0) {
+            const resGasto = await client.query(`
+                INSERT INTO gastos (descripcion, monto, categoria, fecha, creado_en, actualizado_en)
+                VALUES ($1, $2, 'Insumos', CURRENT_DATE, NOW(), NOW())
+                RETURNING *
+            `, [`Costo automático - Pedido #${p.numero_ficha}`, totalCosto]);
+            emisorTiempoReal.notificarCambio('demo-tenant', 'gasto', 'actualizado', resGasto.rows[0]);
+        }
+    }
 
     // Marcar todos como pagados
     await client.query(`

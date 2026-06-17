@@ -20,11 +20,11 @@ router.get('/', async (req, res) => {
 // POST /api/menu — crear elemento
 router.post('/', async (req, res) => {
     try {
-        const { id, nombre, categoria, precio_actual, disponible, descripcion, url_imagen, imagen_base64 } = req.body;
+        const { id, nombre, categoria, precio_actual, disponible, descripcion, url_imagen, imagen_base64, costo } = req.body;
         const r = await pool.query(`
             INSERT INTO elementos_menu
-                (id, nombre, categoria, precio_actual, disponible, descripcion, url_imagen, imagen_base64, actualizado_en)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
+                (id, nombre, categoria, precio_actual, disponible, descripcion, url_imagen, imagen_base64, costo, actualizado_en)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
             ON CONFLICT (id) DO UPDATE SET
                 nombre = EXCLUDED.nombre,
                 categoria = EXCLUDED.categoria,
@@ -33,9 +33,10 @@ router.post('/', async (req, res) => {
                 descripcion = EXCLUDED.descripcion,
                 url_imagen = EXCLUDED.url_imagen,
                 imagen_base64 = EXCLUDED.imagen_base64,
+                costo = EXCLUDED.costo,
                 actualizado_en = NOW()
             RETURNING *
-        `, [id, nombre, categoria, precio_actual, disponible ?? true, descripcion, url_imagen, imagen_base64]);
+        `, [id, nombre, categoria, precio_actual, disponible ?? true, descripcion, url_imagen, imagen_base64, costo ?? 0]);
         emisorTiempoReal.notificarCambio('demo-tenant', 'menu', 'actualizado', r.rows[0]);
         res.status(201).json(r.rows[0]);
     } catch (error: any) {
