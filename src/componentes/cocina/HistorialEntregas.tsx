@@ -5,6 +5,7 @@ import { Badge } from '@/componentes/ui/badge';
 import { Clock, PackageCheck, ChefHat } from 'lucide-react';
 import { format, isToday, isYesterday } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { formatearFechaLocal } from '@/hooks/useInicializacion';
 
 interface EntregaItem {
     pedidoId: string;
@@ -27,9 +28,11 @@ const vaACocina = (cat?: string): boolean => {
 function agruparPorDia(items: EntregaItem[]) {
     const grupos: Record<string, EntregaItem[]> = {};
     for (const it of items) {
-        const fecha = it.entregado_en.slice(0, 10);
-        if (!grupos[fecha]) grupos[fecha] = [];
-        grupos[fecha].push(it);
+        const fecha = formatearFechaLocal(it.entregado_en);
+        if (fecha) {
+            if (!grupos[fecha]) grupos[fecha] = [];
+            grupos[fecha].push(it);
+        }
     }
     return Object.entries(grupos).sort((a, b) => b[0].localeCompare(a[0]));
 }

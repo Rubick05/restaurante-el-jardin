@@ -14,7 +14,7 @@ import {
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState } from 'react';
-import { API_BASE_URL, normalizarPedidos } from '@/hooks/useInicializacion';
+import { API_BASE_URL, normalizarPedidos, formatearFechaLocal } from '@/hooks/useInicializacion';
 import NavegadorMenu from '@/componentes/mesero/NavegadorMenu';
 import { ModalCobro } from '@/componentes/mesero/ModalCobro';
 
@@ -331,8 +331,7 @@ export default function ResumenPedidosDia() {
                 alert(`✅ Día cerrado. Total: Bs ${data.total_recaudado?.toFixed(2)}`);
             } else {
                 // Offline: cerrar localmente
-                const hoy = new Date();
-                const fechaStr = hoy.toISOString().slice(0, 10);
+                const fechaStr = formatearFechaLocal(new Date());
                 for (const pedido of pedidosDia) {
                     if (pedido.estado !== 'pagado') {
                         await bdLocal.pedidos.update(pedido.id, {

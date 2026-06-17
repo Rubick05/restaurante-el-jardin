@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { startOfDay, format, subDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { API_BASE_URL } from '@/hooks/useInicializacion';
+import { API_BASE_URL, normalizarPedidos, formatearFechaLocal } from '@/hooks/useInicializacion';
 
 const CATEGORIAS_GASTOS = [
     'Insumos',
@@ -44,7 +44,7 @@ export default function ReportesVentas() {
     const [descripcion, setDescripcion] = useState('');
     const [monto, setMonto] = useState('');
     const [categoria, setCategoria] = useState('Insumos');
-    const [fecha, setFecha] = useState(new Date().toISOString().slice(0, 10));
+    const [fecha, setFecha] = useState(formatearFechaLocal(new Date()));
     const [guardando, setGuardando] = useState(false);
 
     // Cargar Pedidos e Ingresos
@@ -53,16 +53,43 @@ export default function ReportesVentas() {
         queryFn: async () => {
             const fechaLimite = subDays(startOfDay(new Date()), diasRango);
 
-            // Cargar pedidos locales
-            const todosPedidos = await bdLocal.pedidos
+            // Cargar pedidos locales activos e históricos del rango
+            const pedidosLocales = await bdLocal.pedidos
                 .where('creado_en')
                 .above(fechaLimite.toISOString())
                 .toArray();
 
-            // Filtrar pagados / entregados
-            const pedidosValidos = todosPedidos.filter(
-                p => p.estado === 'pagado' || p.estado === 'entregado'
-            );
+            const todosDiasCerrados = await bdLocal.diasCerrados.toArray();
+            const pedidosHistoricos: Pedido[] = [];
+            todosDiasCerrados.forEach(d => {
+                if (d.pedidos_snapshot) {
+                    try {
+                        const snap = JSON.parse(d.pedidos_snapshot);
+                        if (Array.isArray(snap)) {
+                            pedidosHistoricos.push(...snap);
+                        }
+                    } catch (e) {
+                        console.error("Error al parsear pedidos_snapshot:", e);
+                    }
+                }
+            });
+
+            // Combinar y eliminar duplicados por ID
+            const combinados = [...pedidosLocales, ...pedidosHistoricos];
+            const mapPedidos = new Map<string, Pedido>();
+            combinados.forEach(p => {
+                mapPedidos.set(p.id, p);
+            });
+
+            const todosPedidos = Array.from(mapPedidos.values());
+            const todosPedidosNormalizados = normalizarPedidos(todosPedidos);
+
+            // Filtrar pagados / entregados que están dentro del rango de fecha
+            const pedidosValidos = todosPedidosNormalizados.filter(p => {
+                const esEstadoCorrecto = p.estado === 'pagado' || p.estado === 'entregado';
+                const esFechaValida = p.creado_en && new Date(p.creado_en) >= fechaLimite;
+                return esEstadoCorrecto && esFechaValida;
+            });
 
             // Cargar gastos locales
             const todosGastos = await bdLocal.gastos.toArray();
@@ -87,23 +114,27 @@ export default function ReportesVentas() {
 
             // Sumar ingresos
             pedidosValidos.forEach(p => {
-                const fechaKey = p.creado_en.slice(0, 10);
+                if (!p.creado_en) return;
+                const fechaKey = formatearFechaLocal(p.creado_en);
                 if (agrupadoPorDia[fechaKey]) {
-                    agrupadoPorDia[fechaKey].ingresos += p.total;
+                    agrupadoPorDia[fechaKey].ingresos += Number(p.total || 0);
                 }
             });
 
             // Sumar gastos
             gastosFiltrados.forEach(g => {
-                const fechaKey = g.fecha.slice(0, 10);
+                if (!g.fecha) return;
+                const fechaKey = formatearFechaLocal(g.fecha);
                 if (agrupadoPorDia[fechaKey]) {
-                    agrupadoPorDia[fechaKey].gastos += g.monto;
+                    agrupadoPorDia[fechaKey].gastos += Number(g.monto || 0);
                 }
             });
 
             // Calcular utilidades diarias
             Object.keys(agrupadoPorDia).forEach(k => {
-                agrupadoPorDia[k].utilidad = agrupadoPorDia[k].ingresos - agrupadoPorDia[k].gastos;
+                const ingresos = Number(agrupadoPorDia[k].ingresos || 0);
+                const gastos = Number(agrupadoPorDia[k].gastos || 0);
+                agrupadoPorDia[k].utilidad = ingresos - gastos;
             });
 
             // Convertir a array para gráficos
@@ -144,7 +175,7 @@ export default function ReportesVentas() {
             // 3. Consolidar platos más vendidos en el rango
             const platosVendidos: Record<string, { cantidad: number; total: number; categoria: string; costoUnitario: number }> = {};
             pedidosValidos.forEach(p => {
-                p.items?.forEach(item => {
+                p.items?.forEach((item: any) => {
                     const nombre = item.nombre_item;
                     if (!platosVendidos[nombre]) {
                         const costoUnit = costoMap[item.id_elemento_menu] || costoMap[nombre] || 0;
@@ -174,7 +205,11 @@ export default function ReportesVentas() {
                 historicoFinanciero,
                 gastosPorCategoriaData,
                 topPlatos,
-                todosGastos: todosGastos.sort((a, b) => b.fecha.localeCompare(a.fecha) || b.creado_en.localeCompare(a.creado_en)),
+                todosGastos: todosGastos.sort((a, b) => {
+                    const cmpFecha = (b.fecha || '').localeCompare(a.fecha || '');
+                    if (cmpFecha !== 0) return cmpFecha;
+                    return (b.creado_en || '').localeCompare(a.creado_en || '');
+                }),
                 stats: {
                     totalIngresos,
                     totalGastos,
@@ -379,7 +414,7 @@ export default function ReportesVentas() {
                                     <div className="h-full flex items-center justify-center text-sm text-muted-foreground">Cargando gráfico...</div>
                                 ) : (
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <ComposedChart data={reportData?.historicoFinanciero}>
+                                        <ComposedChart data={reportData?.historicoFinanciero || []}>
                                             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                                             <XAxis dataKey="fechaLabel" stroke="hsl(var(--muted-foreground))" fontSize={11} />
                                             <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} />
@@ -415,7 +450,7 @@ export default function ReportesVentas() {
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <PieChart>
                                                     <Pie
-                                                        data={reportData.gastosPorCategoriaData}
+                                                        data={reportData?.gastosPorCategoriaData || []}
                                                         cx="50%"
                                                         cy="50%"
                                                         innerRadius={45}
@@ -616,7 +651,7 @@ export default function ReportesVentas() {
                                     {/* Gráfico de platos */}
                                     <div className="h-[250px] border border-border rounded-lg bg-muted/10 p-2">
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={reportData.topPlatos.slice(0, 10)} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+                                            <BarChart data={reportData?.topPlatos?.slice(0, 10) || []} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
                                                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                                                 <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11} />
                                                 <YAxis dataKey="nombre" type="category" stroke="hsl(var(--muted-foreground))" fontSize={10} width={100} />

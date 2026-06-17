@@ -43,6 +43,33 @@ export function normalizarMenu(items: any[]): any[] {
     }));
 }
 
+/** Formatea una fecha o string ISO a YYYY-MM-DD en zona horaria local, respetando strings ya formateados */
+export function formatearFechaLocal(dateInput?: string | Date): string {
+    if (!dateInput) return '';
+    try {
+        if (typeof dateInput === 'string') {
+            if (/^\d{4}-\d{2}-\d{2}$/.test(dateInput)) {
+                return dateInput;
+            }
+            const d = new Date(dateInput);
+            if (isNaN(d.getTime())) return '';
+            const anio = d.getFullYear();
+            const mes = String(d.getMonth() + 1).padStart(2, '0');
+            const dia = String(d.getDate()).padStart(2, '0');
+            return `${anio}-${mes}-${dia}`;
+        } else if (dateInput instanceof Date) {
+            if (isNaN(dateInput.getTime())) return '';
+            const anio = dateInput.getFullYear();
+            const mes = String(dateInput.getMonth() + 1).padStart(2, '0');
+            const dia = String(dateInput.getDate()).padStart(2, '0');
+            return `${anio}-${mes}-${dia}`;
+        }
+    } catch (e) {
+        console.error('Error al formatear fecha local:', e);
+    }
+    return '';
+}
+
 /** Normaliza campos numéricos de pedidos que PostgreSQL devuelve como strings */
 export function normalizarPedidos(pedidos: any[]): any[] {
     return pedidos.map(p => ({
@@ -60,6 +87,7 @@ export function normalizarPedidos(pedidos: any[]): any[] {
         sincronizado: true,
     }));
 }
+
 
 export function useInicializacion() {
     const queryClient = useQueryClient();
@@ -82,25 +110,52 @@ export function useInicializacion() {
                 queryClient.invalidateQueries({ queryKey: ['menu'] });
             }
 
-            // ── 2. Sincronizar pedidos activos ───────────────────────────────
-            const resPedidos = await fetch(`${base}/api/pedidos`, {
-                signal: AbortSignal.timeout(8000)
-            });
-            if (resPedidos.ok) {
-                const pedidos = normalizarPedidos(await resPedidos.json());
+            // ── 2. Sincronizar pedidos activos + pedidos de hoy ───────────────────────────────
+            const [resPedidosActivos, resPedidosHoy] = await Promise.all([
+                fetch(`${base}/api/pedidos`, { signal: AbortSignal.timeout(8000) }).catch(() => null),
+                fetch(`${base}/api/pedidos?hoy=true`, { signal: AbortSignal.timeout(8000) }).catch(() => null)
+            ]);
+
+            if ((resPedidosActivos && resPedidosActivos.ok) || (resPedidosHoy && resPedidosHoy.ok)) {
+                const arrActivos = resPedidosActivos && resPedidosActivos.ok ? await resPedidosActivos.json() : [];
+                const arrHoy = resPedidosHoy && resPedidosHoy.ok ? await resPedidosHoy.json() : [];
+
+                // Combinar y normalizar
+                const combinados = normalizarPedidos([...arrActivos, ...arrHoy]);
+
+                // Deduplicar por ID de pedido
+                const mapPedidos = new Map<string, any>();
+                combinados.forEach(p => {
+                    mapPedidos.set(p.id, p);
+                });
+                const pedidosUnicos = Array.from(mapPedidos.values());
 
                 // Detectar pedidos que el servidor ya eliminó para borrarlos localmente
-                const idsServidor = new Set(pedidos.map((p: any) => p.id));
+                const idsServidor = new Set(pedidosUnicos.map((p: any) => p.id));
                 const locales = await bdLocal.pedidos.toArray();
+                
+                // Conservar hoy los pedidos cobrados locales para reportes/ventas
+                const hoyStr = formatearFechaLocal(new Date());
                 const aBorrar = locales
-                    .filter(p => !idsServidor.has(p.id) && p.sincronizado === true)
+                    .filter(p => {
+                        const noEnServidor = !idsServidor.has(p.id);
+                        if (noEnServidor && p.sincronizado === true) {
+                            const esFinalizado = p.estado === 'pagado' || p.estado === 'cancelado';
+                            const esDeHoy = p.creado_en && formatearFechaLocal(p.creado_en) === hoyStr;
+                            if (esFinalizado && esDeHoy) {
+                                return false; // No borrar, conservar hoy
+                            }
+                            return true; // Borrar
+                        }
+                        return false;
+                    })
                     .map(p => p.id);
 
                 if (aBorrar.length > 0) {
                     await bdLocal.pedidos.bulkDelete(aBorrar);
                 }
 
-                await bdLocal.pedidos.bulkPut(pedidos);
+                await bdLocal.pedidos.bulkPut(pedidosUnicos);
                 queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
                 queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
                 queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
@@ -140,7 +195,7 @@ export function useInicializacion() {
                     descripcion: g.descripcion,
                     monto: Number(g.monto ?? 0),
                     categoria: g.categoria,
-                    fecha: g.fecha ? g.fecha.slice(0, 10) : new Date().toISOString().slice(0, 10),
+                    fecha: g.fecha ? formatearFechaLocal(g.fecha) : formatearFechaLocal(new Date()),
                     creado_en: g.creado_en,
                     actualizado_en: g.actualizado_en
                 }));
