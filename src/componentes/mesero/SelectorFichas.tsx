@@ -56,10 +56,10 @@ export default function SelectorFichas({ onSelect, fichaActual }: Props) {
                             variant={esActual ? "default" : ocupada ? "outline" : "secondary"}
                             disabled={ocupada && !esActual}
                             onClick={() => onSelect(numero)}
-                            className={`h-16 text-2xl font-black transition-all ${ocupada && !esActual ? "opacity-50 bg-slate-200 text-slate-400 cursor-not-allowed border-dashed" : ""
-                                } ${esActual ? "ring-2 ring-orange-500 bg-orange-600" : ""}`}
+                            className={`h-16 text-2xl font-black transition-all ${ocupada && !esActual ? "opacity-40 bg-muted/20 text-muted-foreground/30 cursor-not-allowed border-dashed border-border" : ""
+                                } ${esActual ? "ring-2 ring-primary bg-primary text-primary-foreground text-glow-gold glow-gold scale-105" : ""}`}
                         >
-                            <Hash className="w-4 h-4 mr-1" />
+                            <Hash className="w-4 h-4 mr-1 opacity-70" />
                             {numero}
                         </Button>
                     );
@@ -67,16 +67,16 @@ export default function SelectorFichas({ onSelect, fichaActual }: Props) {
             </div>
             <div className="flex gap-4 justify-center mt-6 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-secondary rounded"></div>
+                    <div className="w-4 h-4 bg-secondary rounded border border-border"></div>
                     <span>Disponible</span>
                 </div>
                 <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 bg-slate-200 border border-dashed rounded opacity-50"></div>
+                    <div className="w-4 h-4 bg-muted/20 border border-dashed border-border rounded opacity-50"></div>
                     <span>Ocupada</span>
                 </div>
                 {fichaActual && (
                     <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 bg-orange-600 rounded ring-2 ring-orange-500"></div>
+                        <div className="w-4 h-4 bg-primary rounded ring-1 ring-primary"></div>
                         <span>Actual</span>
                     </div>
                 )}

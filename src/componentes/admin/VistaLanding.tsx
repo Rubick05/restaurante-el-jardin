@@ -34,6 +34,7 @@ interface GaleriaItem {
     span: string;
     tagline?: string;
     detalles?: string;
+    id_elemento_menu?: string;
 }
 
 const BADGE_CHIPS = ['Nuevo', 'Promo', 'Evento', 'Hoy', 'Especial'] as const;
@@ -97,6 +98,18 @@ export default function VistaLanding() {
             }
             return [];
         },
+    });
+
+    // Elementos del menú para vincular
+    const { data: menuElementos = [] } = useQuery<any[]>({
+        queryKey: ['menu-elementos-landing'],
+        queryFn: async () => {
+            const res = await fetch(`${API_BASE_URL}/api/menu`);
+            if (res.ok) {
+                return await res.json();
+            }
+            return [];
+        }
     });
 
     // Web Config (Hero Slides y Galería)
@@ -289,7 +302,7 @@ export default function VistaLanding() {
             });
             if (res.ok) {
                 queryClient.invalidateQueries({ queryKey: ['web-config'] });
-                setMosaicoForm({ src: '', nombre: '', span: 'span-1', tagline: '', detalles: '' });
+                setMosaicoForm({ src: '', nombre: '', span: 'span-1', tagline: '', detalles: '', id_elemento_menu: undefined });
                 setMosaicoArchivoNombre('');
                 setEditandoMosaicoIndex(null);
             } else {
@@ -318,7 +331,8 @@ export default function VistaLanding() {
             nombre: mosaicoForm.nombre.trim(),
             span: mosaicoForm.span || 'span-1',
             tagline: mosaicoForm.tagline?.trim() || '',
-            detalles: mosaicoForm.detalles?.trim() || ''
+            detalles: mosaicoForm.detalles?.trim() || '',
+            id_elemento_menu: mosaicoForm.id_elemento_menu
         };
 
         let nuevaLista = [...galeriaItems];
@@ -769,6 +783,39 @@ export default function VistaLanding() {
                                     </div>
 
                                     <div className="space-y-1.5">
+                                        <Label htmlFor="mos-vinculo" className="text-xs">Vincular a Plato del Menú (Opcional):</Label>
+                                        <select
+                                            id="mos-vinculo"
+                                            value={mosaicoForm.id_elemento_menu || ''}
+                                            onChange={e => {
+                                                const selectedId = e.target.value;
+                                                const plato = menuElementos.find((p: any) => p.id === selectedId);
+                                                if (plato) {
+                                                    setMosaicoForm(prev => ({
+                                                        ...prev,
+                                                        id_elemento_menu: selectedId,
+                                                        nombre: plato.nombre,
+                                                        src: plato.imagen_base64 || plato.url_imagen || '',
+                                                        tagline: prev.tagline || plato.descripcion || '',
+                                                        detalles: prev.detalles || `Bs. ${plato.precio_actual}`
+                                                    }));
+                                                } else {
+                                                    setMosaicoForm(prev => ({
+                                                        ...prev,
+                                                        id_elemento_menu: undefined
+                                                    }));
+                                                }
+                                            }}
+                                            className="w-full bg-background border border-border text-foreground rounded-md p-2 text-xs outline-none focus:ring-1 focus:ring-primary"
+                                        >
+                                            <option value="">-- No vincular --</option>
+                                            {menuElementos.map((p: any) => (
+                                                <option key={p.id} value={p.id}>{p.nombre} ({p.categoria})</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-1.5">
                                         <Label htmlFor="mos-link" className="text-[10px] text-muted-foreground">URL Externa de la foto (Opcional):</Label>
                                         <Input
                                             id="mos-link"
@@ -841,7 +888,7 @@ export default function VistaLanding() {
                                                 type="button"
                                                 variant="outline"
                                                 onClick={() => {
-                                                    setMosaicoForm({ src: '', nombre: '', span: 'span-1', tagline: '', detalles: '' });
+                                                    setMosaicoForm({ src: '', nombre: '', span: 'span-1', tagline: '', detalles: '', id_elemento_menu: undefined });
                                                     setEditandoMosaicoIndex(null);
                                                     setMosaicoArchivoNombre('');
                                                 }}
@@ -873,9 +920,14 @@ export default function VistaLanding() {
                                                     <img src={item.src} className="w-16 h-16 object-cover rounded border border-border shrink-0" alt={item.nombre} />
                                                     <div className="flex-1 min-w-0 flex flex-col justify-between">
                                                         <div>
-                                                            <div className="flex justify-between items-start">
+                                                            <div className="flex justify-between items-start flex-wrap gap-1">
                                                                 <h4 className="font-semibold text-xs text-foreground truncate">{item.nombre}</h4>
-                                                                <Badge className="text-[9px] bg-primary/20 text-primary border-none p-0.5">{spanLabel}</Badge>
+                                                                <div className="flex gap-1 items-center">
+                                                                    {item.id_elemento_menu && (
+                                                                        <Badge className="text-[8px] bg-emerald-500/20 text-emerald-400 border-none px-1">✓ Vinculado</Badge>
+                                                                    )}
+                                                                    <Badge className="text-[9px] bg-primary/20 text-primary border-none p-0.5">{spanLabel}</Badge>
+                                                                </div>
                                                             </div>
                                                             {item.tagline && <p className="text-[10px] text-muted-foreground truncate">{item.tagline}</p>}
                                                         </div>

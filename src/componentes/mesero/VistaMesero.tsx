@@ -47,19 +47,19 @@ export default function VistaMesero() {
     }
 
     return (
-        <div className="h-full flex flex-col relative w-full bg-slate-50">
+        <div className="h-full flex flex-col relative w-full bg-background">
             {/* Header */}
-            <header className="px-6 py-4 bg-white border-b shadow-sm sticky top-0 z-10 flex justify-between items-center">
+            <header className="px-6 py-4 bg-card border-b border-border shadow-sm sticky top-0 z-10 flex justify-between items-center glow-gold">
                 <div>
-                    <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
-                        <UtensilsCrossed className="w-6 h-6 text-orange-600" />
+                    <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
+                        <UtensilsCrossed className="w-6 h-6 text-primary text-glow-gold" />
                         Mis Pedidos
                     </h2>
                     <p className="text-sm text-muted-foreground">Gestiona las órdenes activas</p>
                 </div>
                 <Button
                     onClick={irANuevoPedido}
-                    className="bg-orange-600 hover:bg-orange-700 text-white shadow-md gap-2 hidden md:flex"
+                    className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-md gap-2 hidden md:flex font-bold"
                 >
                     <PlusCircle className="w-5 h-5" />
                     Nuevo Pedido
@@ -78,7 +78,7 @@ export default function VistaMesero() {
             <div className="md:hidden fixed bottom-6 right-6 z-50">
                 <Button
                     size="icon"
-                    className="rounded-full w-14 h-14 shadow-xl bg-orange-600 hover:bg-orange-700 p-0"
+                    className="rounded-full w-14 h-14 shadow-xl bg-primary hover:bg-primary/90 text-primary-foreground p-0 font-bold"
                     onClick={irANuevoPedido}
                 >
                     <PlusCircle className="w-8 h-8" />

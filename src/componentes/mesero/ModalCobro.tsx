@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -172,10 +172,10 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
         <Dialog open={open} onOpenChange={(o) => { if (!o) handleCerrar(); }}>
             <DialogContent className="sm:max-w-lg max-h-[92vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-xl">
-                        <Receipt className="w-5 h-5 text-green-600" />
+                    <DialogTitle className="flex items-center gap-2 text-xl font-serif text-primary">
+                        <Receipt className="w-5 h-5 text-primary text-glow-gold" />
                         Cobrar Pedido
-                        <Badge variant="outline" className="ml-2 font-mono">
+                        <Badge variant="outline" className="ml-2 font-mono border-primary/20 text-primary">
                             Ficha #{pedido.numero_ficha} · Letrero {pedido.numero_letrero || "?"}
                         </Badge>
                     </DialogTitle>
@@ -184,12 +184,12 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                 {cobrado ? (
                     /* ── Pantalla de éxito ── */
                     <div className="flex flex-col items-center justify-center py-10 gap-4">
-                        <CheckCircle2 className="w-20 h-20 text-green-500" />
-                        <p className="text-2xl font-bold text-green-700">¡Cobrado!</p>
+                        <CheckCircle2 className="w-20 h-20 text-emerald-400" />
+                        <p className="text-2xl font-bold text-foreground">¡Cobrado!</p>
                         <p className="text-muted-foreground text-center">
                             El pedido fue marcado como <strong>pagado</strong> correctamente.
                         </p>
-                        <Button onClick={handleCerrar} className="mt-4 bg-green-600 hover:bg-green-700 w-full">
+                        <Button onClick={handleCerrar} className="mt-4 bg-primary hover:bg-primary/90 text-primary-foreground w-full font-bold">
                             Cerrar
                         </Button>
                     </div>
@@ -198,23 +198,23 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
 
                         {/* ── Resumen de Platos ── */}
                         {platos.length > 0 && (
-                            <div className="rounded-lg border overflow-hidden">
-                                <div className="bg-orange-50 px-4 py-2 flex items-center gap-2 border-b">
-                                    <UtensilsCrossed className="w-4 h-4 text-orange-600" />
-                                    <span className="font-semibold text-sm text-orange-800">Platos</span>
+                            <div className="rounded-lg border border-border overflow-hidden">
+                                <div className="bg-amber-950/20 px-4 py-2 flex items-center gap-2 border-b border-border">
+                                    <UtensilsCrossed className="w-4 h-4 text-primary" />
+                                    <span className="font-semibold text-sm text-amber-400">Platos</span>
                                 </div>
-                                <div className="divide-y">
+                                <div className="divide-y divide-border">
                                     {platos.map((item, idx) => (
                                         <div key={idx} className="flex justify-between items-center px-4 py-2 text-sm">
                                             <span className="flex-1">
-                                                <span className="font-bold text-slate-700">{item.cantidad}×</span>{" "}
+                                                <span className="font-bold text-foreground">{item.cantidad}×</span>{" "}
                                                 {item.nombre_item}
                                             </span>
-                                            <span className="font-mono text-slate-700">Bs {Number(item.subtotal).toFixed(2)}</span>
+                                            <span className="font-mono text-foreground/90">Bs {Number(item.subtotal).toFixed(2)}</span>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="bg-orange-50/50 px-4 py-2 flex justify-between text-sm font-semibold border-t">
+                                <div className="bg-amber-950/30 px-4 py-2 flex justify-between text-sm font-semibold border-t border-border text-amber-400">
                                     <span>Subtotal platos</span>
                                     <span>Bs {Number(subtotalPlatos).toFixed(2)}</span>
                                 </div>
@@ -223,23 +223,23 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
 
                         {/* ── Resumen de Bebidas / Consumo ── */}
                         {bebidas.length > 0 && (
-                            <div className="rounded-lg border overflow-hidden">
-                                <div className="bg-blue-50 px-4 py-2 flex items-center gap-2 border-b">
-                                    <Coffee className="w-4 h-4 text-blue-600" />
-                                    <span className="font-semibold text-sm text-blue-800">Bebidas y Consumo</span>
+                            <div className="rounded-lg border border-border overflow-hidden">
+                                <div className="bg-blue-950/20 px-4 py-2 flex items-center gap-2 border-b border-border">
+                                    <Coffee className="w-4 h-4 text-blue-400" />
+                                    <span className="font-semibold text-sm text-blue-300">Bebidas y Consumo</span>
                                 </div>
-                                <div className="divide-y">
+                                <div className="divide-y divide-border">
                                     {bebidas.map((item, idx) => (
                                         <div key={idx} className="flex justify-between items-center px-4 py-2 text-sm">
                                             <span className="flex-1">
-                                                <span className="font-bold text-slate-700">{item.cantidad}×</span>{" "}
+                                                <span className="font-bold text-foreground">{item.cantidad}×</span>{" "}
                                                 {item.nombre_item}
                                             </span>
-                                            <span className="font-mono text-slate-700">Bs {Number(item.subtotal).toFixed(2)}</span>
+                                            <span className="font-mono text-foreground/90">Bs {Number(item.subtotal).toFixed(2)}</span>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="bg-blue-50/50 px-4 py-2 flex justify-between text-sm font-semibold border-t">
+                                <div className="bg-blue-950/30 px-4 py-2 flex justify-between text-sm font-semibold border-t border-border text-blue-300">
                                     <span>Subtotal bebidas</span>
                                     <span>Bs {Number(subtotalBebidas).toFixed(2)}</span>
                                 </div>
@@ -247,14 +247,14 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                         )}
 
                         {/* ── Total ── */}
-                        <div className="bg-slate-900 text-white rounded-xl px-5 py-4 flex justify-between items-center">
+                        <div className="bg-primary text-primary-foreground rounded-xl px-5 py-4 flex justify-between items-center glow-gold">
                             <span className="text-lg font-bold">TOTAL A PAGAR</span>
                             <span className="text-3xl font-black">Bs {Number(total).toFixed(2)}</span>
                         </div>
 
                         {/* ── Tipo de Documento ── */}
-                        <div className="space-y-2 border rounded-lg p-3 bg-slate-50">
-                            <h4 className="font-semibold text-sm flex items-center gap-2">
+                        <div className="space-y-2 border border-border rounded-lg p-3 bg-muted/30">
+                            <h4 className="font-semibold text-sm flex items-center gap-2 text-foreground">
                                 <Hash className="w-4 h-4" /> Documento
                             </h4>
                             <div className="flex gap-2">
@@ -262,7 +262,7 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                                     size="sm"
                                     variant={tipoDoc === "recibo" ? "default" : "outline"}
                                     onClick={() => setTipoDoc("recibo")}
-                                    className="flex-1"
+                                    className="flex-1 font-semibold"
                                 >
                                     Recibo
                                 </Button>
@@ -270,7 +270,7 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                                     size="sm"
                                     variant={tipoDoc === "factura" ? "default" : "outline"}
                                     onClick={() => setTipoDoc("factura")}
-                                    className="flex-1"
+                                    className="flex-1 font-semibold"
                                 >
                                     Factura
                                 </Button>
@@ -279,13 +279,13 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                                 <div className="space-y-2 animate-in slide-in-from-top-2 pt-1">
                                     <input
                                         placeholder="NIT / CI"
-                                        className="w-full p-2 border rounded text-sm bg-white"
+                                        className="w-full p-2 border border-border rounded text-sm bg-background text-foreground"
                                         value={nit}
                                         onChange={e => setNit(e.target.value)}
                                     />
                                     <input
                                         placeholder="Razón Social / Nombre"
-                                        className="w-full p-2 border rounded text-sm bg-white"
+                                        className="w-full p-2 border border-border rounded text-sm bg-background text-foreground"
                                         value={razonSocial}
                                         onChange={e => setRazonSocial(e.target.value)}
                                     />
@@ -295,28 +295,28 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
 
                         {/* ── Método de Pago ── */}
                         <div className="space-y-3">
-                            <h4 className="font-semibold text-sm">Método de Pago</h4>
+                            <h4 className="font-semibold text-sm text-foreground">Método de Pago</h4>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
                                     onClick={() => setMetodoPago("efectivo")}
                                     className={`h-24 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all font-semibold text-sm
                                         ${metodoPago === "efectivo"
-                                            ? "border-green-500 bg-green-50 text-green-700 shadow-md scale-[1.02]"
-                                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                                            ? "border-emerald-500 bg-emerald-950/20 text-emerald-400 shadow-md scale-[1.02]"
+                                            : "border-border bg-card text-foreground hover:bg-muted"
                                         }`}
                                 >
-                                    <Banknote className={`w-8 h-8 ${metodoPago === "efectivo" ? "text-green-600" : "text-slate-400"}`} />
+                                    <Banknote className={`w-8 h-8 ${metodoPago === "efectivo" ? "text-emerald-400" : "text-muted-foreground"}`} />
                                     Efectivo
                                 </button>
                                 <button
                                     onClick={() => setMetodoPago("qr")}
                                     className={`h-24 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all font-semibold text-sm
                                         ${metodoPago === "qr"
-                                            ? "border-blue-500 bg-blue-50 text-blue-700 shadow-md scale-[1.02]"
-                                            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                                            ? "border-blue-500 bg-blue-950/20 text-blue-400 shadow-md scale-[1.02]"
+                                            : "border-border bg-card text-foreground hover:bg-muted"
                                         }`}
                                 >
-                                    <QrCode className={`w-8 h-8 ${metodoPago === "qr" ? "text-blue-600" : "text-slate-400"}`} />
+                                    <QrCode className={`w-8 h-8 ${metodoPago === "qr" ? "text-blue-400" : "text-muted-foreground"}`} />
                                     Código QR
                                 </button>
                             </div>
@@ -324,21 +324,21 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
 
                         {/* ── Vista QR ── */}
                         {metodoPago === "qr" && (
-                            <div className="flex flex-col items-center justify-center p-4 bg-white border-2 border-blue-200 rounded-xl gap-3 animate-in fade-in">
+                            <div className="flex flex-col items-center justify-center p-4 bg-card border-2 border-blue-900/40 rounded-xl gap-3 animate-in fade-in">
                                 {qrImagen ? (
                                     <img
                                         src={qrImagen}
                                         alt="QR de pago"
-                                        className="w-52 h-52 object-contain rounded-lg border shadow"
+                                        className="w-52 h-52 object-contain rounded-lg border border-border shadow"
                                     />
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center bg-slate-100 rounded-xl w-52 h-52 text-slate-400 gap-2">
+                                    <div className="flex flex-col items-center justify-center bg-muted rounded-xl w-52 h-52 text-muted-foreground gap-2">
                                         <QrCode className="w-14 h-14" />
                                         <p className="text-xs text-center px-4">El admin no ha subido un QR aún. Ve a Gestión QR.</p>
                                     </div>
                                 )}
                                 <p className="text-sm text-muted-foreground text-center">Muestra este QR al cliente</p>
-                                <p className="font-bold text-blue-700 text-lg">Bs {Number(total).toFixed(2)}</p>
+                                <p className="font-bold text-blue-400 text-lg">Bs {Number(total).toFixed(2)}</p>
                             </div>
                         )}
                     </div>
@@ -357,7 +357,7 @@ Método:   ${metodoPago === "qr" ? "QR" : "Efectivo"}
                         <Button
                             onClick={handleConfirmar}
                             disabled={!metodoPago || procesando}
-                            className="w-full sm:w-auto font-bold bg-green-600 hover:bg-green-700 text-white h-12 text-base"
+                            className="w-full sm:w-auto font-bold bg-primary hover:bg-primary/90 text-primary-foreground h-12 text-base shadow-md"
                         >
                             {procesando ? (
                                 "Procesando..."

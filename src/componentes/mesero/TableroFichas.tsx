@@ -112,11 +112,11 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
 
     const getStatusInfo = (estado: string) => {
         switch (estado) {
-            case 'pendiente': return { color: 'bg-gray-50 border-gray-200', label: 'Pendiente', badge: 'secondary', borderColor: '#64748b' };
-            case 'en_proceso': return { color: 'bg-blue-50 border-blue-200', label: 'Cocinando', badge: 'default', borderColor: '#3b82f6' };
-            case 'listo': return { color: 'bg-green-50 border-green-200', label: '✓ Listo', badge: 'success', borderColor: '#22c55e' };
-            case 'entregado': return { color: 'bg-orange-50 border-orange-200', label: 'Entregado', badge: 'outline', borderColor: '#f97316' };
-            default: return { color: 'bg-white', label: estado, badge: 'outline', borderColor: '#e2e8f0' };
+            case 'pendiente': return { color: 'bg-muted/40 border-border', label: 'Pendiente', badge: 'secondary', borderColor: '#64748b' };
+            case 'en_proceso': return { color: 'bg-blue-950/20 border-blue-900/50', label: 'Cocinando', badge: 'default', borderColor: '#3b82f6' };
+            case 'listo': return { color: 'bg-green-950/20 border-green-900/50', label: '✓ Listo', badge: 'success', borderColor: '#22c55e' };
+            case 'entregado': return { color: 'bg-amber-950/20 border-amber-900/50', label: 'Entregado', badge: 'outline', borderColor: '#c8903a' };
+            default: return { color: 'bg-card border-border', label: estado, badge: 'outline', borderColor: '#4a7c3f' };
         }
     };
 
@@ -129,8 +129,8 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
             </div>
 
             {pedidos.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground opacity-50 bg-slate-50 rounded-xl border-2 border-dashed">
-                    <Utensils className="w-16 h-16 mb-4 text-slate-300" />
+                <div className="flex flex-col items-center justify-center py-20 text-muted-foreground opacity-50 bg-card rounded-xl border-2 border-dashed border-border glow-gold">
+                    <Utensils className="w-16 h-16 mb-4 text-primary" />
                     <p className="text-xl font-medium">No hay pedidos activos</p>
                     <p className="text-sm">Presiona el botón + para crear uno nuevo</p>
                 </div>
@@ -146,12 +146,12 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                 return (
                     <Card
                         key={pedido.id}
-                        className={`transition-all hover:shadow-md border-l-4 relative group ${esListo ? 'ring-2 ring-green-400 shadow-green-100 shadow-md' : ''}`}
+                        className={`transition-all hover:shadow-md border-l-4 relative group ${esListo ? 'ring-2 ring-green-500 shadow-green-950/20 shadow-md glow-emerald' : 'glow-gold bg-card'}`}
                         style={{ borderLeftColor: status.borderColor }}
                     >
                         {/* Alerta visual cuando está listo */}
                         {esListo && (
-                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white text-[11px] font-black px-4 py-1 rounded-full shadow-lg shadow-green-300/50 flex items-center gap-1.5 ring-4 ring-white animate-bounce">
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-600 text-white text-[11px] font-black px-4 py-1 rounded-full shadow-lg shadow-green-950/50 flex items-center gap-1.5 ring-4 ring-background animate-bounce">
                                 <CheckCircle2 className="w-4 h-4" />
                                 ¡PEDIDO COMPLETO LISTO!
                             </div>
@@ -160,33 +160,33 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                         {/* Botones de acción (arriba a la derecha solo en PC, en móvil van abajo) */}
                         <div className="hidden sm:flex absolute top-3 right-3 z-10 items-center gap-1">
                             {puedeEntregar && (
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-orange-600 hover:bg-orange-50"
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                                     onClick={(e) => handleEntregar(e, pedido)} title="Marcar como entregado">
                                     <CheckCircle2 className="h-4 w-4" />
                                 </Button>
                             )}
                             {puedeEditar && (
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-400 hover:bg-blue-950/20"
                                     onClick={(e) => handleEditar(e, pedido)} title="Editar pedido">
                                     <Pencil className="h-4 w-4" />
                                 </Button>
                             )}
                             {puedeCobrar && (
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-green-700 hover:bg-green-50"
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-emerald-400 hover:bg-emerald-950/20"
                                     onClick={(e) => handleCobrar(e, pedido)} title="Cobrar pedido">
                                     <DollarSign className="h-4 w-4" />
                                 </Button>
                             )}
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-400 hover:bg-red-950/20"
                                 onClick={(e) => handleDelete(e, pedido.id)} title="Eliminar pedido">
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         </div>
 
-                        <CardContent className="p-4 flex items-center gap-4">
+                        <CardContent className="p-4 flex items-center gap-4 bg-card">
                             {/* Letrero + Ficha */}
-                            <div className="flex flex-col items-center justify-center min-w-[70px] border-r pr-4 border-dashed border-slate-200">
-                                <div className="text-5xl font-black text-slate-800 bg-slate-100 rounded-lg w-16 h-16 flex items-center justify-center shadow-sm">
+                            <div className="flex flex-col items-center justify-center min-w-[70px] border-r pr-4 border-dashed border-border">
+                                <div className="text-5xl font-black text-foreground bg-muted rounded-lg w-16 h-16 flex items-center justify-center shadow-sm">
                                     {pedido.numero_letrero || '?'}
                                 </div>
                                 <div className="text-[10px] text-muted-foreground mt-2 font-mono">
@@ -211,8 +211,8 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                                         <span
                                             key={i.id}
                                             className={`px-2 py-0.5 rounded-md text-[11px] uppercase tracking-wider ${i.estado_item === 'listo'
-                                                ? 'bg-green-500 text-white font-black animate-pulse shadow-sm shadow-green-300 ring-2 ring-green-400 ring-offset-1 flex items-center gap-1'
-                                                : 'text-slate-600 bg-slate-100 font-medium whitespace-nowrap'
+                                                ? 'bg-green-600 text-white font-black animate-pulse shadow-sm shadow-green-950 ring-2 ring-green-500 ring-offset-1 flex items-center gap-1'
+                                                : 'text-foreground/85 bg-muted font-medium whitespace-nowrap'
                                                 }`}
                                         >
                                             {i.cantidad}× {i.nombre_item}
@@ -222,42 +222,42 @@ export default function TableroFichas({ onPedidoSelect, onCobrarPedido }: Props)
                                 </div>
 
                                 <div className="flex items-center justify-between mt-2">
-                                    <div className="text-xs text-slate-500">{pedido.items?.length} items</div>
-                                    <div className="font-bold text-green-700 text-sm bg-green-50 px-2 py-0.5 rounded">
+                                    <div className="text-xs text-muted-foreground">{pedido.items?.length} items</div>
+                                    <div className="font-bold text-emerald-400 text-sm bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-900/30">
                                         Bs {Number(pedido.total || 0).toFixed(2)}
                                     </div>
                                 </div>
 
-                                {pedido.notas && (
-                                    <div className="mt-2 text-xs text-orange-700 bg-orange-50 p-2 rounded border border-orange-100 flex items-start gap-1">
+                                {pedido.notas ? (
+                                    <div className="mt-2 text-xs text-amber-400 bg-amber-950/30 p-2 rounded border border-amber-900/50 flex items-start gap-1">
                                         <span className="font-bold shrink-0">Notas:</span>
                                         <span className="italic">{pedido.notas}</span>
                                     </div>
-                                )}
+                                ) : null}
                             </div>
                         </CardContent>
 
                         {/* Fila Inferior para botones de acción SOLAMENTE EN MÓVIL */}
-                        <div className="sm:hidden flex items-center justify-end gap-2 border-t bg-slate-50/50 p-2 overflow-x-auto">
+                        <div className="sm:hidden flex items-center justify-end gap-2 border-t border-border bg-muted/20 p-2 overflow-x-auto">
                             {puedeEntregar && (
-                                <Button variant="outline" size="sm" className="h-9 px-3 text-orange-600 border-orange-200 hover:bg-orange-50 bg-white"
+                                <Button variant="outline" size="sm" className="h-9 px-3 text-primary border-primary/20 hover:bg-primary/10 bg-muted/10"
                                     onClick={(e) => handleEntregar(e, pedido)}>
                                     <CheckCircle2 className="h-4 w-4 mr-1.5" /> Entregar
                                 </Button>
                             )}
                             {puedeEditar && (
-                                <Button variant="outline" size="sm" className="h-9 px-3 text-muted-foreground hover:text-blue-600 bg-white"
+                                <Button variant="outline" size="sm" className="h-9 px-3 text-blue-400 border-blue-900/30 hover:bg-blue-950/20 bg-muted/10"
                                     onClick={(e) => handleEditar(e, pedido)}>
                                     <Pencil className="h-4 w-4 mr-1.5" /> Editar
                                 </Button>
                             )}
                             {puedeCobrar && (
-                                <Button variant="outline" size="sm" className="h-9 px-3 text-green-700 border-green-200 hover:bg-green-50 bg-white"
+                                <Button variant="outline" size="sm" className="h-9 px-3 text-emerald-400 border-emerald-900/30 hover:bg-emerald-950/20 bg-muted/10"
                                     onClick={(e) => handleCobrar(e, pedido)}>
                                     <DollarSign className="h-4 w-4 mr-1" /> Cobrar
                                 </Button>
                             )}
-                            <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 text-red-500 hover:text-red-600 hover:bg-red-50 bg-white border-red-100"
+                            <Button variant="outline" size="icon" className="h-9 w-9 shrink-0 text-red-400 hover:text-red-500 hover:bg-red-950/20 bg-muted/10 border-red-900/30"
                                 onClick={(e) => handleDelete(e, pedido.id)}>
                                 <Trash2 className="h-4 w-4" />
                             </Button>

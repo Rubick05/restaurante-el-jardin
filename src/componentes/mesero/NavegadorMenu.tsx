@@ -1,4 +1,4 @@
-﻿import { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { bdLocal, ElementoMenu, Pedido } from '@/lib/bd/bd-local';
 import { API_BASE_URL, normalizarMenu, normalizarPedidos } from '@/hooks/useInicializacion';
@@ -393,7 +393,7 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
         <div className="flex flex-col h-[calc(100vh-140px)] gap-4">
 
             {/* Header / Barra Superior */}
-            <div className="flex items-center justify-between shrink-0 bg-white p-2 rounded-lg shadow-sm border">
+            <div className="flex items-center justify-between shrink-0 bg-card p-2 rounded-lg shadow-sm border border-border glow-gold">
                 <div className="flex items-center gap-2">
                     {onVolver && (
                         <Button variant="ghost" size="icon" onClick={onVolver}>
@@ -413,14 +413,14 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                     </div>
                 </div>
 
-                <Button onClick={() => setMostrarMenu(true)} className="gap-2 bg-blue-600 hover:bg-blue-700">
+                <Button onClick={() => setMostrarMenu(true)} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                     <BookOpen className="w-4 h-4" />
                     Abrir Menú
                 </Button>
             </div>
 
             {/* Vista Principal */}
-            <div className="flex-1 overflow-y-auto bg-slate-50 rounded-lg border p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto bg-background rounded-lg border border-border p-4 space-y-4">
 
                 {/* Sección 1: Items EXISTENTES (Solo si estamos editando) */}
                 {pedidoVivo && pedidoVivo.items && pedidoVivo.items.length > 0 && (
@@ -438,10 +438,10 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                                         <div
                                             key={idx}
                                             className={`flex items-center gap-2 p-2 rounded border ${estaListo
-                                                ? 'bg-green-50 border-green-200 animate-pulse'
+                                                ? 'bg-green-950/20 border-green-900/50 animate-pulse text-green-400'
                                                 : estaEntregado
-                                                    ? 'bg-slate-50 border-slate-200 opacity-60'
-                                                    : 'bg-slate-100 border-transparent'
+                                                    ? 'bg-muted/40 border-border/50 opacity-60'
+                                                    : 'bg-muted border-transparent'
                                                 }`}
                                         >
                                             {/* Info del item */}
@@ -463,13 +463,13 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                                             </div>
 
                                             {/* Precio */}
-                                            <span className="font-mono text-sm text-slate-600">Bs {Number(item.subtotal).toFixed(2)}</span>
+                                            <span className="font-mono text-sm text-foreground/80">Bs {Number(item.subtotal).toFixed(2)}</span>
 
                                             {/* Botón Entregar — solo si está LISTO */}
                                             {estaListo && (
                                                 <Button
                                                     size="sm"
-                                                    className="bg-green-600 hover:bg-green-700 text-white h-8 px-3 text-xs shrink-0"
+                                                    className="bg-primary hover:bg-primary/90 text-primary-foreground h-8 px-3 text-xs shrink-0 font-bold"
                                                     onClick={() => entregarItem(idx)}
                                                     title="Marcar como entregado al cliente"
                                                 >
@@ -481,25 +481,25 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                                     );
                                 })}
                             </div>
-                            <div className="mt-3 pt-3 border-t flex justify-between font-bold">
+                            <div className="mt-3 pt-3 border-t border-border flex justify-between font-bold">
                                 <span>Total Actual:</span>
-                                <span className="text-green-700">Bs {Number(pedidoVivo.total).toFixed(2)}</span>
+                                <span className="text-emerald-400">Bs {Number(pedidoVivo.total).toFixed(2)}</span>
                             </div>
                         </CardContent>
                     </Card>
                 )}
 
-                {/* Sección 2: Items NUEVOS (Carrito Temporal) */}
+                 {/* Sección 2: Items NUEVOS (Carrito Temporal) */}
                 {itemsNuevos.length === 0 ? (
                     <div className="text-center opacity-50 flex flex-col items-center py-10">
-                        <div className="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center mb-4">
-                            <BookOpen className="w-10 h-10 text-slate-400" />
+                        <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-4">
+                            <BookOpen className="w-10 h-10 text-muted-foreground" />
                         </div>
                         <p className="text-xl font-bold">
                             {pedidoVivo ? 'Agregar más items' : 'El pedido está vacío'}
                         </p>
                         <p className="mb-6">Abre el menú para agregar platos y bebidas</p>
-                        <Button size="lg" onClick={() => setMostrarMenu(true)} className="gap-2">
+                        <Button size="lg" onClick={() => setMostrarMenu(true)} className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                             <Plus className="w-5 h-5" /> Agregar Items
                         </Button>
                     </div>
@@ -562,7 +562,7 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                         </div>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto p-4 bg-slate-50">
+                    <div className="flex-1 overflow-y-auto p-4 bg-background">
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                             {itemsFiltrados.length === 0 ? (
                                 <div className="col-span-full text-center py-20 opacity-50">
@@ -580,11 +580,11 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                         </div>
                     </div>
 
-                    <div className="p-4 border-t bg-white flex justify-between items-center">
+                    <div className="p-4 border-t border-border bg-card flex justify-between items-center">
                         <span className="font-bold">
                             {itemsNuevos.reduce((acc, i) => acc + i.cantidad, 0)} items nuevos
                         </span>
-                        <Button onClick={() => setMostrarMenu(false)}>
+                        <Button onClick={() => setMostrarMenu(false)} className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold">
                             Ver Pedido
                         </Button>
                     </div>
