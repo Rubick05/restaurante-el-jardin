@@ -128,6 +128,38 @@ export function useInicializacion() {
                 queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
             }
 
+            // ── 4. Sincronizar Gastos ────────────────────────────────────────
+            const resGastos = await fetch(`${base}/api/gastos`, {
+                signal: AbortSignal.timeout(8000)
+            });
+            if (resGastos.ok) {
+                const gastosServidor = await resGastos.json();
+                const gastosNormalizados = gastosServidor.map((g: any) => ({
+                    id: g.id,
+                    id_restaurante: g.id_restaurante,
+                    descripcion: g.descripcion,
+                    monto: Number(g.monto ?? 0),
+                    categoria: g.categoria,
+                    fecha: g.fecha ? g.fecha.slice(0, 10) : new Date().toISOString().slice(0, 10),
+                    creado_en: g.creado_en,
+                    actualizado_en: g.actualizado_en
+                }));
+
+                // Borrar locales que no están en el servidor
+                const idsServidor = new Set(gastosNormalizados.map((g: any) => g.id));
+                const locales = await bdLocal.gastos.toArray();
+                const aBorrar = locales
+                    .filter(g => !idsServidor.has(g.id))
+                    .map(g => g.id);
+
+                if (aBorrar.length > 0) {
+                    await bdLocal.gastos.bulkDelete(aBorrar);
+                }
+
+                await bdLocal.gastos.bulkPut(gastosNormalizados);
+                queryClient.invalidateQueries({ queryKey: ['gastos'] });
+            }
+
         } catch (err) {
             console.warn('Sincronización inicial falló (modo offline):', err);
         } finally {

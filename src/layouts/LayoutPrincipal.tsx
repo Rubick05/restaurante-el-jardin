@@ -15,7 +15,8 @@ import {
     X,
     MonitorSmartphone,
     Image,
-    Users
+    Users,
+    TrendingUp
 } from "lucide-react";
 import { Button } from "@/componentes/ui/button";
 import { useAuth } from "@/lib/auth/contexto-auth";
@@ -50,8 +51,9 @@ export default function LayoutPrincipal() {
         <Link to={to} onClick={cerrarSidebar}>
             <Button
                 variant={esRutaActiva(to) ? "secondary" : "ghost"}
-                className={`w-full justify-start gap-3 text-sm font-medium ${esRutaActiva(to) ? 'bg-amber-50 text-amber-900 border border-amber-200' : ''
-                    }`}
+                className={`w-full justify-start gap-3 text-sm font-medium ${
+                    esRutaActiva(to) ? 'bg-primary/10 text-primary border border-primary/20' : ''
+                }`}
             >
                 <Icon className="w-4 h-4 shrink-0" />
                 {label}
@@ -74,7 +76,7 @@ export default function LayoutPrincipal() {
                 </div>
                 {/* Botón cerrar en móvil */}
                 <button
-                    className="md:hidden p-1 rounded-md hover:bg-slate-100"
+                    className="md:hidden p-1 rounded-md hover:bg-accent"
                     onClick={cerrarSidebar}
                 >
                     <X className="w-5 h-5" />
@@ -116,6 +118,7 @@ export default function LayoutPrincipal() {
                             Administración
                         </p>
                         <NavLink to="/admin/pedidos-dia" icon={Calendar} label="Pedidos del Día" />
+                        <NavLink to="/admin/finanzas" icon={TrendingUp} label="Finanzas y Gastos" />
                         <NavLink to="/admin" icon={Settings} label="Gestión Menú" />
                         <NavLink to="/admin/qr" icon={QrCode} label="Gestión QR" />
                         <NavLink to="/admin/historial-dias" icon={History} label="Historial Días" />
@@ -137,7 +140,7 @@ export default function LayoutPrincipal() {
                 </div>
                 <Button
                     variant="ghost"
-                    className="w-full justify-start gap-2 text-red-600 hover:text-red-700 hover:bg-red-50 mt-1"
+                    className="w-full justify-start gap-2 text-red-500 hover:text-red-400 hover:bg-destructive/10 mt-1"
                     onClick={handleLogout}
                 >
                     <LogOut className="w-4 h-4" />
@@ -148,10 +151,10 @@ export default function LayoutPrincipal() {
     );
 
     return (
-        <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden">
+        <div className="flex h-screen bg-background text-foreground overflow-hidden">
 
             {/* ── Sidebar DESKTOP (siempre visible en md+) ── */}
-            <aside className="hidden md:flex w-64 bg-white border-r border-slate-200 flex-col shrink-0">
+            <aside className="hidden md:flex w-64 bg-card border-r border-border flex-col shrink-0">
                 <SidebarContent />
             </aside>
 
@@ -159,13 +162,13 @@ export default function LayoutPrincipal() {
             {/* Overlay */}
             {sidebarAbierto && (
                 <div
-                    className="fixed inset-0 bg-black/40 z-40 md:hidden"
+                    className="fixed inset-0 bg-black/60 z-40 md:hidden"
                     onClick={cerrarSidebar}
                 />
             )}
             {/* Drawer */}
             <aside className={`
-                fixed top-0 left-0 h-full w-72 bg-white border-r border-slate-200 z-50
+                fixed top-0 left-0 h-full w-72 bg-card border-r border-border z-50
                 transform transition-transform duration-300 ease-in-out md:hidden
                 ${sidebarAbierto ? 'translate-x-0' : '-translate-x-full'}
             `}>
@@ -175,10 +178,10 @@ export default function LayoutPrincipal() {
             {/* ── Contenido principal ── */}
             <main className="flex-1 flex flex-col overflow-hidden min-w-0">
                 {/* Header con hamburguesa en móvil */}
-                <header className="h-14 border-b bg-white/90 backdrop-blur-sm sticky top-0 z-30 px-4 flex items-center justify-between shrink-0 shadow-sm">
+                <header className="h-14 border-b border-border bg-card/90 backdrop-blur-sm sticky top-0 z-30 px-4 flex items-center justify-between shrink-0 shadow-sm">
                     {/* Hamburguesa (solo móvil) */}
                     <button
-                        className="md:hidden p-2 rounded-md hover:bg-slate-100 mr-2"
+                        className="md:hidden p-2 rounded-md hover:bg-accent mr-2"
                         onClick={() => setSidebarAbierto(true)}
                         aria-label="Abrir menú"
                     >
@@ -199,7 +202,7 @@ export default function LayoutPrincipal() {
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="md:hidden text-red-600 hover:bg-red-50 p-2"
+                        className="md:hidden text-red-500 hover:bg-destructive/10 p-2"
                         onClick={handleLogout}
                         aria-label="Cerrar sesión"
                     >

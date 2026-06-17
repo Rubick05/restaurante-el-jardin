@@ -93,3 +93,19 @@ INSERT INTO elementos_menu (id, nombre, categoria, precio_actual, disponible, de
   (gen_random_uuid()::TEXT, 'Cerveza Paceña',           'Cervezas',     18,  TRUE, NULL),
   (gen_random_uuid()::TEXT, 'Cerveza Ducal',            'Cervezas',     18,  TRUE, NULL)
 ON CONFLICT DO NOTHING;
+
+-- ───────────────────────────── GASTOS ─────────────────────────────
+CREATE TABLE IF NOT EXISTS gastos (
+    id              TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+    id_restaurante  TEXT        NOT NULL DEFAULT 'demo-tenant',
+    descripcion     TEXT        NOT NULL,
+    monto           NUMERIC(10,2) NOT NULL,
+    categoria       TEXT        NOT NULL,
+    fecha           DATE        NOT NULL DEFAULT CURRENT_DATE,
+    creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_gastos_fecha ON gastos(fecha);
+CREATE INDEX IF NOT EXISTS idx_gastos_categoria ON gastos(categoria);
+

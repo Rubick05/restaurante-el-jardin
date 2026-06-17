@@ -1,10 +1,15 @@
-﻿import { useQuery, useQueryClient } from '@tanstack/react-query';
+import React from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { bdLocal, Pedido } from '@/lib/bd/bd-local';
 import { USUARIOS_SISTEMA } from '@/lib/auth/usuarios';
 import { Card, CardContent, CardHeader, CardTitle } from '@/componentes/ui/card';
 import { Badge } from '@/componentes/ui/badge';
 import { Button } from '@/componentes/ui/button';
-import { Calendar, DollarSign, Hash, MapPin, X, UtensilsCrossed, UserCircle, RefreshCw } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/componentes/ui/tabs';
+import { 
+    Calendar, DollarSign, Hash, MapPin, X, UtensilsCrossed, 
+    UserCircle, RefreshCw, ChevronDown, ChevronUp, ClipboardList, TrendingUp
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState } from 'react';
@@ -18,6 +23,11 @@ function nombreMesero(idMesero: string): string {
 export default function ResumenPedidosDia() {
     const queryClient = useQueryClient();
     const [procesando, setProcesando] = useState(false);
+    const [pedidosExpandidos, setPedidosExpandidos] = useState<Record<string, boolean>>({});
+
+    const togglePedido = (id: string) => {
+        setPedidosExpandidos(prev => ({ ...prev, [id]: !prev[id] }));
+    };
 
     const { data: pedidosDia = [], isLoading, refetch } = useQuery({
         queryKey: ['pedidos-dia'],
@@ -48,8 +58,8 @@ export default function ResumenPedidosDia() {
         refetchInterval: 10000
     });
 
-    const totalDia = pedidosDia.reduce((acc, p) => acc + p.total, 0);
-    const totalItems = pedidosDia.reduce((acc, p) => acc + (p.items?.length || 0), 0);
+    const totalDia = pedidosDia.reduce((acc, p) => p.estado !== 'cancelado' ? acc + p.total : acc, 0);
+    const totalItems = pedidosDia.reduce((acc, p) => p.estado !== 'cancelado' ? acc + (p.items?.length || 0) : acc, 0);
 
     const cerrarDia = async () => {
         if (!confirm('¿Cerrar el día? Se guardará el resumen para el historial y todos los pedidos quedarán archivados.')) return;
@@ -99,26 +109,43 @@ export default function ResumenPedidosDia() {
         }
     };
 
-
     const getEstadoBadge = (estado: string) => {
         const map: Record<string, { label: string; className: string }> = {
-            pendiente: { label: 'Pendiente', className: 'bg-yellow-100 text-yellow-800 border-yellow-200' },
-            en_proceso: { label: 'En Proceso', className: 'bg-blue-100 text-blue-800 border-blue-200' },
-            listo: { label: 'Listo', className: 'bg-green-100 text-green-800 border-green-200' },
-            entregado: { label: 'Entregado', className: 'bg-slate-100 text-slate-600 border-slate-200' },
-            pagado: { label: 'Pagado ✓', className: 'bg-emerald-100 text-emerald-800 border-emerald-200' },
-            cancelado: { label: 'Cancelado', className: 'bg-red-100 text-red-700 border-red-200' },
+            pendiente: { label: 'Pendiente', className: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
+            en_proceso: { label: 'En Proceso', className: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+            listo: { label: 'Listo', className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+            entregado: { label: 'Entregado', className: 'bg-slate-500/10 text-slate-400 border-slate-500/20' },
+            pagado: { label: 'Pagado ✓', className: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
+            cancelado: { label: 'Cancelado', className: 'bg-red-500/10 text-red-400 border-red-500/20' },
         };
-        return map[estado] || { label: estado, className: 'bg-gray-100 text-gray-600' };
+        return map[estado] || { label: estado, className: 'bg-secondary text-secondary-foreground' };
     };
+
+    // Consolidar platos vendidos hoy
+    const resumenPlatos = pedidosDia
+        .filter(p => p.estado !== 'cancelado')
+        .reduce((acc, p) => {
+            p.items?.forEach(item => {
+                const nombre = item.nombre_item;
+                if (!acc[nombre]) {
+                    acc[nombre] = { cantidad: 0, total: 0, categoria: item.categoria || 'Sin Categoría' };
+                }
+                acc[nombre].cantidad += item.cantidad;
+                acc[nombre].total += item.cantidad * item.precio_unitario;
+            });
+            return acc;
+        }, {} as Record<string, { cantidad: number; total: number; categoria: string }>);
+
+    const platosVendidosSorted = Object.entries(resumenPlatos)
+        .sort((a, b) => b[1].cantidad - a[1].cantidad);
 
     return (
         <div className="space-y-4">
-            {/* Encabezado responsive */}
+            {/* Encabezado */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 font-serif">
-                        <Calendar className="w-6 h-6 sm:w-8 sm:h-8" />
+                    <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2 font-serif text-foreground">
+                        <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-primary" />
                         Pedidos del Día
                     </h1>
                     <p className="text-muted-foreground text-sm mt-1">
@@ -126,19 +153,19 @@ export default function ResumenPedidosDia() {
                     </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
-
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={() => refetch()}
                         disabled={isLoading}
+                        className="border-border hover:bg-accent text-foreground"
                     >
                         <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                     </Button>
                     <Button
                         onClick={cerrarDia}
                         disabled={procesando || pedidosDia.length === 0}
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold"
                         size="sm"
                     >
                         <X className="mr-1.5 h-4 w-4" />
@@ -147,130 +174,329 @@ export default function ResumenPedidosDia() {
                 </div>
             </div>
 
-            {/* Cards de Resumen — 3 columnas en desktop, 2 en tablet, 1 en móvil */}
+            {/* Cards de Resumen */}
             <div className="grid grid-cols-3 gap-3">
-                <Card>
+                <Card className="bg-card border-border">
                     <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                        <Hash className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500 shrink-0" />
+                        <Hash className="w-6 h-6 sm:w-8 sm:h-8 text-primary shrink-0" />
                         <div>
-                            <div className="text-xl sm:text-2xl font-bold">{pedidosDia.length}</div>
+                            <div className="text-xl sm:text-2xl font-bold text-foreground">{pedidosDia.length}</div>
                             <div className="text-[10px] sm:text-xs text-muted-foreground">Pedidos</div>
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="bg-card border-border">
                     <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                        <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-green-500 shrink-0" />
+                        <DollarSign className="w-6 h-6 sm:w-8 sm:h-8 text-emerald-500 shrink-0" />
                         <div>
-                            <div className="text-xl sm:text-2xl font-bold">Bs {totalDia.toFixed(0)}</div>
-                            <div className="text-[10px] sm:text-xs text-muted-foreground">Total Día</div>
+                            <div className="text-xl sm:text-2xl font-bold text-foreground">Bs {totalDia.toFixed(0)}</div>
+                            <div className="text-[10px] sm:text-xs text-muted-foreground">Total Recaudado</div>
                         </div>
                     </CardContent>
                 </Card>
-                <Card>
+                <Card className="bg-card border-border">
                     <CardContent className="p-3 sm:p-4 flex items-center gap-3">
-                        <UtensilsCrossed className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 shrink-0" />
+                        <UtensilsCrossed className="w-6 h-6 sm:w-8 sm:h-8 text-amber-500 shrink-0" />
                         <div>
-                            <div className="text-xl sm:text-2xl font-bold">{totalItems}</div>
-                            <div className="text-[10px] sm:text-xs text-muted-foreground">Items</div>
+                            <div className="text-xl sm:text-2xl font-bold text-foreground">{totalItems}</div>
+                            <div className="text-[10px] sm:text-xs text-muted-foreground">Platos Vendidos</div>
                         </div>
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Lista de pedidos */}
-            <Card>
-                <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-base">Listado de Pedidos</CardTitle>
-                </CardHeader>
-                <CardContent className="p-0">
-                    {isLoading ? (
-                        <div className="text-center p-8 text-muted-foreground">Cargando pedidos...</div>
-                    ) : pedidosDia.length === 0 ? (
-                        <div className="text-center p-8 text-muted-foreground">
-                            Sin pedidos registrados hoy
-                        </div>
-                    ) : (
-                        <>
-                            {/* Vista TABLA en desktop */}
-                            <div className="hidden sm:block overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-slate-50 border-b">
-                                        <tr>
-                                            <th className="text-left p-3 text-sm font-semibold">Ficha</th>
-                                            <th className="text-left p-3 text-sm font-semibold">Letrero</th>
-                                            <th className="text-left p-3 text-sm font-semibold">Hora</th>
-                                            <th className="text-left p-3 text-sm font-semibold">Mesero</th>
-                                            <th className="text-left p-3 text-sm font-semibold">Items</th>
-                                            <th className="text-right p-3 text-sm font-semibold">Total</th>
-                                            <th className="text-center p-3 text-sm font-semibold">Estado</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
+            <Tabs defaultValue="pedidos" className="w-full">
+                <TabsList className="bg-muted w-full sm:w-auto grid grid-cols-2">
+                    <TabsTrigger value="pedidos" className="flex items-center gap-1.5">
+                        <ClipboardList className="w-4 h-4" />
+                        Detalle de Pedidos
+                    </TabsTrigger>
+                    <TabsTrigger value="platos" className="flex items-center gap-1.5">
+                        <TrendingUp className="w-4 h-4" />
+                        Platos Vendidos ({platosVendidosSorted.length})
+                    </TabsTrigger>
+                </TabsList>
+
+                {/* TAB 1: LISTADO DE PEDIDOS */}
+                <TabsContent value="pedidos" className="mt-4">
+                    <Card className="bg-card border-border">
+                        <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-base text-foreground">Listado General de Pedidos</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-0">
+                            {isLoading ? (
+                                <div className="text-center p-8 text-muted-foreground">Cargando pedidos...</div>
+                            ) : pedidosDia.length === 0 ? (
+                                <div className="text-center p-8 text-muted-foreground">
+                                    Sin pedidos registrados hoy
+                                </div>
+                            ) : (
+                                <>
+                                    {/* Vista TABLA en desktop */}
+                                    <div className="hidden sm:block overflow-x-auto">
+                                        <table className="w-full text-left">
+                                            <thead className="bg-muted/40 border-b border-border text-muted-foreground text-xs uppercase">
+                                                <tr>
+                                                    <th className="p-3 font-semibold w-10"></th>
+                                                    <th className="p-3 font-semibold">Ficha</th>
+                                                    <th className="p-3 font-semibold">Letrero</th>
+                                                    <th className="p-3 font-semibold">Hora</th>
+                                                    <th className="p-3 font-semibold">Mesero</th>
+                                                    <th className="p-3 font-semibold">Items</th>
+                                                    <th className="p-3 text-right font-semibold">Total</th>
+                                                    <th className="p-3 text-center font-semibold">Estado</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {pedidosDia.map(pedido => {
+                                                    const estado = getEstadoBadge(pedido.estado);
+                                                    const expandido = !!pedidosExpandidos[pedido.id];
+                                                    return (
+                                                        <React.Fragment key={pedido.id}>
+                                                            <tr 
+                                                                onClick={() => togglePedido(pedido.id)} 
+                                                                className="border-b border-border hover:bg-accent/40 cursor-pointer transition-colors"
+                                                            >
+                                                                <td className="p-3 text-center">
+                                                                    {expandido ? (
+                                                                        <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                                                                    ) : (
+                                                                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                                                                    )}
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <span className="font-mono font-bold text-base text-foreground">#{pedido.numero_ficha}</span>
+                                                                </td>
+                                                                <td className="p-3">
+                                                                    <span className="font-black text-xl text-foreground">{pedido.numero_letrero || '-'}</span>
+                                                                </td>
+                                                                <td className="p-3 text-sm text-muted-foreground">{format(new Date(pedido.creado_en), 'HH:mm')}</td>
+                                                                <td className="p-3">
+                                                                    <div className="flex items-center gap-1.5 text-sm text-foreground">
+                                                                        <UserCircle className="w-3.5 h-3.5 text-muted-foreground" />
+                                                                        <span>{nombreMesero(pedido.id_mesero)}</span>
+                                                                    </div>
+                                                                </td>
+                                                                <td className="p-3 text-sm text-muted-foreground">{pedido.items?.length || 0} items</td>
+                                                                <td className="p-3 text-right font-bold text-emerald-400">Bs {Number(pedido.total || 0).toFixed(2)}</td>
+                                                                <td className="p-3 text-center">
+                                                                    <Badge className={`text-xs border ${estado.className}`}>{estado.label}</Badge>
+                                                                </td>
+                                                            </tr>
+                                                            {expandido && (
+                                                                <tr className="bg-muted/10 border-b border-border">
+                                                                    <td colSpan={8} className="p-4 pl-12">
+                                                                        <div className="space-y-3">
+                                                                            <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                                                                                <UtensilsCrossed className="w-4 h-4 text-primary" />
+                                                                                Detalle del Consumo (Ficha #{pedido.numero_ficha})
+                                                                            </h4>
+                                                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                                                <div className="space-y-2">
+                                                                                    {pedido.items && pedido.items.length > 0 ? (
+                                                                                        <div className="divide-y divide-border border border-border rounded-lg bg-card overflow-hidden">
+                                                                                            {pedido.items.map((item, idx) => (
+                                                                                                <div key={idx} className="p-3 flex items-center justify-between text-sm">
+                                                                                                    <div>
+                                                                                                        <span className="font-bold text-foreground">{item.cantidad}x</span>{' '}
+                                                                                                        <span className="text-foreground">{item.nombre_item}</span>
+                                                                                                        {item.instrucciones && (
+                                                                                                            <div className="text-[11px] text-amber-400 mt-0.5 font-medium">
+                                                                                                                Nota: {item.instrucciones}
+                                                                                                            </div>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                    <div className="text-right">
+                                                                                                        <span className="text-muted-foreground text-xs block">Bs {Number(item.precio_unitario).toFixed(2)} c/u</span>
+                                                                                                        <span className="font-semibold text-foreground">Bs {Number(item.subtotal).toFixed(2)}</span>
+                                                                                                    </div>
+                                                                                                </div>
+                                                                                            ))}
+                                                                                            <div className="p-3 bg-muted/20 flex justify-between font-bold text-sm">
+                                                                                                <span className="text-foreground">Total:</span>
+                                                                                                <span className="text-emerald-400">Bs {Number(pedido.total).toFixed(2)}</span>
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    ) : (
+                                                                                        <p className="text-sm text-muted-foreground p-3 bg-muted/10 rounded-lg">El pedido no tiene platos registrados.</p>
+                                                                                    )}
+                                                                                </div>
+                                                                                <div className="p-4 border border-border rounded-lg bg-card text-sm space-y-2">
+                                                                                    <h5 className="font-medium text-foreground">Información del Pedido</h5>
+                                                                                    <div className="grid grid-cols-2 gap-y-1 text-xs text-muted-foreground">
+                                                                                        <span>ID Pedido:</span>
+                                                                                        <span className="font-mono text-foreground select-all">{pedido.id}</span>
+                                                                                        <span>Registrado:</span>
+                                                                                        <span className="text-foreground">{format(new Date(pedido.creado_en), 'HH:mm:ss')} hs</span>
+                                                                                        <span>Actualizado:</span>
+                                                                                        <span className="text-foreground">{format(new Date(pedido.actualizado_en), 'HH:mm:ss')} hs</span>
+                                                                                        <span>Mesero ID:</span>
+                                                                                        <span className="text-foreground font-mono">{pedido.id_mesero}</span>
+                                                                                        {pedido.notas && (
+                                                                                            <>
+                                                                                                <span>Notas Generales:</span>
+                                                                                                <span className="text-amber-300 font-medium">{pedido.notas}</span>
+                                                                                            </>
+                                                                                        )}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr>
+                                                            )}
+                                                        </React.Fragment>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    {/* Vista CARDS en móvil */}
+                                    <div className="sm:hidden divide-y divide-border">
                                         {pedidosDia.map(pedido => {
                                             const estado = getEstadoBadge(pedido.estado);
+                                            const expandido = !!pedidosExpandidos[pedido.id];
                                             return (
-                                                <tr key={pedido.id} className="border-b hover:bg-slate-50 transition-colors">
-                                                    <td className="p-3">
-                                                        <span className="font-mono font-bold text-lg">#{pedido.numero_ficha}</span>
-                                                    </td>
-                                                    <td className="p-3">
-                                                        <span className="font-black text-2xl text-slate-800">{pedido.numero_letrero || '-'}</span>
-                                                    </td>
-                                                    <td className="p-3 text-sm">{format(new Date(pedido.creado_en), 'HH:mm')}</td>
-                                                    <td className="p-3">
-                                                        <div className="flex items-center gap-1.5 text-sm">
-                                                            <UserCircle className="w-3.5 h-3.5 text-muted-foreground" />
-                                                            <span>{nombreMesero(pedido.id_mesero)}</span>
+                                                <div key={pedido.id} className="p-4 space-y-2">
+                                                    <div 
+                                                        onClick={() => togglePedido(pedido.id)} 
+                                                        className="flex items-center justify-between cursor-pointer"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="font-mono font-bold text-lg text-foreground">#{pedido.numero_ficha}</span>
+                                                            {pedido.numero_letrero && (
+                                                                <div className="flex items-center gap-1 text-muted-foreground">
+                                                                    <MapPin className="w-3 h-3 text-primary" />
+                                                                    <span className="font-black text-base text-foreground">{pedido.numero_letrero}</span>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    </td>
-                                                    <td className="p-3 text-sm text-muted-foreground">{pedido.items?.length || 0} items</td>
-                                                    <td className="p-3 text-right font-bold text-green-700">Bs {Number(pedido.total || 0).toFixed(2)}</td>
-                                                    <td className="p-3 text-center">
-                                                        <Badge className={`text-xs border ${estado.className}`}>{estado.label}</Badge>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
+                                                        <div className="flex items-center gap-2">
+                                                            <Badge className={`text-xs border ${estado.className}`}>{estado.label}</Badge>
+                                                            {expandido ? (
+                                                                <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                                                            ) : (
+                                                                <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                                        <div className="flex items-center gap-1">
+                                                            <UserCircle className="w-3.5 h-3.5" />
+                                                            <span>{nombreMesero(pedido.id_mesero)}</span>
+                                                            <span>· {format(new Date(pedido.creado_en), 'HH:mm')}</span>
+                                                            <span>· {pedido.items?.length || 0} items</span>
+                                                        </div>
+                                                        <span className="font-bold text-emerald-400">Bs {Number(pedido.total || 0).toFixed(2)}</span>
+                                                    </div>
 
-                            {/* Vista CARDS en móvil */}
-                            <div className="sm:hidden divide-y">
-                                {pedidosDia.map(pedido => {
-                                    const estado = getEstadoBadge(pedido.estado);
-                                    return (
-                                        <div key={pedido.id} className="p-4 space-y-2">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="font-mono font-bold text-xl">#{pedido.numero_ficha}</span>
-                                                    {pedido.numero_letrero && (
-                                                        <div className="flex items-center gap-1 text-slate-600">
-                                                            <MapPin className="w-3 h-3" />
-                                                            <span className="font-black text-lg">{pedido.numero_letrero}</span>
+                                                    {/* Desglose en móvil */}
+                                                    {expandido && (
+                                                        <div className="pt-3 border-t border-border mt-2 space-y-2 animate-accordion-down">
+                                                            {pedido.items && pedido.items.length > 0 ? (
+                                                                <div className="divide-y divide-border border border-border rounded-lg bg-muted/10 overflow-hidden">
+                                                                    {pedido.items.map((item, idx) => (
+                                                                        <div key={idx} className="p-2.5 flex justify-between text-xs text-foreground">
+                                                                            <div>
+                                                                                <span className="font-bold">{item.cantidad}x</span> {item.nombre_item}
+                                                                                {item.instrucciones && (
+                                                                                    <div className="text-[10px] text-amber-400 font-medium">Nota: {item.instrucciones}</div>
+                                                                                )}
+                                                                            </div>
+                                                                            <span className="font-semibold">Bs {Number(item.subtotal).toFixed(2)}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                    <div className="p-2.5 bg-muted/30 flex justify-between font-bold text-xs text-foreground">
+                                                                        <span>Total:</span>
+                                                                        <span className="text-emerald-400">Bs {Number(pedido.total).toFixed(2)}</span>
+                                                                    </div>
+                                                                </div>
+                                                            ) : (
+                                                                <p className="text-xs text-muted-foreground py-2">Sin platos registrados.</p>
+                                                            )}
+                                                            {pedido.notas && (
+                                                                <div className="text-[11px] bg-amber-500/10 border border-amber-500/20 text-amber-300 rounded p-2">
+                                                                    <strong>Notas:</strong> {pedido.notas}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
-                                                <Badge className={`text-xs border ${estado.className}`}>{estado.label}</Badge>
-                                            </div>
-                                            <div className="flex items-center justify-between text-sm text-muted-foreground">
-                                                <div className="flex items-center gap-1">
-                                                    <UserCircle className="w-3.5 h-3.5" />
-                                                    <span>{nombreMesero(pedido.id_mesero)}</span>
-                                                    <span>· {format(new Date(pedido.creado_en), 'HH:mm')}</span>
-                                                    <span>· {pedido.items?.length || 0} items</span>
+                                            );
+                                        })}
+                                    </div>
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+
+                {/* TAB 2: CONSOLIDADO DE PLATOS */}
+                <TabsContent value="platos" className="mt-4">
+                    <Card className="bg-card border-border">
+                        <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-base text-foreground">Consumo de Platos y Productos de Hoy</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4">
+                            {platosVendidosSorted.length === 0 ? (
+                                <p className="text-center text-muted-foreground py-8">Aún no se han vendido platos el día de hoy.</p>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {/* Listado ordenado */}
+                                        <div className="border border-border rounded-lg overflow-hidden bg-muted/10 divide-y divide-border">
+                                            <div className="bg-muted/40 p-3 flex justify-between text-xs font-semibold text-muted-foreground uppercase">
+                                                <span>Plato / Producto</span>
+                                                <div className="flex gap-12">
+                                                    <span>Cant.</span>
+                                                    <span className="w-16 text-right">Recaudado</span>
                                                 </div>
-                                                <span className="font-bold text-green-700">Bs {Number(pedido.total || 0).toFixed(2)}</span>
+                                            </div>
+                                            {platosVendidosSorted.map(([nombre, info], index) => (
+                                                <div key={index} className="p-3 flex items-center justify-between text-sm text-foreground">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs bg-primary/20 text-primary border border-primary/20 rounded px-1.5 py-0.5 font-bold">{index + 1}</span>
+                                                        <div>
+                                                            <span className="font-medium text-foreground">{nombre}</span>
+                                                            <span className="text-[10px] text-muted-foreground block">{info.categoria}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex gap-12 items-center">
+                                                        <span className="font-bold text-foreground text-center">{info.cantidad}</span>
+                                                        <span className="w-16 text-right font-semibold text-emerald-400">Bs {info.total.toFixed(0)}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        {/* Gráfico o resumen visual */}
+                                        <div className="p-4 border border-border rounded-lg bg-muted/5 flex flex-col justify-center space-y-4">
+                                            <h4 className="text-sm font-semibold text-foreground">Estadísticas Rápidas</h4>
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <div className="bg-card p-3 border border-border rounded-lg">
+                                                    <span className="text-xs text-muted-foreground block">Plato Más Vendido:</span>
+                                                    <span className="text-sm font-bold text-primary truncate block">{platosVendidosSorted[0]?.[0] || '-'}</span>
+                                                    <span className="text-xs text-muted-foreground">({platosVendidosSorted[0]?.[1]?.cantidad || 0} porciones)</span>
+                                                </div>
+                                                <div className="bg-card p-3 border border-border rounded-lg">
+                                                    <span className="text-xs text-muted-foreground block">Variedad de Platos:</span>
+                                                    <span className="text-lg font-bold text-foreground block">{platosVendidosSorted.length}</span>
+                                                    <span className="text-xs text-muted-foreground">diferentes servidos</span>
+                                                </div>
+                                            </div>
+                                            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg text-xs text-muted-foreground">
+                                                💡 Utiliza este listado para realizar un seguimiento exacto de las porciones que salen de cocina y contrastarlas con tu inventario de insumos diarios.
                                             </div>
                                         </div>
-                                    );
-                                })}
-                            </div>
-                        </>
-                    )}
-                </CardContent>
-            </Card>
+                                    </div>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

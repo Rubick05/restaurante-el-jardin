@@ -108,6 +108,17 @@ export async function inicializarBaseDeDatos() {
                 orden           INTEGER     NOT NULL DEFAULT 1,
                 creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
+
+            CREATE TABLE IF NOT EXISTS gastos (
+                id              TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+                id_restaurante  TEXT        NOT NULL DEFAULT 'demo-tenant',
+                descripcion     TEXT        NOT NULL,
+                monto           NUMERIC(10,2) NOT NULL,
+                categoria       TEXT        NOT NULL,
+                fecha           DATE        NOT NULL DEFAULT CURRENT_DATE,
+                creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
         `);
 
         // Insertar usuarios por defecto si la tabla está vacía

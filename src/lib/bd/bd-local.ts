@@ -33,6 +33,7 @@ export interface Pedido {
         subtotal: number;
         categoria?: string; // Nuevo campo para filtrar en cocina
         estado_item?: 'pendiente' | 'en_proceso' | 'listo' | 'entregado'; // Estado individual del item
+        instrucciones?: string;
     }[];
 }
 
@@ -95,6 +96,17 @@ export interface DiaCerrado {
     cerrado_en: string;   // ISO timestamp del cierre
 }
 
+export interface Gasto {
+    id: string;
+    id_restaurante: string;
+    descripcion: string;
+    monto: number;
+    categoria: string;
+    fecha: string; // YYYY-MM-DD
+    creado_en: string;
+    actualizado_en: string;
+}
+
 class BaseDatosRestaurante extends Dexie {
     pedidos!: Table<Pedido>;
     itemsPedido!: Table<ItemPedido>;
@@ -102,6 +114,7 @@ class BaseDatosRestaurante extends Dexie {
     mesas!: Table<Mesa>;
     colaSincronizacion!: Table<OperacionSincronizacion>;
     diasCerrados!: Table<DiaCerrado>;
+    gastos!: Table<Gasto>;
 
     constructor() {
         super('RestaurantePelusaBD');
@@ -119,6 +132,15 @@ class BaseDatosRestaurante extends Dexie {
             mesas: 'id, id_restaurante, numero',
             colaSincronizacion: 'id, procesado, [tipo_entidad+id_entidad]',
             diasCerrados: 'id, fecha, cerrado_en'
+        });
+        this.version(3).stores({
+            pedidos: 'id, id_restaurante, estado, sincronizado, creado_en',
+            itemsPedido: 'id, id_pedido, id_elemento_menu',
+            elementosMenu: 'id, id_restaurante, categoria, disponible',
+            mesas: 'id, id_restaurante, numero',
+            colaSincronizacion: 'id, procesado, [tipo_entidad+id_entidad]',
+            diasCerrados: 'id, fecha, cerrado_en',
+            gastos: 'id, fecha, categoria'
         });
     }
 }

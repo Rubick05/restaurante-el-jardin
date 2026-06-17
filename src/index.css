@@ -4,65 +4,59 @@
 
 @layer base {
   :root {
-    /* RUSTIC THEME: EL JARDIN */
-    --background: 48 100% 97%;
-    /* Base crema/pergamino */
-    --foreground: 28 80% 10%;
-    /* Marrón muy oscuro para texto */
+    /* DARK PROFESSIONAL MINIMALIST THEME: EL JARDIN DARK */
+    --background: 224 25% 9%;
+    --foreground: 210 40% 98%;
 
-    --card: 40 50% 98%;
-    /* Blanco hueso */
-    --card-foreground: 28 80% 10%;
+    --card: 224 25% 12%;
+    --card-foreground: 210 40% 98%;
 
-    --popover: 40 50% 98%;
-    --popover-foreground: 28 80% 10%;
+    --popover: 224 25% 12%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 28 80% 25%;
-    /* Marrón Madera Profundo (#45220a) */
-    --primary-foreground: 40 100% 97%;
+    --primary: 38 92% 50%;
+    /* Ámbar / Oro Premium (#f59e0b) */
+    --primary-foreground: 224 25% 9%;
 
-    --secondary: 35 30% 90%;
-    /* Beige Arena */
-    --secondary-foreground: 24 10% 10%;
+    --secondary: 224 20% 16%;
+    /* Gris medio */
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 35 20% 92%;
-    --muted-foreground: 25 20% 40%;
+    --muted: 224 20% 14%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 32 90% 45%;
-    /* Naranja Quemado / Terracota (#d95b11) */
-    --accent-foreground: 40 100% 97%;
+    --accent: 224 20% 18%;
+    --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 70% 40%;
-    /* Rojo Ladrillo */
-    --destructive-foreground: 40 100% 97%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
 
-    --border: 30 20% 80%;
-    /* Beige Oscuro */
-    --input: 30 20% 80%;
-    --ring: 28 80% 25%;
+    --border: 224 20% 16%;
+    --input: 224 20% 16%;
+    --ring: 38 92% 50%;
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 224 25% 9%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+    --card: 224 25% 12%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 224 25% 12%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+    --primary: 38 92% 50%;
+    --primary-foreground: 224 25% 9%;
+    --secondary: 224 20% 16%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
+    --muted: 224 20% 14%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 224 20% 18%;
     --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    --border: 224 20% 16%;
+    --input: 224 20% 16%;
+    --ring: 38 92% 50%;
   }
 }
 
@@ -73,9 +67,9 @@
 
   body {
     @apply bg-background text-foreground;
-    /* WOOD TEXTURE SUBTLE */
+    /* WOOD TEXTURE SUBTLE - DARK MODE ADAPTED */
     background-color: hsl(var(--background));
-    background-image: linear-gradient(rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.4)), url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v20h2v20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20z' fill='%2378350f' fill-opacity='0.03' fill-rule='evenodd'/%3E%3C/svg%3E");
+    background-image: linear-gradient(rgba(15, 23, 42, 0.94), rgba(15, 23, 42, 0.94)), url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M20 20.5V18H0v-2h20v-2H0v-2h20v-2H0V8h20V6H0V4h20V2H0V0h22v20h2V0h2v20h2V0h2v20h2V0h2v20h2V0h2v20h2v20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20h-2v-20h-2v20H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20v-2H0v-2h20z' fill='%2378350f' fill-opacity='0.08' fill-rule='evenodd'/%3E%3C/svg%3E");
     font-family: 'Inter', system-ui, sans-serif;
   }
 }

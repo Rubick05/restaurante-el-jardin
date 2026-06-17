@@ -12,6 +12,7 @@ import ResumenPedidosDia from '@/componentes/admind/ResumenPedidosDia';
 import HistorialCamarero from '@/componentes/camarero/HistorialCamarero';
 import PantallaLogin from '@/componentes/auth/PantallaLogin';
 import VistaLanding from '@/componentes/admin/VistaLanding';
+import ReportesVentas from '@/componentes/admin/ReportesVentas';
 
 import GestionUsuarios from '@/componentes/admin/GestionUsuarios';
 import { useSocketSync } from '@/hooks/useSocketSync';
@@ -110,6 +111,15 @@ const router = createBrowserRouter([
         element: (
           <RutaProtegida
             elemento={<ResumenPedidosDia />}
+            rolesPermitidos={['administrador']}
+          />
+        ),
+      },
+      {
+        path: "admin/finanzas",
+        element: (
+          <RutaProtegida
+            elemento={<ReportesVentas />}
             rolesPermitidos={['administrador']}
           />
         ),
