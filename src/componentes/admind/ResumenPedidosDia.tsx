@@ -9,7 +9,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/componentes/ui/tabs'
 import { 
     Calendar, DollarSign, Hash, MapPin, X, UtensilsCrossed, 
     UserCircle, RefreshCw, ChevronDown, ChevronUp, ClipboardList, TrendingUp,
-    Pencil, Trash2, CheckCircle2
+    Pencil, Trash2, CheckCircle2, Printer, FileText
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -32,6 +32,254 @@ export default function ResumenPedidosDia() {
 
     const togglePedido = (id: string) => {
         setPedidosExpandidos(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
+    const imprimirComanda = (pedido: Pedido) => {
+        const lineas = (pedido.items || []).map(
+            i => `
+            <tr>
+                <td style="padding: 6px 0; font-size: 16px; font-weight: bold; border-bottom: 1px solid #ddd;">${i.cantidad}x</td>
+                <td style="padding: 6px 0; font-size: 16px; border-bottom: 1px solid #ddd;">
+                    <strong>${i.nombre_item}</strong>
+                    ${i.instrucciones ? `<br><span style="font-size: 12px; color: #d97706; font-weight: bold;">NOTA: ${i.instrucciones}</span>` : ""}
+                </td>
+            </tr>`
+        ).join("");
+
+        const htmlContenido = `
+            <html>
+            <head>
+                <title>Comanda Ficha #${pedido.numero_ficha}</title>
+                <style>
+                    body {
+                        font-family: Arial, sans-serif;
+                        color: #000;
+                        padding: 10px;
+                        max-width: 300px;
+                        margin: 0 auto;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 12px;
+                        border-bottom: 2px solid #000;
+                        padding-bottom: 8px;
+                    }
+                    .header h2 {
+                        margin: 5px 0;
+                        font-size: 22px;
+                        font-weight: bold;
+                    }
+                    .info {
+                        font-size: 14px;
+                        margin-bottom: 12px;
+                        line-height: 1.5;
+                        border-bottom: 1px dashed #000;
+                        padding-bottom: 8px;
+                    }
+                    .table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 15px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h2>** COMANDA DE COCINA **</h2>
+                </div>
+                <div class="info">
+                    <strong>FICHA: #${pedido.numero_ficha}</strong><br>
+                    <strong>LETRERO: ${pedido.numero_letrero || "?"}</strong><br>
+                    Camarero: ${nombreMesero(pedido.id_mesero)}<br>
+                    Fecha: ${new Date(pedido.creado_en).toLocaleString("es-BO")}<br>
+                    ${pedido.notas ? `<strong>Notas Pedido:</strong> <span style="font-size: 13px; color: #d97706;">${pedido.notas}</span><br>` : ""}
+                </div>
+                <table class="table">
+                    <tbody>
+                        ${lineas}
+                    </tbody>
+                </table>
+                <div style="text-align: center; font-size: 11px; margin-top: 20px; border-top: 1px solid #000; padding-top: 5px;">
+                    Control de Cocina - El Jardín
+                </div>
+            </body>
+            </html>
+        `;
+
+        const ventana = window.open("", "PRINT", "height=600,width=400");
+        if (ventana) {
+            ventana.document.write(htmlContenido);
+            ventana.document.close();
+            ventana.focus();
+            setTimeout(() => {
+                ventana.print();
+                ventana.close();
+            }, 250);
+        }
+    };
+
+    const imprimirRecibo = (pedido: Pedido) => {
+        const CATEGORIAS_BEBIDA = ["bebida", "cerveza", "refresco", "trago", "jugo", "agua", "gaseosa", "vino", "cocktail"];
+        const esBebida = (cat?: string) => {
+            if (!cat) return false;
+            const c = cat.toLowerCase();
+            return CATEGORIAS_BEBIDA.some(b => c.includes(b));
+        };
+
+        const platos = (pedido.items || []).filter(i => !esBebida(i.categoria));
+        const bebidas = (pedido.items || []).filter(i => esBebida(i.categoria));
+        const subtotalPlatos = platos.reduce((acc, i) => acc + i.subtotal, 0);
+        const subtotalBebidas = bebidas.reduce((acc, i) => acc + i.subtotal, 0);
+
+        const lineas = (pedido.items || []).map(
+            i => `
+            <tr>
+                <td style="padding: 4px 0; font-size: 13px; font-weight: bold;">${i.cantidad}x</td>
+                <td style="padding: 4px 0; font-size: 13px;">${i.nombre_item}</td>
+                <td style="padding: 4px 0; text-align: right; font-family: monospace; font-size: 13px;">Bs ${Number(i.subtotal).toFixed(2)}</td>
+            </tr>`
+        ).join("");
+
+        const logoSvg = `
+            <svg width="70" height="70" viewBox="0 0 100 100" fill="none" stroke="#f59e0b" stroke-width="2.5" style="margin: 0 auto; display: block;">
+                <path d="M50 15 C30 35, 30 65, 50 85 C70 65, 70 35, 50 15 Z" fill="rgba(245, 158, 11, 0.05)" />
+                <path d="M50 15 L50 85" stroke-dasharray="2 2" />
+                <path d="M50 35 C42 40, 42 50, 50 55" />
+                <path d="M50 45 C58 50, 58 60, 50 65" />
+            </svg>
+        `;
+
+        const htmlContenido = `
+            <html>
+            <head>
+                <title>Recibo Ficha #${pedido.numero_ficha}</title>
+                <style>
+                    body {
+                        font-family: 'Courier New', Courier, monospace;
+                        color: #000;
+                        padding: 10px;
+                        max-width: 300px;
+                        margin: 0 auto;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 12px;
+                        border-bottom: 1px dashed #000;
+                        padding-bottom: 8px;
+                    }
+                    .header h2 {
+                        margin: 5px 0 2px 0;
+                        font-size: 18px;
+                        font-weight: bold;
+                        letter-spacing: 1px;
+                    }
+                    .header p {
+                        margin: 0;
+                        font-size: 10px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+                    .info {
+                        font-size: 12px;
+                        margin-bottom: 10px;
+                        line-height: 1.4;
+                    }
+                    .table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 10px;
+                    }
+                    .table th {
+                        border-bottom: 1px solid #000;
+                        font-size: 11px;
+                        text-align: left;
+                        padding-bottom: 4px;
+                        text-transform: uppercase;
+                    }
+                    .totales {
+                        border-top: 1px dashed #000;
+                        padding-top: 6px;
+                        margin-top: 6px;
+                        font-size: 12px;
+                    }
+                    .total-grande {
+                        font-size: 14px;
+                        font-weight: bold;
+                        display: flex;
+                        justify-content: space-between;
+                        margin-top: 5px;
+                        border-top: 1px solid #000;
+                        padding-top: 5px;
+                    }
+                    .footer-text {
+                        text-align: center;
+                        font-size: 11px;
+                        margin-top: 18px;
+                        border-top: 1px dashed #000;
+                        padding-top: 8px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    ${logoSvg}
+                    <h2>EL JARDÍN</h2>
+                    <p>Peña - Restaurant</p>
+                </div>
+                <div class="info">
+                    <strong>RECIBO DE VENTA</strong><br>
+                    Ficha: #${pedido.numero_ficha} · Letrero: ${pedido.numero_letrero || "?"}<br>
+                    Camarero: ${nombreMesero(pedido.id_mesero)}<br>
+                    Fecha: ${new Date(pedido.creado_en).toLocaleString("es-BO")}<br>
+                    Cliente: ${pedido.datos_facturacion?.razon_social || "PÚBLICO GENERAL"}<br>
+                    NIT/CI: ${pedido.datos_facturacion?.nit_ci || "0"}
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%;">Cant</th>
+                            <th style="width: 60%;">Detalle</th>
+                            <th style="width: 25%; text-align: right;">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${lineas}
+                    </tbody>
+                </table>
+                <div class="totales">
+                    ${subtotalPlatos > 0 ? `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                        <span>Subtotal Platos:</span>
+                        <span>Bs ${Number(subtotalPlatos).toFixed(2)}</span>
+                    </div>` : ''}
+                    ${subtotalBebidas > 0 ? `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px;">
+                        <span>Subtotal Bebidas:</span>
+                        <span>Bs ${Number(subtotalBebidas).toFixed(2)}</span>
+                    </div>` : ''}
+                    <div class="total-grande">
+                        <span>TOTAL A PAGAR:</span>
+                        <span>Bs ${Number(pedido.total).toFixed(2)}</span>
+                    </div>
+                </div>
+                <div class="footer-text">
+                    ¡Gracias por su visita!<br>
+                    Cochabamba, Bolivia
+                </div>
+            </body>
+            </html>
+        `;
+
+        const ventana = window.open("", "PRINT", "height=700,width=400");
+        if (ventana) {
+            ventana.document.write(htmlContenido);
+            ventana.document.close();
+            ventana.focus();
+            setTimeout(() => {
+                ventana.print();
+                ventana.close();
+            }, 250);
+        }
     };
 
     const { data: pedidosDia = [], isLoading, refetch } = useQuery({
@@ -397,6 +645,22 @@ export default function ResumenPedidosDia() {
                                                                                                 </Button>
                                                                                                 <Button
                                                                                                     size="sm"
+                                                                                                    variant="outline"
+                                                                                                    className="border-amber-500/20 hover:bg-amber-500/10 text-amber-500 font-bold"
+                                                                                                    onClick={() => imprimirComanda(pedido)}
+                                                                                                >
+                                                                                                    <Printer className="w-3.5 h-3.5 mr-1 text-amber-400" /> Imprimir Comanda
+                                                                                                </Button>
+                                                                                                <Button
+                                                                                                    size="sm"
+                                                                                                    variant="outline"
+                                                                                                    className="border-blue-500/20 hover:bg-blue-500/10 text-blue-400 font-bold"
+                                                                                                    onClick={() => imprimirRecibo(pedido)}
+                                                                                                >
+                                                                                                    <FileText className="w-3.5 h-3.5 mr-1 text-blue-400" /> Imprimir Recibo
+                                                                                                </Button>
+                                                                                                <Button
+                                                                                                    size="sm"
                                                                                                     variant="secondary"
                                                                                                     className="font-bold border border-border"
                                                                                                     onClick={async () => {
@@ -555,6 +819,22 @@ export default function ResumenPedidosDia() {
                                                                         </Button>
                                                                     </>
                                                                 )}
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    className="h-8 px-2.5 border-amber-500/20 text-amber-500 font-bold text-xs"
+                                                                    onClick={() => imprimirComanda(pedido)}
+                                                                >
+                                                                    <Printer className="w-3 h-3 mr-1 text-amber-400" /> Comanda
+                                                                </Button>
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="outline"
+                                                                    className="h-8 px-2.5 border-blue-500/20 text-blue-400 font-bold text-xs"
+                                                                    onClick={() => imprimirRecibo(pedido)}
+                                                                >
+                                                                    <FileText className="w-3 h-3 mr-1 text-blue-400" /> Recibo
+                                                                </Button>
                                                             </div>
                                                         </div>
                                                     )}

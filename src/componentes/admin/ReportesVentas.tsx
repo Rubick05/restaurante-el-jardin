@@ -131,13 +131,29 @@ export default function ReportesVentas() {
                 .map(([name, value]) => ({ name, value }))
                 .filter(c => c.value > 0);
 
+            // Cargar menú para obtener costos de insumos
+            const menuLocal = await bdLocal.elementosMenu.toArray();
+            const costoMap: Record<string, number> = {};
+            menuLocal.forEach(m => {
+                costoMap[m.nombre] = m.costo || 0;
+                if (m.id) {
+                    costoMap[m.id] = m.costo || 0;
+                }
+            });
+
             // 3. Consolidar platos más vendidos en el rango
-            const platosVendidos: Record<string, { cantidad: number; total: number; categoria: string }> = {};
+            const platosVendidos: Record<string, { cantidad: number; total: number; categoria: string; costoUnitario: number }> = {};
             pedidosValidos.forEach(p => {
                 p.items?.forEach(item => {
                     const nombre = item.nombre_item;
                     if (!platosVendidos[nombre]) {
-                        platosVendidos[nombre] = { cantidad: 0, total: 0, categoria: item.categoria || 'Sin Categoría' };
+                        const costoUnit = costoMap[item.id_elemento_menu] || costoMap[nombre] || 0;
+                        platosVendidos[nombre] = { 
+                            cantidad: 0, 
+                            total: 0, 
+                            categoria: item.categoria || 'Sin Categoría',
+                            costoUnitario: costoUnit
+                        };
                     }
                     platosVendidos[nombre].cantidad += item.cantidad;
                     platosVendidos[nombre].total += item.cantidad * item.precio_unitario;
@@ -146,8 +162,7 @@ export default function ReportesVentas() {
 
             const topPlatos = Object.entries(platosVendidos)
                 .map(([nombre, info]) => ({ nombre, ...info }))
-                .sort((a, b) => b.cantidad - a.cantidad)
-                .slice(0, 15);
+                .sort((a, b) => b.cantidad - a.cantidad);
 
             // Totales acumulados
             const totalIngresos = pedidosValidos.reduce((acc, p) => acc + p.total, 0);
@@ -597,11 +612,11 @@ export default function ReportesVentas() {
                             ) : !reportData?.topPlatos || reportData.topPlatos.length === 0 ? (
                                 <p className="text-center text-muted-foreground py-8">No se han registrado consumos en los últimos {diasRango} días.</p>
                             ) : (
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div className="space-y-6">
                                     {/* Gráfico de platos */}
-                                    <div className="col-span-1 lg:col-span-2 h-[350px] border border-border rounded-lg bg-muted/10 p-2">
+                                    <div className="h-[250px] border border-border rounded-lg bg-muted/10 p-2">
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={reportData.topPlatos} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
+                                            <BarChart data={reportData.topPlatos.slice(0, 10)} layout="vertical" margin={{ left: 20, right: 20, top: 10, bottom: 10 }}>
                                                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
                                                 <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={11} />
                                                 <YAxis dataKey="nombre" type="category" stroke="hsl(var(--muted-foreground))" fontSize={10} width={100} />
@@ -616,31 +631,45 @@ export default function ReportesVentas() {
                                             </BarChart>
                                         </ResponsiveContainer>
                                     </div>
-
-                                    {/* Tabla resumen detallada */}
-                                    <div className="border border-border rounded-lg overflow-hidden bg-card divide-y divide-border h-fit">
-                                        <div className="bg-muted/40 p-3 flex justify-between text-xs font-semibold text-muted-foreground uppercase">
-                                            <span>Plato / Producto</span>
-                                            <div className="flex gap-8">
-                                                <span>Cant.</span>
-                                                <span className="w-16 text-right">Recaudado</span>
-                                            </div>
+ 
+                                    {/* Tabla resumen detallada de desglose */}
+                                    <div className="border border-border rounded-lg overflow-hidden bg-card">
+                                        <div className="p-4 border-b border-border bg-muted/30">
+                                            <h4 className="font-semibold text-sm text-foreground">Desglose de Costo Real y Utilidades por Plato</h4>
+                                            <p className="text-xs text-muted-foreground">Detalle exacto de la inversión de insumos frente al precio de venta</p>
                                         </div>
-                                        {reportData.topPlatos.map((plato, idx) => (
-                                            <div key={idx} className="p-3 flex items-center justify-between text-sm text-foreground">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-xs font-bold bg-primary/20 text-primary rounded px-1.5 py-0.5">{idx + 1}</span>
-                                                    <div>
-                                                        <span className="font-semibold block text-foreground truncate max-w-[120px]">{plato.nombre}</span>
-                                                        <span className="text-[10px] text-muted-foreground">{plato.categoria}</span>
-                                                    </div>
-                                                </div>
-                                                <div className="flex gap-8 items-center text-sm">
-                                                    <span className="font-bold text-foreground w-8 text-center">{plato.cantidad}</span>
-                                                    <span className="font-semibold text-emerald-400 w-16 text-right">Bs {plato.total.toFixed(0)}</span>
-                                                </div>
-                                            </div>
-                                        ))}
+                                        <div className="overflow-x-auto">
+                                            <table className="w-full text-left text-sm">
+                                                <thead className="bg-muted/40 border-b border-border text-muted-foreground text-xs uppercase">
+                                                    <tr>
+                                                        <th className="p-3 font-semibold">Plato / Producto</th>
+                                                        <th className="p-3 font-semibold">Categoría</th>
+                                                        <th className="p-3 text-center font-semibold">Cant. Vendida</th>
+                                                        <th className="p-3 text-right font-semibold">Costo Unitario</th>
+                                                        <th className="p-3 text-right font-semibold">Ingresos</th>
+                                                        <th className="p-3 text-right font-semibold">Costo Real</th>
+                                                        <th className="p-3 text-right font-semibold">Utilidad</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="divide-y divide-border">
+                                                    {reportData.topPlatos.map((plato, idx) => {
+                                                        const totalCosto = plato.cantidad * (plato.costoUnitario || 0);
+                                                        const utilidad = plato.total - totalCosto;
+                                                        return (
+                                                            <tr key={idx} className="hover:bg-accent/20 transition-colors">
+                                                                <td className="p-3 font-semibold text-foreground">{plato.nombre}</td>
+                                                                <td className="p-3 text-muted-foreground">{plato.categoria}</td>
+                                                                <td className="p-3 text-center font-bold text-foreground">{plato.cantidad}</td>
+                                                                <td className="p-3 text-right font-mono text-muted-foreground">Bs {(plato.costoUnitario || 0).toFixed(2)}</td>
+                                                                <td className="p-3 text-right font-mono text-emerald-400">Bs {plato.total.toFixed(2)}</td>
+                                                                <td className="p-3 text-right font-mono text-red-400">Bs {totalCosto.toFixed(2)}</td>
+                                                                <td className="p-3 text-right font-mono font-bold text-primary">Bs {utilidad.toFixed(2)}</td>
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             )}

@@ -226,7 +226,8 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
 
             const totalNuevos = itemsNuevos.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
             const todosLosItems = [...(pedidoExistente.items || []), ...itemsNuevosBD];
-            const nuevoTotal = pedidoExistente.total + totalNuevos;
+            const totalExistente = Number(pedidoExistente.total || 0);
+            const nuevoTotal = totalExistente + totalNuevos;
 
             // Si hay platos de cocina nuevos, el pedido vuelve a 'en_proceso' o 'pendiente'
             const hayNuevosPlatoCocina = itemsNuevosBD.some(i => i.estado_item === 'pendiente');
@@ -235,8 +236,20 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                 ? 'en_proceso'
                 : estadoActual;
 
+            const todosLosItemsMapeados = todosLosItems.map((it: any) => ({
+                id: it.id || undefined, // Mapear id si ya existe
+                id_elemento_menu: it.id_elemento_menu,
+                nombre_item: it.nombre_item || it.nombre,
+                cantidad: it.cantidad,
+                precio_unitario: it.precio_unitario || it.precio || 0,
+                subtotal: it.subtotal || (it.cantidad * (it.precio_unitario || it.precio || 0)),
+                categoria: it.categoria,
+                estado_item: it.estado_item || (esPlatoCocina(it.categoria) ? 'pendiente' : 'entregado'),
+                instrucciones: it.instrucciones || null
+            }));
+
             await bdLocal.pedidos.update(pedidoExistente.id, {
-                items: todosLosItems,
+                items: todosLosItemsMapeados,
                 total: nuevoTotal,
                 subtotal: nuevoTotal,
                 notas: notaCliente,
@@ -244,6 +257,29 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                 actualizado_en: new Date().toISOString(),
                 sincronizado: false
             });
+
+            // Sincronizar inmediatamente con el servidor
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/pedidos/${pedidoExistente.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        total: nuevoTotal,
+                        subtotal: nuevoTotal,
+                        notas: notaCliente,
+                        estado: nuevoEstado,
+                        items: todosLosItemsMapeados
+                    }),
+                });
+                if (response.ok) {
+                    const data = await response.json();
+                    const pSincronizado = data.pedido || data;
+                    const [pedidoNormalizado] = normalizarPedidos([pSincronizado]);
+                    await bdLocal.pedidos.put(pedidoNormalizado);
+                }
+            } catch (err) {
+                console.warn("Offline: Falló al sincronizar items editados con el servidor.", err);
+            }
 
             await queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
             await queryClient.invalidateQueries({ queryKey: ['items-cocina'] });

@@ -10,6 +10,12 @@ import { Button } from "@/componentes/ui/button";
 import { Badge } from "@/componentes/ui/badge";
 import { Pedido, bdLocal } from "@/lib/bd/bd-local";
 import { useQueryClient } from "@tanstack/react-query";
+import { USUARIOS_SISTEMA } from "@/lib/auth/usuarios";
+
+function nombreMesero(idMesero: string): string {
+    const usuario = USUARIOS_SISTEMA.find(u => u.id === idMesero);
+    return usuario?.nombre ?? idMesero;
+}
 import {
     QrCode,
     Banknote,
@@ -214,6 +220,7 @@ export function ModalCobro({ open, onOpenChange, pedido, onCobrado }: Props) {
                 <div class="info">
                     <strong>RECIBO DE VENTA</strong><br>
                     Ficha: #${pedido.numero_ficha} · Letrero: ${pedido.numero_letrero || "?"}<br>
+                    Camarero: ${nombreMesero(pedido.id_mesero)}<br>
                     Fecha: ${new Date().toLocaleString("es-BO")}<br>
                     Cliente: ${razonSocial.trim() || "PÚBLICO GENERAL"}<br>
                     NIT/CI: ${nit.trim() || "0"}

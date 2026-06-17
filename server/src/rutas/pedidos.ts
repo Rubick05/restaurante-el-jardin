@@ -271,7 +271,7 @@ router.post('/', async (req, res) => {
 router.patch('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { estado, item_id, estado_item, datos_facturacion } = req.body;
+    const { estado, item_id, estado_item, datos_facturacion, total, subtotal, notas, items } = req.body;
 
     // Consultar estado anterior y número de ficha
     const resPrevio = await pool.query('SELECT estado, numero_ficha FROM pedidos WHERE id = $1', [id]);
@@ -308,19 +308,31 @@ router.patch('/:id', async (req, res) => {
 
       // Validar si es transición de pago para el pedido general al cambiar items (raro pero posible)
       if (estado === 'pagado' && estadoAnterior !== 'pagado') {
-        const resCosto = await pool.query(`
-            SELECT SUM(i.cantidad * COALESCE(m.costo, 0)) AS total_costo
+        const resCostoDetallado = await pool.query(`
+            SELECT i.cantidad, i.nombre_item, COALESCE(m.costo, 0) AS costo_unitario
             FROM items_pedido i
             JOIN elementos_menu m ON i.id_elemento_menu = m.id
             WHERE i.id_pedido = $1
         `, [id]);
-        const totalCosto = parseFloat(resCosto.rows[0]?.total_costo || '0');
+        
+        let totalCosto = 0;
+        const desglosePartes: string[] = [];
+        resCostoDetallado.rows.forEach(r => {
+            const cUnit = parseFloat(r.costo_unitario);
+            const cant = parseInt(r.cantidad);
+            if (cUnit > 0) {
+                totalCosto += cant * cUnit;
+                desglosePartes.push(`${cant}x ${r.nombre_item} (costo real: Bs ${(cant * cUnit).toFixed(2)})`);
+            }
+        });
+
         if (totalCosto > 0) {
+          const descGasto = `Costo automático - Pedido #${numeroFicha}: ${desglosePartes.join(', ')}`;
           const resGasto = await pool.query(`
               INSERT INTO gastos (descripcion, monto, categoria, fecha, creado_en, actualizado_en)
               VALUES ($1, $2, 'Insumos', CURRENT_DATE, NOW(), NOW())
               RETURNING *
-          `, [`Costo automático - Pedido #${numeroFicha}`, totalCosto]);
+          `, [descGasto, totalCosto]);
           emisorTiempoReal.notificarCambio('demo-tenant', 'gasto', 'actualizado', resGasto.rows[0]);
         }
       }
@@ -340,6 +352,18 @@ router.patch('/:id', async (req, res) => {
     if (datos_facturacion) {
       campos.push(`datos_facturacion = $${idx++}`);
       valores.push(JSON.stringify(datos_facturacion));
+    }
+    if (total !== undefined) {
+      campos.push(`total = $${idx++}`);
+      valores.push(total);
+    }
+    if (subtotal !== undefined) {
+      campos.push(`subtotal = $${idx++}`);
+      valores.push(subtotal);
+    }
+    if (notas !== undefined) {
+      campos.push(`notas = $${idx++}`);
+      valores.push(notas);
     }
 
     const arrayItems = req.body.nuevosItems || req.body.items;
@@ -372,8 +396,31 @@ router.patch('/:id', async (req, res) => {
     // Si el pedido se entrega o se paga, marcar todos sus items entregados
     if (estado === 'entregado' || estado === 'pagado') {
       await pool.query(`UPDATE items_pedido SET estado_item = 'entregado', actualizado_en = NOW() WHERE id_pedido = $1`, [id]);
+    } else if (items && Array.isArray(items)) {
+      // Reemplazo completo de items del pedido (ej. Edición de pedido)
+      await pool.query(`DELETE FROM items_pedido WHERE id_pedido = $1`, [id]);
+      for (const it of items) {
+        const itemId = it.id || (await pool.query('SELECT gen_random_uuid()::TEXT AS id')).rows[0].id;
+        await pool.query(`
+          INSERT INTO items_pedido
+              (id, id_pedido, id_elemento_menu, nombre_item, categoria,
+               cantidad, precio_unitario, subtotal, estado_item, instrucciones)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+        `, [
+          itemId,
+          id,
+          it.id_elemento_menu,
+          it.nombre_item || it.nombre,
+          it.categoria,
+          it.cantidad,
+          it.precio_unitario || it.precio || 0,
+          it.subtotal || (it.cantidad * (it.precio_unitario || it.precio || 0)),
+          it.estado_item || 'pendiente',
+          it.instrucciones_especiales || it.instrucciones || null
+        ]);
+      }
     } else if (arrayItems && Array.isArray(arrayItems)) {
-      // Actualización explícita de un array de items
+      // Actualización explícita de un array de items (ej. Tablero de Cocina)
       for (const it of arrayItems) {
         if (it.estado_item && (it.id || it.itemId)) {
           await pool.query(
@@ -390,19 +437,31 @@ router.patch('/:id', async (req, res) => {
 
     // Si es transición de pago, registrar el costo como gasto
     if (estado === 'pagado' && estadoAnterior !== 'pagado') {
-      const resCosto = await pool.query(`
-          SELECT SUM(i.cantidad * COALESCE(m.costo, 0)) AS total_costo
+      const resCostoDetallado = await pool.query(`
+          SELECT i.cantidad, i.nombre_item, COALESCE(m.costo, 0) AS costo_unitario
           FROM items_pedido i
           JOIN elementos_menu m ON i.id_elemento_menu = m.id
           WHERE i.id_pedido = $1
       `, [id]);
-      const totalCosto = parseFloat(resCosto.rows[0]?.total_costo || '0');
+
+      let totalCosto = 0;
+      const desglosePartes: string[] = [];
+      resCostoDetallado.rows.forEach(r => {
+          const cUnit = parseFloat(r.costo_unitario);
+          const cant = parseInt(r.cantidad);
+          if (cUnit > 0) {
+              totalCosto += cant * cUnit;
+              desglosePartes.push(`${cant}x ${r.nombre_item} (costo real: Bs ${(cant * cUnit).toFixed(2)})`);
+          }
+      });
+
       if (totalCosto > 0) {
+        const descGasto = `Costo automático - Pedido #${numeroFicha}: ${desglosePartes.join(', ')}`;
         const resGasto = await pool.query(`
             INSERT INTO gastos (descripcion, monto, categoria, fecha, creado_en, actualizado_en)
             VALUES ($1, $2, 'Insumos', CURRENT_DATE, NOW(), NOW())
             RETURNING *
-        `, [`Costo automático - Pedido #${numeroFicha}`, totalCosto]);
+        `, [descGasto, totalCosto]);
         emisorTiempoReal.notificarCambio('demo-tenant', 'gasto', 'actualizado', resGasto.rows[0]);
       }
     }
@@ -450,19 +509,31 @@ router.post('/cerrar-dia', async (req, res) => {
     `, [hoy]);
 
     for (const p of pedidosAPagarResult.rows) {
-        const resCosto = await client.query(`
-            SELECT SUM(i.cantidad * COALESCE(m.costo, 0)) AS total_costo
+        const resCostoDetallado = await client.query(`
+            SELECT i.cantidad, i.nombre_item, COALESCE(m.costo, 0) AS costo_unitario
             FROM items_pedido i
             JOIN elementos_menu m ON i.id_elemento_menu = m.id
             WHERE i.id_pedido = $1
         `, [p.id]);
-        const totalCosto = parseFloat(resCosto.rows[0]?.total_costo || '0');
+
+        let totalCosto = 0;
+        const desglosePartes: string[] = [];
+        resCostoDetallado.rows.forEach(r => {
+            const cUnit = parseFloat(r.costo_unitario);
+            const cant = parseInt(r.cantidad);
+            if (cUnit > 0) {
+                totalCosto += cant * cUnit;
+                desglosePartes.push(`${cant}x ${r.nombre_item} (costo real: Bs ${(cant * cUnit).toFixed(2)})`);
+            }
+        });
+
         if (totalCosto > 0) {
+            const descGasto = `Costo automático - Pedido #${p.numero_ficha}: ${desglosePartes.join(', ')}`;
             const resGasto = await client.query(`
                 INSERT INTO gastos (descripcion, monto, categoria, fecha, creado_en, actualizado_en)
                 VALUES ($1, $2, 'Insumos', CURRENT_DATE, NOW(), NOW())
                 RETURNING *
-            `, [`Costo automático - Pedido #${p.numero_ficha}`, totalCosto]);
+            `, [descGasto, totalCosto]);
             emisorTiempoReal.notificarCambio('demo-tenant', 'gasto', 'actualizado', resGasto.rows[0]);
         }
     }
