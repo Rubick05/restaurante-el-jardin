@@ -109,3 +109,10 @@ CREATE TABLE IF NOT EXISTS gastos (
 CREATE INDEX IF NOT EXISTS idx_gastos_fecha ON gastos(fecha);
 CREATE INDEX IF NOT EXISTS idx_gastos_categoria ON gastos(categoria);
 
+-- ─────────────────────────── WEB CONFIG ───────────────────────────
+CREATE TABLE IF NOT EXISTS web_config (
+    clave           TEXT        PRIMARY KEY,
+    valor           JSONB       NOT NULL,
+    actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+

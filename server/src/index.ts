@@ -22,6 +22,7 @@ import historialRouter from './rutas/historial';
 import usuariosRouter from './rutas/usuarios';
 import promocionesRouter from './rutas/promociones';
 import gastosRouter from './rutas/gastos';
+import webConfigRouter from './rutas/webConfig';
 
 import { inicializarSocket } from './sincronizacion/emisor-tiempo-real';
 import { inicializarCronDiario } from './sincronizacion/cron-diario';
@@ -47,6 +48,7 @@ app.use('/api/menu', menuRouter);
 app.use('/api/historial', historialRouter);
 app.use('/api/promociones', promocionesRouter);
 app.use('/api/gastos', gastosRouter);
+app.use('/api/web-config', webConfigRouter);
 
 app.use('/api/usuarios', usuariosRouter);
 

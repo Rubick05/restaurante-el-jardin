@@ -119,6 +119,12 @@ export async function inicializarBaseDeDatos() {
                 creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                 actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
             );
+
+            CREATE TABLE IF NOT EXISTS web_config (
+                clave           TEXT        PRIMARY KEY,
+                valor           JSONB       NOT NULL,
+                actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
         `);
 
         // Insertar usuarios por defecto si la tabla está vacía
