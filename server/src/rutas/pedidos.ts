@@ -311,7 +311,7 @@ router.patch('/:id', async (req, res) => {
         const resCostoDetallado = await pool.query(`
             SELECT i.cantidad, i.nombre_item, COALESCE(m.costo, 0) AS costo_unitario
             FROM items_pedido i
-            JOIN elementos_menu m ON i.id_elemento_menu = m.id
+            LEFT JOIN elementos_menu m ON (i.id_elemento_menu = m.id OR i.nombre_item = m.nombre)
             WHERE i.id_pedido = $1
         `, [id]);
         
@@ -440,7 +440,7 @@ router.patch('/:id', async (req, res) => {
       const resCostoDetallado = await pool.query(`
           SELECT i.cantidad, i.nombre_item, COALESCE(m.costo, 0) AS costo_unitario
           FROM items_pedido i
-          JOIN elementos_menu m ON i.id_elemento_menu = m.id
+          LEFT JOIN elementos_menu m ON (i.id_elemento_menu = m.id OR i.nombre_item = m.nombre)
           WHERE i.id_pedido = $1
       `, [id]);
 
@@ -512,7 +512,7 @@ router.post('/cerrar-dia', async (req, res) => {
         const resCostoDetallado = await client.query(`
             SELECT i.cantidad, i.nombre_item, COALESCE(m.costo, 0) AS costo_unitario
             FROM items_pedido i
-            JOIN elementos_menu m ON i.id_elemento_menu = m.id
+            LEFT JOIN elementos_menu m ON (i.id_elemento_menu = m.id OR i.nombre_item = m.nombre)
             WHERE i.id_pedido = $1
         `, [p.id]);
 
