@@ -1,17 +1,12 @@
 import { Client } from 'pg';
-import fs from 'fs';
-import path from 'path';
 
 async function migrarDatos() {
-    // Obtener URIs de conexión desde los argumentos
     const sourceUrl = process.argv[2];
     const targetUrl = process.argv[3];
 
     if (!sourceUrl || !targetUrl) {
         console.error('\n❌ Error: Debes proporcionar ambas cadenas de conexión.');
         console.error('Uso: npx ts-node src/scripts/migrar-datos.ts "URL_ORIGEN_RAILWAY" "URL_DESTINO_SUPABASE"');
-        console.error('\nEjemplo:');
-        console.error('npx ts-node src/scripts/migrar-datos.ts "postgresql://postgres:...@metro.proxy.rlwy.net:12352/railway" "postgresql://postgres:...@aws-0-us-west-1.pooler.supabase.com:6543/postgres?sslmode=require"\n');
         process.exit(1);
     }
 
@@ -34,16 +29,131 @@ async function migrarDatos() {
         await clientDest.connect();
         console.log('✅ Conexión establecida con Destino.');
 
-        // Inicializar esquema de tablas en Supabase antes de vaciar
-        const rutaSchema = path.resolve(__dirname, '../../../database/esquema.sql');
-        if (fs.existsSync(rutaSchema)) {
-            console.log('📝 Inicializando esquema de tablas en Supabase...');
-            const sql = fs.readFileSync(rutaSchema, 'utf-8');
-            await clientDest.query(sql);
-            console.log('✅ Esquema inicializado correctamente en Supabase.');
-        } else {
-            console.warn('⚠️ No se encontró el archivo de esquema.sql en', rutaSchema);
+        console.log('🧹 Limpiando tablas previas incorrectas en Supabase...');
+        // Dropear todas las tablas (incluso las del esquema.sql erróneo si existen)
+        const dropQueries = [
+            'DROP TABLE IF EXISTS items_pedido CASCADE',
+            'DROP TABLE IF EXISTS pedidos CASCADE',
+            'DROP TABLE IF EXISTS elementos_menu CASCADE',
+            'DROP TABLE IF EXISTS usuarios CASCADE',
+            'DROP TABLE IF EXISTS dias_cerrados CASCADE',
+            'DROP TABLE IF EXISTS promociones CASCADE',
+            'DROP TABLE IF EXISTS gastos CASCADE',
+            'DROP TABLE IF EXISTS web_config CASCADE',
+            'DROP TABLE IF EXISTS mesas CASCADE',
+            'DROP TABLE IF EXISTS precios_elementos_menu CASCADE',
+            'DROP TABLE IF EXISTS restaurantes CASCADE',
+            'DROP TABLE IF EXISTS cola_sincronizacion CASCADE'
+        ];
+        for (const query of dropQueries) {
+            await clientDest.query(query).catch(() => {});
         }
+        console.log('✅ Base de datos de destino limpia.');
+
+        console.log('📝 Inicializando esquema de base de datos correcto en Supabase...');
+        // Crear las tablas con el esquema real usado por la app
+        await clientDest.query(`
+            CREATE TABLE IF NOT EXISTS elementos_menu (
+                id              TEXT        PRIMARY KEY,
+                id_restaurante  TEXT        NOT NULL DEFAULT 'demo-tenant',
+                nombre          TEXT        NOT NULL,
+                descripcion     TEXT,
+                categoria       TEXT        NOT NULL,
+                precio_actual   NUMERIC(10,2) NOT NULL,
+                disponible      BOOLEAN     NOT NULL DEFAULT TRUE,
+                url_imagen      TEXT,
+                imagen_base64   TEXT,
+                actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS pedidos (
+                id              TEXT        PRIMARY KEY,
+                id_restaurante  TEXT        NOT NULL DEFAULT 'demo-tenant',
+                id_mesero       TEXT,
+                numero_ficha    INTEGER     NOT NULL DEFAULT 0,
+                numero_letrero  INTEGER,
+                estado          TEXT        NOT NULL DEFAULT 'pendiente',
+                subtotal        NUMERIC(10,2) NOT NULL DEFAULT 0,
+                total           NUMERIC(10,2) NOT NULL DEFAULT 0,
+                datos_facturacion JSONB,
+                notas           TEXT,
+                creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS items_pedido (
+                id                  TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+                id_pedido           TEXT        NOT NULL REFERENCES pedidos(id) ON DELETE CASCADE,
+                id_elemento_menu    TEXT,
+                nombre_item         TEXT        NOT NULL,
+                categoria           TEXT,
+                cantidad            INTEGER     NOT NULL DEFAULT 1,
+                precio_unitario     NUMERIC(10,2) NOT NULL DEFAULT 0,
+                subtotal            NUMERIC(10,2) NOT NULL DEFAULT 0,
+                estado_item         TEXT        NOT NULL DEFAULT 'pendiente',
+                instrucciones       TEXT,
+                creado_en           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                actualizado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS dias_cerrados (
+                id              TEXT        PRIMARY KEY,
+                fecha           TEXT        NOT NULL,
+                total_recaudado NUMERIC(10,2) NOT NULL DEFAULT 0,
+                total_pedidos   INTEGER     NOT NULL DEFAULT 0,
+                total_items     INTEGER     NOT NULL DEFAULT 0,
+                pedidos_snapshot JSONB,
+                cerrado_en      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS usuarios (
+                id              TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+                nombre          TEXT        NOT NULL,
+                usuario         TEXT        NOT NULL UNIQUE,
+                password        TEXT        NOT NULL,
+                rol             TEXT        NOT NULL CHECK (rol IN ('administrador', 'cocinero', 'camarero')),
+                creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_pedidos_estado ON pedidos(estado);
+            CREATE INDEX IF NOT EXISTS idx_pedidos_creado ON pedidos(creado_en);
+            CREATE INDEX IF NOT EXISTS idx_items_pedido   ON items_pedido(id_pedido);
+            CREATE INDEX IF NOT EXISTS idx_menu_disponible ON elementos_menu(disponible);
+
+            CREATE TABLE IF NOT EXISTS promociones (
+                id              TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+                titulo          TEXT        NOT NULL,
+                subtitulo       TEXT,
+                badge           TEXT,
+                tipo            TEXT        NOT NULL DEFAULT 'imagen',
+                imagen_url      TEXT,
+                imagen_base64   TEXT,
+                fecha_inicio    DATE        NOT NULL DEFAULT CURRENT_DATE,
+                fecha_fin       DATE,
+                orden           INTEGER     NOT NULL DEFAULT 1,
+                creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS gastos (
+                id              TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
+                id_restaurante  TEXT        NOT NULL DEFAULT 'demo-tenant',
+                descripcion     TEXT        NOT NULL,
+                monto           NUMERIC(10,2) NOT NULL,
+                categoria       TEXT        NOT NULL,
+                fecha           DATE        NOT NULL DEFAULT CURRENT_DATE,
+                creado_en       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            CREATE TABLE IF NOT EXISTS web_config (
+                clave           TEXT        PRIMARY KEY,
+                valor           JSONB       NOT NULL,
+                actualizado_en  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+            );
+
+            ALTER TABLE elementos_menu ADD COLUMN IF NOT EXISTS costo NUMERIC(10,2) NOT NULL DEFAULT 0;
+        `);
+        console.log('✅ Esquema correcto inicializado en Supabase.');
 
         // Lista de tablas ordenadas por dependencias de llaves foráneas
         const tablas = [
@@ -56,15 +166,6 @@ async function migrarDatos() {
             'pedidos',
             'items_pedido'
         ];
-
-        console.log('🧹 Vaciando tablas en la base de datos de destino...');
-        // Vaciamos en sentido inverso para evitar errores de claves foráneas
-        for (let i = tablas.length - 1; i >= 0; i--) {
-            const tabla = tablas[i];
-            console.log(`   Vaciando tabla ${tabla}...`);
-            await clientDest.query(`TRUNCATE TABLE "${tabla}" CASCADE`);
-        }
-        console.log('✅ Base de datos de destino limpia y lista para recibir datos.');
 
         // Copiar los datos tabla por tabla
         for (const tabla of tablas) {
