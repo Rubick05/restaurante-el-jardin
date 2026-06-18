@@ -13,7 +13,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
-import { API_BASE_URL } from './useInicializacion';
+import { API_BASE_URL, normalizarPedidos } from './useInicializacion';
 
 let socket: Socket | null = null;
 
@@ -36,12 +36,12 @@ export function useSocketSync() {
             console.warn('⚠️ Socket sin conexión:', err.message);
         });
 
-        // ── Eventos de Pedidos ──────────────────────────────────
         socket.on('pedido:nuevo', async (pedido: any) => {
             if (pedido?.id) {
                 try {
                     const { bdLocal } = await import('@/lib/bd/bd-local');
-                    await bdLocal.pedidos.put({ ...pedido, sincronizado: true });
+                    const [normalizado] = normalizarPedidos([pedido]);
+                    await bdLocal.pedidos.put(normalizado);
                 } catch (e) { console.error('Error guardando pedido nuevo', e); }
             }
             queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
@@ -55,7 +55,8 @@ export function useSocketSync() {
                 try {
                     const { bdLocal } = await import('@/lib/bd/bd-local');
                     const local = await bdLocal.pedidos.get(pedido.id);
-                    await bdLocal.pedidos.put({ ...local, ...pedido, sincronizado: true });
+                    const [normalizado] = normalizarPedidos([{ ...local, ...pedido }]);
+                    await bdLocal.pedidos.put(normalizado);
                 } catch (e) { console.error('Error actualizando pedido local', e); }
             }
             queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
@@ -92,7 +93,11 @@ export function useSocketSync() {
             if (gasto?.id) {
                 try {
                     const { bdLocal } = await import('@/lib/bd/bd-local');
-                    await bdLocal.gastos.put({ ...gasto, sincronizado: true });
+                    await bdLocal.gastos.put({
+                        ...gasto,
+                        monto: Number(gasto.monto ?? 0),
+                        sincronizado: true
+                    });
                 } catch (e) { console.error('Error guardando gasto en tiempo real', e); }
             }
             queryClient.invalidateQueries({ queryKey: ['gastos'] });

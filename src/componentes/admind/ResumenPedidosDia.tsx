@@ -328,7 +328,7 @@ export default function ResumenPedidosDia() {
                 await queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
                 await queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
                 await queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
-                alert(`✅ Día cerrado. Total: Bs ${data.total_recaudado?.toFixed(2)}`);
+                alert(`✅ Día cerrado. Total: Bs ${Number(data.total_recaudado ?? 0).toFixed(2)}`);
             } else {
                 // Offline: cerrar localmente
                 const fechaStr = formatearFechaLocal(new Date());
@@ -879,13 +879,11 @@ export default function ResumenPedidosDia() {
                                                     </div>
                                                     <div className="flex gap-12 items-center">
                                                         <span className="font-bold text-foreground text-center">{info.cantidad}</span>
-                                                        <span className="w-16 text-right font-semibold text-emerald-400">Bs {info.total.toFixed(0)}</span>
+                                                        <span className="w-16 text-right font-semibold text-emerald-400">Bs {Number(info.total || 0).toFixed(0)}</span>
                                                     </div>
                                                 </div>
                                             ))}
                                         </div>
-
-                                        {/* Gráfico o resumen visual */}
                                         <div className="p-4 border border-border rounded-lg bg-muted/5 flex flex-col justify-center space-y-4">
                                             <h4 className="text-sm font-semibold text-foreground">Estadísticas Rápidas</h4>
                                             <div className="grid grid-cols-2 gap-3">

@@ -22,7 +22,7 @@ export default function GestionMenu() {
       try {
         const res = await fetch(`${API_BASE_URL}/api/menu`);
         if (res.ok) {
-          const items = await res.json() as ElementoMenu[];
+          const items = normalizarMenu(await res.json());
           await bdLocal.elementosMenu.bulkPut(items);
           return items;
         }

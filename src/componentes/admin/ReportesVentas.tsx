@@ -168,10 +168,11 @@ export default function ReportesVentas() {
             
             gastosFiltrados.forEach(g => {
                 const cat = g.categoria || 'Otros';
+                const montoNum = Number(g.monto || 0);
                 if (gastosCategorias[cat] !== undefined) {
-                    gastosCategorias[cat] += g.monto;
+                    gastosCategorias[cat] += montoNum;
                 } else {
-                    gastosCategorias['Otros'] = (gastosCategorias['Otros'] || 0) + g.monto;
+                    gastosCategorias['Otros'] = (gastosCategorias['Otros'] || 0) + montoNum;
                 }
             });
 
@@ -187,10 +188,10 @@ export default function ReportesVentas() {
                     if (!platosVendidos[nombre]) {
                         const costoUnit = costoMap[item.id_elemento_menu] || costoMap[nombre] || 0;
                         platosVendidos[nombre] = { 
-                            cantidad: 0, 
-                            total: 0, 
-                            categoria: item.categoria || 'Sin Categoría',
-                            costoUnitario: costoUnit
+                             cantidad: 0, 
+                             total: 0, 
+                             categoria: item.categoria || 'Sin Categoría',
+                             costoUnitario: costoUnit
                         };
                     }
                     platosVendidos[nombre].cantidad += item.cantidad;
@@ -213,7 +214,7 @@ export default function ReportesVentas() {
                 return acc + costoPedido;
             }, 0);
 
-            const totalGastosRegistrados = gastosFiltrados.reduce((acc, g) => acc + g.monto, 0);
+            const totalGastosRegistrados = gastosFiltrados.reduce((acc, g) => acc + Number(g.monto || 0), 0);
             const totalGastos = totalGastosRegistrados + totalCostoInsumos;
             const utilidadNeta = totalIngresos - totalGastos;
             const margenUtilidad = totalIngresos > 0 ? (utilidadNeta / totalIngresos) * 100 : 0;
@@ -502,7 +503,7 @@ export default function ReportesVentas() {
                                                 <div key={idx} className="flex items-center gap-1.5">
                                                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORES_CATEGORIAS[entry.name] }} />
                                                     <span className="text-muted-foreground truncate">{entry.name}:</span>
-                                                    <span className="font-semibold text-foreground">Bs {entry.value.toFixed(0)}</span>
+                                                    <span className="font-semibold text-foreground">Bs {Number(entry.value).toFixed(0)}</span>
                                                 </div>
                                             ))}
                                         </div>
