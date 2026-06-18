@@ -39,6 +39,7 @@ export function normalizarMenu(items: any[]): any[] {
     return items.map(i => ({
         ...i,
         precio_actual: Number(i.precio_actual ?? 0),
+        costo: Number(i.costo ?? 0),
         disponible: Boolean(i.disponible),
     }));
 }

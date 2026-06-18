@@ -688,17 +688,17 @@ export default function ReportesVentas() {
                                                 </thead>
                                                 <tbody className="divide-y divide-border">
                                                     {reportData.topPlatos.map((plato, idx) => {
-                                                        const totalCosto = plato.cantidad * (plato.costoUnitario || 0);
-                                                        const utilidad = plato.total - totalCosto;
+                                                        const totalCosto = plato.cantidad * Number(plato.costoUnitario || 0);
+                                                        const utilidad = Number(plato.total || 0) - totalCosto;
                                                         return (
                                                             <tr key={idx} className="hover:bg-accent/20 transition-colors">
                                                                 <td className="p-3 font-semibold text-foreground">{plato.nombre}</td>
                                                                 <td className="p-3 text-muted-foreground">{plato.categoria}</td>
                                                                 <td className="p-3 text-center font-bold text-foreground">{plato.cantidad}</td>
-                                                                <td className="p-3 text-right font-mono text-muted-foreground">Bs {(plato.costoUnitario || 0).toFixed(2)}</td>
-                                                                <td className="p-3 text-right font-mono text-emerald-400">Bs {plato.total.toFixed(2)}</td>
-                                                                <td className="p-3 text-right font-mono text-red-400">Bs {totalCosto.toFixed(2)}</td>
-                                                                <td className="p-3 text-right font-mono font-bold text-primary">Bs {utilidad.toFixed(2)}</td>
+                                                                <td className="p-3 text-right font-mono text-muted-foreground">Bs {Number(plato.costoUnitario || 0).toFixed(2)}</td>
+                                                                <td className="p-3 text-right font-mono text-emerald-400">Bs {Number(plato.total || 0).toFixed(2)}</td>
+                                                                <td className="p-3 text-right font-mono text-red-400">Bs {Number(totalCosto || 0).toFixed(2)}</td>
+                                                                <td className="p-3 text-right font-mono font-bold text-primary">Bs {Number(utilidad || 0).toFixed(2)}</td>
                                                             </tr>
                                                         );
                                                     })}
