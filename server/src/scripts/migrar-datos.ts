@@ -1,4 +1,6 @@
 import { Client } from 'pg';
+import fs from 'fs';
+import path from 'path';
 
 async function migrarDatos() {
     // Obtener URIs de conexión desde los argumentos
@@ -31,6 +33,17 @@ async function migrarDatos() {
         console.log('✅ Conexión establecida con Origen.');
         await clientDest.connect();
         console.log('✅ Conexión establecida con Destino.');
+
+        // Inicializar esquema de tablas en Supabase antes de vaciar
+        const rutaSchema = path.resolve(__dirname, '../../../database/esquema.sql');
+        if (fs.existsSync(rutaSchema)) {
+            console.log('📝 Inicializando esquema de tablas en Supabase...');
+            const sql = fs.readFileSync(rutaSchema, 'utf-8');
+            await clientDest.query(sql);
+            console.log('✅ Esquema inicializado correctamente en Supabase.');
+        } else {
+            console.warn('⚠️ No se encontró el archivo de esquema.sql en', rutaSchema);
+        }
 
         // Lista de tablas ordenadas por dependencias de llaves foráneas
         const tablas = [
