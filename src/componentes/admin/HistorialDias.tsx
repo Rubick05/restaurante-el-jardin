@@ -17,6 +17,18 @@ function nombreMesero(idMesero: string): string {
     return USUARIOS_SISTEMA.find(u => u.id === idMesero)?.nombre ?? idMesero;
 }
 
+function getEstadoBadge(estado: string) {
+    const map: Record<string, { label: string; className: string }> = {
+        pendiente: { label: 'Pendiente', className: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' },
+        en_proceso: { label: 'En Proceso', className: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
+        listo: { label: 'Listo', className: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
+        entregado: { label: 'Entregado', className: 'bg-slate-500/10 text-slate-400 border-slate-500/20' },
+        pagado: { label: 'Pagado ✓', className: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
+        cancelado: { label: 'Cancelado', className: 'bg-red-500/10 text-red-400 border-red-500/20' },
+    };
+    return map[estado] || { label: estado, className: 'bg-secondary text-secondary-foreground border border-border' };
+}
+
 export default function HistorialDias() {
     const [expandido, setExpandido] = useState<string | null>(null);
     const queryClient = useQueryClient();
@@ -71,29 +83,29 @@ export default function HistorialDias() {
             {/* Resumen General */}
             {dias.length > 0 && (
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Card>
+                    <Card className="bg-card border-border shadow-sm">
                         <CardContent className="p-4 flex items-center gap-3">
-                            <Calendar className="w-8 h-8 text-blue-500" />
+                            <Calendar className="w-8 h-8 text-blue-400" />
                             <div>
-                                <div className="text-2xl font-bold">{dias.length}</div>
+                                <div className="text-2xl font-bold text-foreground">{dias.length}</div>
                                 <div className="text-xs text-muted-foreground">Días con Actividad</div>
                             </div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-card border-border shadow-sm">
                         <CardContent className="p-4 flex items-center gap-3">
-                            <TrendingUp className="w-8 h-8 text-green-500" />
+                            <TrendingUp className="w-8 h-8 text-emerald-400" />
                             <div>
-                                <div className="text-2xl font-bold">Bs {Number(totalGeneral || 0).toFixed(2)}</div>
+                                <div className="text-2xl font-bold text-foreground">Bs {Number(totalGeneral || 0).toFixed(2)}</div>
                                 <div className="text-xs text-muted-foreground">Total Acumulado</div>
                             </div>
                         </CardContent>
                     </Card>
-                    <Card>
+                    <Card className="bg-card border-border shadow-sm">
                         <CardContent className="p-4 flex items-center gap-3">
-                            <Hash className="w-8 h-8 text-orange-500" />
+                            <Hash className="w-8 h-8 text-amber-500" />
                             <div>
-                                <div className="text-2xl font-bold">{totalPedidos}</div>
+                                <div className="text-2xl font-bold text-foreground">{totalPedidos}</div>
                                 <div className="text-xs text-muted-foreground">Pedidos Totales</div>
                             </div>
                         </CardContent>
@@ -119,9 +131,9 @@ export default function HistorialDias() {
                     const estaExpandido = expandido === dia.id;
 
                     return (
-                        <Card key={dia.id} className="overflow-hidden">
+                        <Card key={dia.id} className="overflow-hidden border-border bg-card">
                             <CardHeader
-                                className="pb-2 cursor-pointer hover:bg-slate-50 transition-colors"
+                                className="pb-2 cursor-pointer hover:bg-accent/40 transition-colors"
                                 onClick={() => setExpandido(estaExpandido ? null : dia.id)}
                             >
                                 <div className="flex items-center justify-between">
@@ -130,7 +142,7 @@ export default function HistorialDias() {
                                             <Calendar className="w-5 h-5 text-primary" />
                                         </div>
                                         <div>
-                                            <CardTitle className="text-base capitalize">
+                                            <CardTitle className="text-base capitalize text-foreground">
                                                 {format(new Date(dia.fecha + 'T12:00:00'), "EEEE, d 'de' MMMM yyyy", { locale: es })}
                                             </CardTitle>
                                             <p className="text-xs text-muted-foreground">
@@ -141,7 +153,7 @@ export default function HistorialDias() {
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="text-right">
-                                            <div className="font-bold text-green-700 text-lg">
+                                            <div className="font-bold text-emerald-400 text-lg">
                                                 Bs {Number(dia.total_recaudado || 0).toFixed(2)}
                                             </div>
                                             <div className="text-xs text-muted-foreground">recaudado</div>
@@ -155,10 +167,10 @@ export default function HistorialDias() {
                             </CardHeader>
 
                             {estaExpandido && (
-                                <CardContent className="pt-0 border-t">
+                                <CardContent className="pt-0 border-t border-border">
                                     <div className="overflow-x-auto mt-3">
                                         <table className="w-full text-sm">
-                                            <thead className="bg-slate-50 border-b">
+                                            <thead className="bg-muted/40 border-b border-border text-muted-foreground text-xs uppercase">
                                                 <tr>
                                                     <th className="text-left p-2.5 font-semibold">Ficha</th>
                                                     <th className="text-left p-2.5 font-semibold">Letrero</th>
@@ -177,35 +189,31 @@ export default function HistorialDias() {
                                                     <th className="text-center p-2.5 font-semibold">Estado</th>
                                                 </tr>
                                             </thead>
-                                            <tbody>
+                                            <tbody className="divide-y divide-border">
                                                 {pedidos.map((p: any) => (
-                                                    <tr key={p.id} className="border-b hover:bg-slate-50">
-                                                        <td className="p-2.5 font-mono font-bold">#{p.numero_ficha}</td>
-                                                        <td className="p-2.5 font-black text-xl">{p.numero_letrero || '-'}</td>
+                                                    <tr key={p.id} className="hover:bg-accent/20 transition-colors">
+                                                        <td className="p-2.5 font-mono font-bold text-foreground">#{p.numero_ficha}</td>
+                                                        <td className="p-2.5 font-black text-xl text-foreground">{p.numero_letrero || '-'}</td>
                                                         <td className="p-2.5 text-muted-foreground">
-                                                            {format(new Date(p.creado_en), 'HH:mm')}
+                                                            {p.creado_en ? format(new Date(p.creado_en), 'HH:mm') : '-'}
                                                         </td>
-                                                        <td className="p-2.5">{nombreMesero(p.id_mesero)}</td>
-                                                        <td className="p-2.5 text-muted-foreground">{p.items?.length ?? 0}</td>
-                                                        <td className="p-2.5 text-right font-bold text-green-700">
+                                                        <td className="p-2.5 text-foreground">{nombreMesero(p.id_mesero)}</td>
+                                                        <td className="p-2.5 text-muted-foreground">{p.items?.length ?? 0} items</td>
+                                                        <td className="p-2.5 text-right font-bold text-emerald-400 font-mono">
                                                             Bs {Number(p.total || 0).toFixed(2)}
                                                         </td>
                                                         <td className="p-2.5 text-center">
-                                                            <Badge className={
-                                                                p.estado === 'pagado'
-                                                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                                                                    : 'bg-slate-100 text-slate-600'
-                                                            }>
-                                                                {p.estado === 'pagado' ? 'Pagado ✓' : p.estado}
+                                                            <Badge className={`text-xs border ${getEstadoBadge(p.estado).className}`}>
+                                                                {getEstadoBadge(p.estado).label}
                                                             </Badge>
                                                         </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                             <tfoot>
-                                                <tr className="bg-green-50 border-t-2 border-green-200">
-                                                    <td colSpan={5} className="p-2.5 font-bold text-right">TOTAL DEL DÍA:</td>
-                                                    <td className="p-2.5 text-right font-black text-green-700 text-base">
+                                                <tr className="bg-emerald-500/10 border-t border-border font-bold">
+                                                    <td colSpan={5} className="p-2.5 font-bold text-right text-foreground">TOTAL DEL DÍA:</td>
+                                                    <td className="p-2.5 text-right font-black text-emerald-400 text-base font-mono">
                                                         Bs {Number(dia.total_recaudado || 0).toFixed(2)}
                                                     </td>
                                                     <td></td>
@@ -217,7 +225,7 @@ export default function HistorialDias() {
                                         <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="text-red-500 hover:text-red-600 hover:bg-red-50 text-xs"
+                                            className="text-red-400 hover:text-red-500 hover:bg-destructive/10 text-xs font-bold"
                                             onClick={() => handleEliminarDia(dia.id)}
                                         >
                                             Eliminar registro

@@ -93,9 +93,11 @@ export default function ReportesVentas() {
 
             // Cargar gastos locales
             const todosGastos = await bdLocal.gastos.toArray();
-            const gastosFiltrados = todosGastos.filter(
-                g => new Date(g.fecha) >= fechaLimite
-            );
+            const gastosFiltrados = todosGastos.filter(g => {
+                const esFechaValida = new Date(g.fecha) >= fechaLimite;
+                const esAutomatico = g.descripcion?.toLowerCase().includes('costo autom');
+                return esFechaValida && !esAutomatico;
+            });
 
             // Cargar menú para obtener costos de insumos
             const menuLocal = await bdLocal.elementosMenu.toArray();
@@ -162,6 +164,17 @@ export default function ReportesVentas() {
                 }))
                 .sort((a, b) => a.fechaKey.localeCompare(b.fechaKey));
 
+            // Totales acumulados
+            const totalIngresos = pedidosValidos.reduce((acc, p) => acc + p.total, 0);
+            
+            const totalCostoInsumos = pedidosValidos.reduce((acc, p) => {
+                const costoPedido = p.items?.reduce((itemAcc: number, item: any) => {
+                    const costoUnit = costoMap[item.id_elemento_menu] || costoMap[item.nombre_item] || 0;
+                    return itemAcc + (Number(item.cantidad || 0) * Number(costoUnit));
+                }, 0) || 0;
+                return acc + costoPedido;
+            }, 0);
+
             // 2. Gastos por categoría
             const gastosCategorias: Record<string, number> = {};
             CATEGORIAS_GASTOS.forEach(c => { gastosCategorias[c] = 0; });
@@ -175,6 +188,9 @@ export default function ReportesVentas() {
                     gastosCategorias['Otros'] = (gastosCategorias['Otros'] || 0) + montoNum;
                 }
             });
+
+            // Añadir el costo de insumos calculado dinámicamente al gráfico de distribución
+            gastosCategorias['Insumos'] += totalCostoInsumos;
 
             const gastosPorCategoriaData = Object.entries(gastosCategorias)
                 .map(([name, value]) => ({ name, value }))
@@ -203,16 +219,7 @@ export default function ReportesVentas() {
                 .map(([nombre, info]) => ({ nombre, ...info }))
                 .sort((a, b) => b.cantidad - a.cantidad);
 
-            // Totales acumulados
-            const totalIngresos = pedidosValidos.reduce((acc, p) => acc + p.total, 0);
-            
-            const totalCostoInsumos = pedidosValidos.reduce((acc, p) => {
-                const costoPedido = p.items?.reduce((itemAcc: number, item: any) => {
-                    const costoUnit = costoMap[item.id_elemento_menu] || costoMap[item.nombre_item] || 0;
-                    return itemAcc + (Number(item.cantidad || 0) * Number(costoUnit));
-                }, 0) || 0;
-                return acc + costoPedido;
-            }, 0);
+
 
             const totalGastosRegistrados = gastosFiltrados.reduce((acc, g) => acc + Number(g.monto || 0), 0);
             const totalGastos = totalGastosRegistrados + totalCostoInsumos;
