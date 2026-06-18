@@ -90,7 +90,7 @@ export default function ResumenPedidosDia() {
                 <div class="info">
                     <strong>FICHA: #${pedido.numero_ficha}</strong><br>
                     <strong>LETRERO: ${pedido.numero_letrero || "?"}</strong><br>
-                    Camarero: ${nombreMesero(pedido.id_mesero)}<br>
+                    Mesero: ${nombreMesero(pedido.id_mesero)}<br>
                     Fecha: ${new Date(pedido.creado_en).toLocaleString("es-BO")}<br>
                     ${pedido.notas ? `<strong>Notas Pedido:</strong> <span style="font-size: 13px; color: #d97706;">${pedido.notas}</span><br>` : ""}
                 </div>
@@ -229,7 +229,7 @@ export default function ResumenPedidosDia() {
                 <div class="info">
                     <strong>RECIBO DE VENTA</strong><br>
                     Ficha: #${pedido.numero_ficha} · Letrero: ${pedido.numero_letrero || "?"}<br>
-                    Camarero: ${nombreMesero(pedido.id_mesero)}<br>
+                    Mesero: ${nombreMesero(pedido.id_mesero)}<br>
                     Fecha: ${new Date(pedido.creado_en).toLocaleString("es-BO")}<br>
                     Cliente: ${pedido.datos_facturacion?.razon_social || "PÚBLICO GENERAL"}<br>
                     NIT/CI: ${pedido.datos_facturacion?.nit_ci || "0"}

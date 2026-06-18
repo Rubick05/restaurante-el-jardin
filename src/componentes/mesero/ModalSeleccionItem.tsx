@@ -76,6 +76,21 @@ export function ModalSeleccionItem({ open, onOpenChange, item, cantidadInicial =
                         </Button>
                     </div>
 
+                    {/* Notas del Item */}
+                    <div className="space-y-1.5">
+                        <label htmlFor="item-notes" className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                            Especificaciones (Opcional)
+                        </label>
+                        <input
+                            id="item-notes"
+                            type="text"
+                            placeholder="Ej. Sin cebolla, término medio, etc."
+                            className="flex h-10 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:ring-2 focus:ring-primary focus:outline-none placeholder:text-muted-foreground/40"
+                            value={notas}
+                            onChange={(e) => setNotas(e.target.value)}
+                        />
+                    </div>
+
                     {/* Subtotal */}
                     <div className="text-center">
                         <span className="text-lg font-medium text-muted-foreground mr-2">Subtotal:</span>

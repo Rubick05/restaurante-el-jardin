@@ -220,7 +220,7 @@ export function ModalCobro({ open, onOpenChange, pedido, onCobrado }: Props) {
                 <div class="info">
                     <strong>RECIBO DE VENTA</strong><br>
                     Ficha: #${pedido.numero_ficha} · Letrero: ${pedido.numero_letrero || "?"}<br>
-                    Camarero: ${nombreMesero(pedido.id_mesero)}<br>
+                    Mesero: ${nombreMesero(pedido.id_mesero)}<br>
                     Fecha: ${new Date().toLocaleString("es-BO")}<br>
                     Cliente: ${razonSocial.trim() || "PÚBLICO GENERAL"}<br>
                     NIT/CI: ${nit.trim() || "0"}

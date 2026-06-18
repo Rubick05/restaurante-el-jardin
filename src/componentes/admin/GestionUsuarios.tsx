@@ -128,7 +128,7 @@ export default function GestionUsuarios() {
                             <CardTitle className="text-lg flex justify-between items-start">
                                 <span>{u.nombre}</span>
                                 <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border">
-                                    {u.rol}
+                                    {u.rol === 'camarero' ? 'mesero' : u.rol}
                                 </span>
                             </CardTitle>
                             <CardDescription className="text-sm">
@@ -200,7 +200,7 @@ export default function GestionUsuarios() {
                                         onChange={e => setRol(e.target.value)}
                                         required
                                     >
-                                        <option value="camarero" className="bg-card text-foreground">Camarero</option>
+                                        <option value="camarero" className="bg-card text-foreground">Mesero</option>
                                         <option value="cocinero" className="bg-card text-foreground">Cocina</option>
                                         <option value="administrador" className="bg-card text-foreground">Administrador</option>
                                     </select>

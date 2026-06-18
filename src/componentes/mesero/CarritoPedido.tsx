@@ -1,4 +1,4 @@
-﻿import { Button } from "@/componentes/ui/button";
+import { Button } from "@/componentes/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/componentes/ui/card";
 import { Minus, Plus, Trash2, Send } from "lucide-react";
 
@@ -8,11 +8,12 @@ export interface ItemCarrito {
     precio: number;
     cantidad: number;
     categoria?: string;
+    instrucciones?: string;
 }
 
 interface Props {
     items: ItemCarrito[];
-    onUpdateQuantity: (id: string, delta: number) => void;
+    onUpdateQuantity: (id: string, delta: number, instrucciones?: string) => void;
     onSubmit: () => void;
     procesando: boolean;
     notaCliente: string;
@@ -39,10 +40,15 @@ export function CarritoPedido({ items, onUpdateQuantity, onSubmit, procesando, n
                     </div>
                 ) : (
                     items.map((item) => (
-                        <div key={item.id_elemento_menu} className="flex gap-3 items-center bg-secondary/30 p-2 rounded-lg">
+                        <div key={item.id_elemento_menu + '-' + (item.instrucciones || '')} className="flex gap-3 items-center bg-secondary/30 p-2 rounded-lg">
                             <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate">{item.nombre}</p>
                                 <p className="text-sm text-muted-foreground">Bs {Number(item.precio).toFixed(2)} x {item.cantidad}</p>
+                                {item.instrucciones && (
+                                    <p className="text-xs text-amber-400 italic font-medium mt-0.5">
+                                        Nota: {item.instrucciones}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="flex items-center gap-1">
@@ -50,7 +56,7 @@ export function CarritoPedido({ items, onUpdateQuantity, onSubmit, procesando, n
                                     size="icon"
                                     variant="ghost"
                                     className="h-8 w-8"
-                                    onClick={() => onUpdateQuantity(item.id_elemento_menu, -1)}
+                                    onClick={() => onUpdateQuantity(item.id_elemento_menu, -1, item.instrucciones)}
                                 >
                                     {item.cantidad === 1 ? <Trash2 className="h-4 w-4 text-destructive" /> : <Minus className="h-4 w-4" />}
                                 </Button>
@@ -59,7 +65,7 @@ export function CarritoPedido({ items, onUpdateQuantity, onSubmit, procesando, n
                                     size="icon"
                                     variant="ghost"
                                     className="h-8 w-8"
-                                    onClick={() => onUpdateQuantity(item.id_elemento_menu, 1)}
+                                    onClick={() => onUpdateQuantity(item.id_elemento_menu, 1, item.instrucciones)}
                                 >
                                     <Plus className="h-4 w-4" />
                                 </Button>

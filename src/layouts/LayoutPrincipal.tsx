@@ -41,7 +41,7 @@ export default function LayoutPrincipal() {
     const etiquetaRol = ({
         administrador: '👑 Administrador',
         cocinero: '👨‍🍳 Cocina',
-        camarero: '🍽️ Camarero',
+        camarero: '🍽️ Mesero',
     } as Record<string, string>)[usuarioActual?.rol ?? ''] ?? '';
 
     const esRutaActiva = (ruta: string) =>

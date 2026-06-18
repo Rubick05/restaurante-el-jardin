@@ -93,13 +93,13 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
         });
     }, [menu, categoriaActiva, busqueda]);
 
-    const agregarAlCarrito = (cantidad: number) => {
+    const agregarAlCarrito = (cantidad: number, instrucciones?: string) => {
         if (!itemSeleccionado) return;
 
         setItemsNuevos(prev => {
-            const existente = prev.find(i => i.id_elemento_menu === itemSeleccionado.id);
+            const existente = prev.find(i => i.id_elemento_menu === itemSeleccionado.id && i.instrucciones === instrucciones);
             if (existente) {
-                return prev.map(i => i.id_elemento_menu === itemSeleccionado.id
+                return prev.map(i => i.id_elemento_menu === itemSeleccionado.id && i.instrucciones === instrucciones
                     ? { ...i, cantidad: i.cantidad + cantidad }
                     : i
                 );
@@ -109,16 +109,17 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                 nombre: itemSeleccionado.nombre,
                 precio: itemSeleccionado.precio_actual,
                 cantidad: cantidad,
-                categoria: itemSeleccionado.categoria
+                categoria: itemSeleccionado.categoria,
+                instrucciones: instrucciones || ""
             }];
         });
 
         setItemSeleccionado(null);
     };
 
-    const actualizarCantidad = (id: string, delta: number) => {
+    const actualizarCantidad = (id: string, delta: number, instrucciones?: string) => {
         setItemsNuevos(prev => prev.map(item => {
-            if (item.id_elemento_menu === id) {
+            if (item.id_elemento_menu === id && item.instrucciones === instrucciones) {
                 return { ...item, cantidad: Math.max(0, item.cantidad + delta) };
             }
             return item;
@@ -336,6 +337,7 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                 estado_item: esPlatoCocina(i.categoria)
                     ? ('pendiente' as const)
                     : ('entregado' as const),
+                instrucciones: i.instrucciones || undefined,
             }));
 
             const totalNuevos = itemsNuevos.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
@@ -486,6 +488,11 @@ export default function NavegadorMenu({ onVolver, pedidoExistente }: Props) {
                                                     }`}>
                                                     {item.cantidad}× {item.nombre_item}
                                                 </span>
+                                                {item.instrucciones ? (
+                                                    <div className="text-[11px] text-amber-400 italic mt-0.5">
+                                                        Nota: {item.instrucciones}
+                                                    </div>
+                                                ) : null}
                                                 <div className="flex items-center gap-1 mt-0.5">
                                                     {(() => {
                                                         const { variant, className: badgeCls } = getEstadoBadgeColor(item.estado_item);
