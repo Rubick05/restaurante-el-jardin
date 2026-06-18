@@ -13,7 +13,7 @@
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { io, Socket } from 'socket.io-client';
-import { API_BASE_URL, normalizarPedidos } from './useInicializacion';
+import { API_BASE_URL, normalizarPedidos, formatearFechaLocal } from './useInicializacion';
 
 let socket: Socket | null = null;
 
@@ -96,6 +96,7 @@ export function useSocketSync() {
                     await bdLocal.gastos.put({
                         ...gasto,
                         monto: Number(gasto.monto ?? 0),
+                        fecha: gasto.fecha ? formatearFechaLocal(gasto.fecha) : formatearFechaLocal(new Date()),
                         sincronizado: true
                     });
                 } catch (e) { console.error('Error guardando gasto en tiempo real', e); }

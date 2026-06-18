@@ -536,7 +536,18 @@ export default function ResumenPedidosDia() {
                                                                 <td className="p-3">
                                                                     <span className="font-black text-xl text-foreground">{pedido.numero_letrero || '-'}</span>
                                                                 </td>
-                                                                <td className="p-3 text-sm text-muted-foreground">{format(new Date(pedido.creado_en), 'HH:mm')}</td>
+                                                                <td className="p-3 text-sm text-muted-foreground">
+                                                                     {(() => {
+                                                                         try {
+                                                                             if (!pedido.creado_en) return '-';
+                                                                             const d = new Date(pedido.creado_en);
+                                                                             if (isNaN(d.getTime())) return String(pedido.creado_en);
+                                                                             return format(d, 'HH:mm');
+                                                                         } catch {
+                                                                             return String(pedido.creado_en || '-');
+                                                                         }
+                                                                     })()}
+                                                                 </td>
                                                                 <td className="p-3">
                                                                     <div className="flex items-center gap-1.5 text-sm text-foreground">
                                                                         <UserCircle className="w-3.5 h-3.5 text-muted-foreground" />
@@ -593,9 +604,31 @@ export default function ResumenPedidosDia() {
                                                                                         <span>ID Pedido:</span>
                                                                                         <span className="font-mono text-foreground select-all text-[11px]">{pedido.id}</span>
                                                                                         <span>Registrado:</span>
-                                                                                        <span className="text-foreground">{format(new Date(pedido.creado_en), 'HH:mm:ss')} hs</span>
+                                                                                        <span className="text-foreground">
+                                                                                            {(() => {
+                                                                                                try {
+                                                                                                    if (!pedido.creado_en) return '-';
+                                                                                                    const d = new Date(pedido.creado_en);
+                                                                                                    if (isNaN(d.getTime())) return String(pedido.creado_en);
+                                                                                                    return format(d, 'HH:mm:ss');
+                                                                                                } catch {
+                                                                                                    return String(pedido.creado_en || '-');
+                                                                                                }
+                                                                                            })()} hs
+                                                                                        </span>
                                                                                         <span>Actualizado:</span>
-                                                                                        <span className="text-foreground">{format(new Date(pedido.actualizado_en), 'HH:mm:ss')} hs</span>
+                                                                                        <span className="text-foreground">
+                                                                                            {(() => {
+                                                                                                try {
+                                                                                                    if (!pedido.actualizado_en) return '-';
+                                                                                                    const d = new Date(pedido.actualizado_en);
+                                                                                                    if (isNaN(d.getTime())) return String(pedido.actualizado_en);
+                                                                                                    return format(d, 'HH:mm:ss');
+                                                                                                } catch {
+                                                                                                    return String(pedido.actualizado_en || '-');
+                                                                                                }
+                                                                                            })()} hs
+                                                                                        </span>
                                                                                         <span>Mesero ID:</span>
                                                                                         <span className="text-foreground font-mono">{pedido.id_mesero}</span>
                                                                                         {pedido.notas && (
@@ -749,18 +782,26 @@ export default function ResumenPedidosDia() {
                                                             )}
                                                         </div>
                                                     </div>
-                                                    
-                                                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                                        <div className="flex items-center gap-1">
-                                                            <UserCircle className="w-3.5 h-3.5" />
-                                                            <span>{nombreMesero(pedido.id_mesero)}</span>
-                                                            <span>· {format(new Date(pedido.creado_en), 'HH:mm')}</span>
-                                                            <span>· {pedido.items?.length || 0} items</span>
-                                                        </div>
-                                                        <span className="font-bold text-emerald-400">Bs {Number(pedido.total || 0).toFixed(2)}</span>
-                                                    </div>
+                                                     
+                                                     <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                                         <div className="flex items-center gap-1">
+                                                             <UserCircle className="w-3.5 h-3.5" />
+                                                             <span>{nombreMesero(pedido.id_mesero)}</span>
+                                                             <span>· {(() => {
+                                                                 try {
+                                                                     if (!pedido.creado_en) return '-';
+                                                                     const d = new Date(pedido.creado_en);
+                                                                     if (isNaN(d.getTime())) return String(pedido.creado_en);
+                                                                     return format(d, 'HH:mm');
+                                                                 } catch {
+                                                                     return String(pedido.creado_en || '-');
+                                                                 }
+                                                             })()}</span>
+                                                             <span>· {pedido.items?.length || 0} items</span>
+                                                         </div>
+                                                         <span className="font-bold text-emerald-400">Bs {Number(pedido.total || 0).toFixed(2)}</span>
+                                                     </div>
 
-                                                    {/* Desglose en móvil */}
                                                     {expandido && (
                                                         <div className="pt-3 border-t border-border mt-2 space-y-2 animate-accordion-down">
                                                             {pedido.items && pedido.items.length > 0 ? (

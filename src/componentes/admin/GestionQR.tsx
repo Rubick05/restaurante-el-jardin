@@ -51,9 +51,16 @@ export default function GestionQR() {
         queryClient.invalidateQueries({ queryKey: ['qr-admin'] });
     };
 
-    const fechaActualizacion = qrData?.fecha
-        ? format(new Date(qrData.fecha), "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es })
-        : null;
+    const fechaActualizacion = (() => {
+        try {
+            if (!qrData?.fecha) return null;
+            const d = new Date(qrData.fecha);
+            if (isNaN(d.getTime())) return String(qrData.fecha);
+            return format(d, "d 'de' MMMM yyyy 'a las' HH:mm", { locale: es });
+        } catch {
+            return String(qrData?.fecha || '');
+        }
+    })();
 
     // Calcula si el QR tiene más de 7 días (vencido)
     const qrVencido = qrData?.fecha

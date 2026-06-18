@@ -632,7 +632,24 @@ export default function ReportesVentas() {
                                                 {reportData.todosGastos.map((gasto) => (
                                                     <tr key={gasto.id} className="hover:bg-accent/20 transition-colors">
                                                         <td className="p-3 text-muted-foreground whitespace-nowrap">
-                                                            {format(new Date(gasto.fecha + 'T12:00:00'), 'dd MMM yyyy', { locale: es })}
+                                                             {(() => {
+                                                                 try {
+                                                                     if (!gasto.fecha) return '-';
+                                                                     let d: Date;
+                                                                     if ((gasto.fecha as any) instanceof Date) {
+                                                                         d = gasto.fecha as unknown as Date;
+                                                                     } else {
+                                                                         const fechaStr = String(gasto.fecha);
+                                                                         const dateStr = fechaStr.includes('T') ? fechaStr : `${fechaStr}T12:00:00`;
+                                                                         d = new Date(dateStr);
+                                                                     }
+                                                                     if (isNaN(d.getTime())) return String(gasto.fecha);
+                                                                     return format(d, 'dd MMM yyyy', { locale: es });
+                                                                 } catch (e) {
+                                                                     console.error("Error al formatear fecha de gasto:", e);
+                                                                     return String(gasto.fecha || '-');
+                                                                 }
+                                                             })()}
                                                         </td>
                                                         <td className="p-3 font-medium text-foreground">{gasto.descripcion}</td>
                                                         <td className="p-3 whitespace-nowrap">

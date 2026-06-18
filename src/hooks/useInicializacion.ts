@@ -179,7 +179,7 @@ export function useInicializacion() {
                 // Formatear si es necesario (el backend envía snake_case alineado con dbLocal)
                 const diasNormalizados = diasHistorial.map((d: any) => ({
                     id: d.id,
-                    fecha: d.fecha,
+                    fecha: d.fecha ? formatearFechaLocal(d.fecha) : formatearFechaLocal(new Date()),
                     total_recaudado: Number(d.total_recaudado ?? 0),
                     total_pedidos: Number(d.total_pedidos ?? 0),
                     total_items: Number(d.total_items ?? 0),

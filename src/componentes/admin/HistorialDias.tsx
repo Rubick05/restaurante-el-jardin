@@ -143,10 +143,36 @@ export default function HistorialDias() {
                                         </div>
                                         <div>
                                             <CardTitle className="text-base capitalize text-foreground">
-                                                {format(new Date(dia.fecha + 'T12:00:00'), "EEEE, d 'de' MMMM yyyy", { locale: es })}
+                                                {(() => {
+                                                    try {
+                                                        if (!dia.fecha) return '-';
+                                                        let d: Date;
+                                                        if ((dia.fecha as any) instanceof Date) {
+                                                            d = dia.fecha as unknown as Date;
+                                                        } else {
+                                                            const fechaStr = String(dia.fecha);
+                                                            const dateStr = fechaStr.includes('T') ? fechaStr : `${fechaStr}T12:00:00`;
+                                                            d = new Date(dateStr);
+                                                        }
+                                                        if (isNaN(d.getTime())) return String(dia.fecha);
+                                                        return format(d, "EEEE, d 'de' MMMM yyyy", { locale: es });
+                                                    } catch (e) {
+                                                        console.error("Error al formatear fecha de dia:", e);
+                                                        return String(dia.fecha || '-');
+                                                    }
+                                                })()}
                                             </CardTitle>
                                             <p className="text-xs text-muted-foreground">
-                                                Cerrado: {format(new Date(dia.cerrado_en), 'HH:mm')} hs
+                                                Cerrado: {(() => {
+                                                    try {
+                                                        if (!dia.cerrado_en) return '-';
+                                                        const d = new Date(dia.cerrado_en);
+                                                        if (isNaN(d.getTime())) return String(dia.cerrado_en);
+                                                        return format(d, 'HH:mm');
+                                                    } catch {
+                                                        return String(dia.cerrado_en || '-');
+                                                    }
+                                                })()} hs
                                                 · {dia.total_pedidos} pedidos · {dia.total_items} items
                                             </p>
                                         </div>
@@ -195,7 +221,16 @@ export default function HistorialDias() {
                                                         <td className="p-2.5 font-mono font-bold text-foreground">#{p.numero_ficha}</td>
                                                         <td className="p-2.5 font-black text-xl text-foreground">{p.numero_letrero || '-'}</td>
                                                         <td className="p-2.5 text-muted-foreground">
-                                                            {p.creado_en ? format(new Date(p.creado_en), 'HH:mm') : '-'}
+                                                            {(() => {
+                                                                try {
+                                                                    if (!p.creado_en) return '-';
+                                                                    const d = new Date(p.creado_en);
+                                                                    if (isNaN(d.getTime())) return String(p.creado_en);
+                                                                    return format(d, 'HH:mm');
+                                                                } catch {
+                                                                    return String(p.creado_en || '-');
+                                                                }
+                                                            })()}
                                                         </td>
                                                         <td className="p-2.5 text-foreground">{nombreMesero(p.id_mesero)}</td>
                                                         <td className="p-2.5 text-muted-foreground">{p.items?.length ?? 0} items</td>
