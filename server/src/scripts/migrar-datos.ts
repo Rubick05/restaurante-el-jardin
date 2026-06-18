@@ -186,7 +186,13 @@ async function migrarDatos() {
 
             let contador = 0;
             for (const row of rows) {
-                const valores = columnas.map(c => row[c]);
+                const valores = columnas.map(c => {
+                    const val = row[c];
+                    if (val !== null && typeof val === 'object' && !(val instanceof Date)) {
+                        return JSON.stringify(val);
+                    }
+                    return val;
+                });
                 await clientDest.query(insertQuery, valores);
                 contador++;
             }

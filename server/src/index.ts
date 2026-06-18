@@ -23,6 +23,7 @@ import usuariosRouter from './rutas/usuarios';
 import promocionesRouter from './rutas/promociones';
 import gastosRouter from './rutas/gastos';
 import webConfigRouter from './rutas/webConfig';
+import chatRouter from './rutas/chat';
 
 import { inicializarSocket } from './sincronizacion/emisor-tiempo-real';
 import { inicializarCronDiario } from './sincronizacion/cron-diario';
@@ -51,6 +52,7 @@ app.use('/api/gastos', gastosRouter);
 app.use('/api/web-config', webConfigRouter);
 
 app.use('/api/usuarios', usuariosRouter);
+app.use('/api/chat', chatRouter);
 
 // ─── Health check ───
 app.get('/health', (_req, res) => {
