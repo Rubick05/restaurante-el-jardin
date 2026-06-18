@@ -206,8 +206,11 @@ export default function GestionMenu() {
                   <Input
                     type="number"
                     placeholder="0.00"
-                    value={formulario.precio_actual || ''}
-                    onChange={e => setFormulario({ ...formulario, precio_actual: parseFloat(e.target.value) })}
+                    value={formulario.precio_actual !== undefined && formulario.precio_actual !== null ? formulario.precio_actual : ''}
+                    onChange={e => {
+                      const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                      setFormulario({ ...formulario, precio_actual: isNaN(val) ? 0 : val });
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
@@ -215,8 +218,11 @@ export default function GestionMenu() {
                   <Input
                     type="number"
                     placeholder="0.00"
-                    value={formulario.costo || ''}
-                    onChange={e => setFormulario({ ...formulario, costo: parseFloat(e.target.value) })}
+                    value={formulario.costo !== undefined && formulario.costo !== null ? formulario.costo : ''}
+                    onChange={e => {
+                      const val = e.target.value === '' ? 0 : parseFloat(e.target.value);
+                      setFormulario({ ...formulario, costo: isNaN(val) ? 0 : val });
+                    }}
                   />
                 </div>
                 <div className="space-y-2">

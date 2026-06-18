@@ -17,10 +17,16 @@ import { bdLocal } from '@/lib/bd/bd-local';
 function getApiUrl(): string {
     // 1. Variable de entorno del build (si fue configurada antes del build)
     const buildEnv = import.meta.env.VITE_API_URL;
-    if (buildEnv && buildEnv.length > 0) return buildEnv;
+    if (buildEnv && buildEnv.length > 0) {
+        return buildEnv.replace(/\/api$/, '').replace(/\/$/, '');
+    }
 
     // 2. En producción: el servidor sirve el frontend, misma URL base
     if (import.meta.env.PROD) {
+        // Si estamos en Vercel, el API no corre localmente, ruteamos a Railway
+        if (window.location.hostname.includes('vercel.app') || window.location.hostname.includes('restaurante-el-jardin')) {
+            return 'https://restaurante-pelusa-production.up.railway.app';
+        }
         return window.location.origin;
     }
 

@@ -97,8 +97,18 @@ export default function ReportesVentas() {
                 g => new Date(g.fecha) >= fechaLimite
             );
 
-            // 1. Agrupar ingresos y gastos por día en el rango
-            const agrupadoPorDia: Record<string, { fechaLabel: string; ingresos: number; gastos: number; utilidad: number }> = {};
+            // Cargar menú para obtener costos de insumos
+            const menuLocal = await bdLocal.elementosMenu.toArray();
+            const costoMap: Record<string, number> = {};
+            menuLocal.forEach(m => {
+                costoMap[m.nombre] = m.costo || 0;
+                if (m.id) {
+                    costoMap[m.id] = m.costo || 0;
+                }
+            });
+
+            // 1. Agrupar ingresos, gastos y costos de insumos por día en el rango
+            const agrupadoPorDia: Record<string, { fechaLabel: string; ingresos: number; gastos: number; costoInsumos: number; utilidad: number }> = {};
             
             // Generar todos los días del rango para que el gráfico no tenga saltos vacíos
             for (let i = diasRango; i >= 0; i--) {
@@ -107,21 +117,27 @@ export default function ReportesVentas() {
                 agrupadoPorDia[fechaKey] = {
                     fechaLabel: format(d, 'dd MMM', { locale: es }),
                     ingresos: 0,
-                    gastos: 0,
+                    gastos: 0,       // Gastos de caja manuales
+                    costoInsumos: 0, // Costo de insumos de platos vendidos
                     utilidad: 0
                 };
             }
 
-            // Sumar ingresos
+            // Sumar ingresos y calcular costo de insumos vendidos diariamente
             pedidosValidos.forEach(p => {
                 if (!p.creado_en) return;
                 const fechaKey = formatearFechaLocal(p.creado_en);
                 if (agrupadoPorDia[fechaKey]) {
                     agrupadoPorDia[fechaKey].ingresos += Number(p.total || 0);
+                    
+                    p.items?.forEach((item: any) => {
+                        const costoUnit = costoMap[item.id_elemento_menu] || costoMap[item.nombre_item] || 0;
+                        agrupadoPorDia[fechaKey].costoInsumos += Number(item.cantidad || 0) * Number(costoUnit);
+                    });
                 }
             });
 
-            // Sumar gastos
+            // Sumar gastos manuales registrados en caja
             gastosFiltrados.forEach(g => {
                 if (!g.fecha) return;
                 const fechaKey = formatearFechaLocal(g.fecha);
@@ -130,11 +146,12 @@ export default function ReportesVentas() {
                 }
             });
 
-            // Calcular utilidades diarias
+            // Calcular utilidades diarias descontando ambos tipos de egreso
             Object.keys(agrupadoPorDia).forEach(k => {
                 const ingresos = Number(agrupadoPorDia[k].ingresos || 0);
                 const gastos = Number(agrupadoPorDia[k].gastos || 0);
-                agrupadoPorDia[k].utilidad = ingresos - gastos;
+                const costoInsumos = Number(agrupadoPorDia[k].costoInsumos || 0);
+                agrupadoPorDia[k].utilidad = ingresos - (gastos + costoInsumos);
             });
 
             // Convertir a array para gráficos
@@ -162,16 +179,6 @@ export default function ReportesVentas() {
                 .map(([name, value]) => ({ name, value }))
                 .filter(c => c.value > 0);
 
-            // Cargar menú para obtener costos de insumos
-            const menuLocal = await bdLocal.elementosMenu.toArray();
-            const costoMap: Record<string, number> = {};
-            menuLocal.forEach(m => {
-                costoMap[m.nombre] = m.costo || 0;
-                if (m.id) {
-                    costoMap[m.id] = m.costo || 0;
-                }
-            });
-
             // 3. Consolidar platos más vendidos en el rango
             const platosVendidos: Record<string, { cantidad: number; total: number; categoria: string; costoUnitario: number }> = {};
             pedidosValidos.forEach(p => {
@@ -197,7 +204,17 @@ export default function ReportesVentas() {
 
             // Totales acumulados
             const totalIngresos = pedidosValidos.reduce((acc, p) => acc + p.total, 0);
-            const totalGastos = gastosFiltrados.reduce((acc, g) => acc + g.monto, 0);
+            
+            const totalCostoInsumos = pedidosValidos.reduce((acc, p) => {
+                const costoPedido = p.items?.reduce((itemAcc: number, item: any) => {
+                    const costoUnit = costoMap[item.id_elemento_menu] || costoMap[item.nombre_item] || 0;
+                    return itemAcc + (Number(item.cantidad || 0) * Number(costoUnit));
+                }, 0) || 0;
+                return acc + costoPedido;
+            }, 0);
+
+            const totalGastosRegistrados = gastosFiltrados.reduce((acc, g) => acc + g.monto, 0);
+            const totalGastos = totalGastosRegistrados + totalCostoInsumos;
             const utilidadNeta = totalIngresos - totalGastos;
             const margenUtilidad = totalIngresos > 0 ? (utilidadNeta / totalIngresos) * 100 : 0;
 
@@ -213,6 +230,8 @@ export default function ReportesVentas() {
                 stats: {
                     totalIngresos,
                     totalGastos,
+                    totalGastosRegistrados,
+                    totalCostoInsumos,
                     utilidadNeta,
                     margenUtilidad,
                     cantidadPedidos: pedidosValidos.length,
@@ -303,6 +322,8 @@ export default function ReportesVentas() {
     const stats = reportData?.stats || {
         totalIngresos: 0,
         totalGastos: 0,
+        totalGastosRegistrados: 0,
+        totalCostoInsumos: 0,
         utilidadNeta: 0,
         margenUtilidad: 0,
         cantidadPedidos: 0,
@@ -360,7 +381,9 @@ export default function ReportesVentas() {
                     </CardHeader>
                     <CardContent className="p-4 pt-0">
                         <div className="text-2xl font-bold text-foreground">Bs {stats.totalGastos.toFixed(2)}</div>
-                        <p className="text-xs text-muted-foreground mt-1">Egresos registrados en el rango</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                            Insumos: Bs {(stats.totalCostoInsumos || 0).toFixed(0)} | Caja: Bs {(stats.totalGastosRegistrados || 0).toFixed(0)}
+                        </p>
                     </CardContent>
                 </Card>
 
@@ -427,7 +450,8 @@ export default function ReportesVentas() {
                                             />
                                             <Legend verticalAlign="top" height={36} />
                                             <Bar dataKey="ingresos" name="Ingresos (Ventas)" fill="#10b981" radius={[3, 3, 0, 0]} />
-                                            <Bar dataKey="gastos" name="Gastos (Egresos)" fill="#ef4444" radius={[3, 3, 0, 0]} />
+                                            <Bar dataKey="gastos" name="Gastos (Caja)" stackId="egresos" fill="#ef4444" radius={[3, 3, 0, 0]} />
+                                            <Bar dataKey="costoInsumos" name="Costo de Insumos" stackId="egresos" fill="#fb923c" radius={[3, 3, 0, 0]} />
                                             <Line type="monotone" dataKey="utilidad" name="Utilidad Neta" stroke="#f59e0b" strokeWidth={2.5} dot={{ r: 2 }} />
                                         </ComposedChart>
                                     </ResponsiveContainer>

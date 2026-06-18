@@ -8,7 +8,9 @@
  * Si VITE_API_URL no está definida, funciona en modo offline (solo IndexedDB).
  */
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? '';
+import { API_BASE_URL } from '@/hooks/useInicializacion';
+
+const BASE_URL = API_BASE_URL;
 
 /** true si tenemos servidor configurado */
 export const servidorDisponible = (): boolean => !!BASE_URL;

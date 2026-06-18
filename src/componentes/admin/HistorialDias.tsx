@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState } from 'react';
 import { USUARIOS_SISTEMA } from '@/lib/auth/usuarios';
+import { API_BASE_URL } from '@/hooks/useInicializacion';
 
 function nombreMesero(idMesero: string): string {
     return USUARIOS_SISTEMA.find(u => u.id === idMesero)?.nombre ?? idMesero;
@@ -33,7 +34,6 @@ export default function HistorialDias() {
         if (!confirm('¿Eliminar este registro histórico? Esta acción no se puede deshacer.')) return;
 
         try {
-            const API_BASE_URL = import.meta.env.VITE_API_URL || window.location.origin;
             const res = await fetch(`${API_BASE_URL}/api/historial/${id}`, { method: 'DELETE' });
 
             if (res.ok) {

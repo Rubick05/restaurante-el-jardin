@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:3001/api');
+import { API_BASE_URL } from '@/hooks/useInicializacion';
+
+const API_URL = `${API_BASE_URL}/api`;
 
 interface OpcionesCliente extends RequestInit {
     token?: string;
