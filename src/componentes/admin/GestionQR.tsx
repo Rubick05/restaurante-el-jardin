@@ -2,9 +2,10 @@ import { useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/componentes/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/componentes/ui/card';
-import { QrCode, Upload, Trash2, RefreshCw, Calendar } from 'lucide-react';
+import { QrCode, Upload, Trash2, RefreshCw, Calendar, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { API_BASE_URL } from '@/hooks/useInicializacion';
 
 // QR se guarda en una entry especial de elementosMenu con id='qr-restaurante'
 const QR_KEY = 'qr-restaurante-imagen';
@@ -15,13 +16,32 @@ export default function GestionQR() {
     const inputRef = useRef<HTMLInputElement>(null);
     const [subiendo, setSubiendo] = useState(false);
 
-    // Leer QR del localStorage
-    const { data: qrData } = useQuery({
+    // Leer QR del backend (con fallback al localStorage si no está o falla)
+    const { data: qrData, isLoading } = useQuery({
         queryKey: ['qr-admin'],
-        queryFn: () => ({
-            imagen: localStorage.getItem(QR_KEY),
-            fecha: localStorage.getItem(QR_UPDATED_KEY),
-        }),
+        queryFn: async () => {
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/web-config`);
+                if (res.ok) {
+                    const config = await res.json();
+                    if (config.qr_pago) {
+                        // Sincronizar localmente también por seguridad
+                        localStorage.setItem(QR_KEY, config.qr_pago.imagen);
+                        localStorage.setItem(QR_UPDATED_KEY, config.qr_pago.fecha);
+                        return {
+                            imagen: config.qr_pago.imagen,
+                            fecha: config.qr_pago.fecha
+                        };
+                    }
+                }
+            } catch (err) {
+                console.warn('Error cargando QR de API, usando local:', err);
+            }
+            return {
+                imagen: localStorage.getItem(QR_KEY),
+                fecha: localStorage.getItem(QR_UPDATED_KEY),
+            };
+        },
     });
 
     const handleSubirQR = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -34,20 +54,55 @@ export default function GestionQR() {
         setSubiendo(true);
 
         const reader = new FileReader();
-        reader.onload = (ev) => {
+        reader.onload = async (ev) => {
             const base64 = ev.target?.result as string;
+            const fecha = new Date().toISOString();
+            
+            // Guardar local
             localStorage.setItem(QR_KEY, base64);
-            localStorage.setItem(QR_UPDATED_KEY, new Date().toISOString());
+            localStorage.setItem(QR_UPDATED_KEY, fecha);
+
+            // Guardar en base de datos del servidor
+            try {
+                await fetch(`${API_BASE_URL}/api/web-config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        clave: 'qr_pago',
+                        valor: { imagen: base64, fecha }
+                    })
+                });
+            } catch (err) {
+                console.error('Error guardando QR en BD:', err);
+            }
+
             queryClient.invalidateQueries({ queryKey: ['qr-admin'] });
             setSubiendo(false);
         };
         reader.readAsDataURL(file);
     };
 
-    const handleEliminar = () => {
+    const handleEliminar = async () => {
         if (!confirm('¿Eliminar el QR actual?')) return;
+        
+        // Eliminar local
         localStorage.removeItem(QR_KEY);
         localStorage.removeItem(QR_UPDATED_KEY);
+
+        // Eliminar en base de datos del servidor
+        try {
+            await fetch(`${API_BASE_URL}/api/web-config`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    clave: 'qr_pago',
+                    valor: null
+                })
+            });
+        } catch (err) {
+            console.error('Error eliminando QR en BD:', err);
+        }
+
         queryClient.invalidateQueries({ queryKey: ['qr-admin'] });
     };
 
