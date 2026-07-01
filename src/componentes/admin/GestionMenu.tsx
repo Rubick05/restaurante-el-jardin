@@ -4,15 +4,17 @@ import { bdLocal, ElementoMenu } from '@/lib/bd/bd-local';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/componentes/ui/card';
-import { Plus, Pencil, Trash2, Save, X, ImagePlus } from 'lucide-react';
+import { Plus, Pencil, Trash2, Save, X, ImagePlus, Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { API_BASE_URL, normalizarMenu } from '@/hooks/useInicializacion';
+import { comprimirImagen, validarTamañoArchivo } from '@/lib/utils/imagen';
 
 export default function GestionMenu() {
   const queryClient = useQueryClient();
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [formulario, setFormulario] = useState<Partial<ElementoMenu>>({});
   const [esNuevo, setEsNuevo] = useState(false);
+  const [procesandoImagen, setProcesandoImagen] = useState(false);
   const inputImagenRef = useRef<HTMLInputElement>(null);
 
   const { data: menu = [] } = useQuery({
@@ -176,26 +178,38 @@ export default function GestionMenu() {
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          setFormulario({ ...formulario, imagen_base64: ev.target?.result as string });
-                        };
-                        reader.readAsDataURL(file);
+                        if (!validarTamañoArchivo(file, 15)) {
+                          e.target.value = '';
+                          return;
+                        }
+                        setProcesandoImagen(true);
+                        try {
+                          const base64 = await comprimirImagen(file, 900, 0.82);
+                          setFormulario(prev => ({ ...prev, imagen_base64: base64 }));
+                        } catch {
+                          alert('Error al procesar la imagen. Intenta con otro archivo.');
+                        } finally {
+                          setProcesandoImagen(false);
+                          e.target.value = '';
+                        }
                       }}
                     />
                     <Button
                       type="button"
                       variant="outline"
                       size="sm"
+                      disabled={procesandoImagen}
                       onClick={() => inputImagenRef.current?.click()}
                     >
-                      <ImagePlus className="w-4 h-4 mr-2" />
-                      {formulario.imagen_base64 ? 'Cambiar imagen' : 'Subir imagen'}
+                      {procesandoImagen
+                        ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Procesando...</>
+                        : <><ImagePlus className="w-4 h-4 mr-2" />{formulario.imagen_base64 ? 'Cambiar imagen' : 'Subir imagen'}</>
+                      }
                     </Button>
-                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG o WebP. Se guardará en la base de datos local.</p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG o WebP · Máx 15MB · Se comprime automáticamente.</p>
                   </div>
                 </div>
               </div>

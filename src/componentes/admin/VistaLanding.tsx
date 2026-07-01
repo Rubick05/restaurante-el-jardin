@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
     Upload, Pencil, Trash2, Save, X, ImagePlus, Tag, 
     CheckCircle, ChevronDown, ChevronUp, Sparkles, 
-    MonitorSmartphone, Plus, Image, Grid, FileText 
+    MonitorSmartphone, Plus, Image, Grid, FileText, Loader2
 } from 'lucide-react';
 import { API_BASE_URL } from '@/hooks/useInicializacion';
 import { Button } from '@/componentes/ui/button';
@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/componentes/ui/tabs';
 import { Label } from '@/componentes/ui/label';
 import { Badge } from '@/componentes/ui/badge';
+import { comprimirImagen, validarTamañoArchivo } from '@/lib/utils/imagen';
 
 interface Promocion {
     id: string;
@@ -69,6 +70,7 @@ export default function VistaLanding() {
     const inputHeroRef = useRef<HTMLInputElement>(null);
     const [heroUrl, setHeroUrl] = useState('');
     const [guardandoHero, setGuardandoHero] = useState(false);
+    const [procesandoHero, setProcesandoHero] = useState(false);
 
     // ────────────────────────────────────────────────────────────────
     // ESTADOS: GALERÍA MOSAICO
@@ -83,6 +85,7 @@ export default function VistaLanding() {
     });
     const [mosaicoArchivoNombre, setMosaicoArchivoNombre] = useState('');
     const [guardandoMosaico, setGuardandoMosaico] = useState(false);
+    const [procesandoMosaico, setProcesandoMosaico] = useState(false);
     const [editandoMosaicoIndex, setEditandoMosaicoIndex] = useState<number | null>(null);
 
     // ────────────────────────────────────────────────────────────────
@@ -163,22 +166,21 @@ export default function VistaLanding() {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const procesarArchivoPromo = useCallback((file: File) => {
-        if (file.size > 10 * 1024 * 1024) {
-            alert('El archivo es demasiado grande (Máx 10MB).');
-            return;
-        }
+    const procesarArchivoPromo = useCallback(async (file: File) => {
+        if (!validarTamañoArchivo(file, 15)) return;
         const esVideo = file.type.startsWith('video/');
-        const reader = new FileReader();
-        reader.onload = (ev) => {
+        try {
+            // Comprimir solo imágenes, los videos se envían como están
+            const base64 = await comprimirImagen(file, esVideo ? Infinity as unknown as number : 1200, 0.85);
             setFormularioPromo(prev => ({
                 ...prev,
-                imagen_base64: ev.target?.result as string,
+                imagen_base64: base64,
                 tipo: esVideo ? 'video' : 'imagen',
             }));
             setArchivoNombre(file.name);
-        };
-        reader.readAsDataURL(file);
+        } catch {
+            alert('Error al procesar el archivo. Intenta con otro.');
+        }
     }, []);
 
     const guardarPromo = async () => {
@@ -233,17 +235,17 @@ export default function VistaLanding() {
     // ────────────────────────────────────────────────────────────────
     // METODOS: HERO SLIDESHOW
     // ────────────────────────────────────────────────────────────────
-    const procesarArchivoHero = (file: File) => {
-        if (file.size > 8 * 1024 * 1024) {
-            alert('El archivo es demasiado grande (Máx 8MB).');
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-            const base64 = ev.target?.result as string;
+    const procesarArchivoHero = async (file: File) => {
+        if (!validarTamañoArchivo(file, 15)) return;
+        setProcesandoHero(true);
+        try {
+            const base64 = await comprimirImagen(file, 1600, 0.88);
             await guardarHeroSlides([...heroSlides, base64]);
-        };
-        reader.readAsDataURL(file);
+        } catch {
+            alert('Error al procesar la imagen. Intenta con otro archivo.');
+        } finally {
+            setProcesandoHero(false);
+        }
     };
 
     const guardarHeroSlides = async (nuevosSlides: string[]) => {
@@ -276,20 +278,18 @@ export default function VistaLanding() {
     // ────────────────────────────────────────────────────────────────
     // METODOS: GALERÍA MOSAICO
     // ────────────────────────────────────────────────────────────────
-    const procesarArchivoMosaico = (file: File) => {
-        if (file.size > 8 * 1024 * 1024) {
-            alert('El archivo es demasiado grande (Máx 8MB).');
-            return;
-        }
-        const reader = new FileReader();
-        reader.onload = (ev) => {
-            setMosaicoForm(prev => ({
-                ...prev,
-                src: ev.target?.result as string
-            }));
+    const procesarArchivoMosaico = async (file: File) => {
+        if (!validarTamañoArchivo(file, 15)) return;
+        setProcesandoMosaico(true);
+        try {
+            const base64 = await comprimirImagen(file, 1200, 0.85);
+            setMosaicoForm(prev => ({ ...prev, src: base64 }));
             setMosaicoArchivoNombre(file.name);
-        };
-        reader.readAsDataURL(file);
+        } catch {
+            alert('Error al procesar la imagen. Intenta con otro archivo.');
+        } finally {
+            setProcesandoMosaico(false);
+        }
     };
 
     const guardarGaleriaMosaico = async (nuevaGaleria: GaleriaItem[]) => {
@@ -673,10 +673,13 @@ export default function VistaLanding() {
                                     />
                                     <Button
                                         onClick={() => inputHeroRef.current?.click()}
+                                        disabled={guardandoHero || procesandoHero}
                                         className="w-full h-24 border-2 border-dashed border-border hover:border-primary/50 hover:bg-muted/10 flex flex-col gap-2 items-center justify-center rounded-xl bg-muted/5 text-foreground"
                                     >
-                                        <ImagePlus className="w-6 h-6 text-primary" />
-                                        <span className="text-xs font-semibold">Subir nueva imagen</span>
+                                        {procesandoHero
+                                            ? <><Loader2 className="w-6 h-6 text-primary animate-spin" /><span className="text-xs font-semibold">Comprimiendo...</span></>
+                                            : <><ImagePlus className="w-6 h-6 text-primary" /><span className="text-xs font-semibold">Subir nueva imagen</span></>
+                                        }
                                     </Button>
                                 </div>
 
@@ -760,12 +763,20 @@ export default function VistaLanding() {
                                             type="file"
                                             accept="image/*"
                                             className="hidden"
-                                            onChange={e => {
+                                            onChange={async e => {
                                                 const file = e.target.files?.[0];
-                                                if (file) procesarArchivoMosaico(file);
+                                                if (file) {
+                                                    await procesarArchivoMosaico(file);
+                                                    e.target.value = '';
+                                                }
                                             }}
                                         />
-                                        {mosaicoForm.src ? (
+                                        {procesandoMosaico ? (
+                                            <div className="flex flex-col items-center gap-2">
+                                                <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                                                <span className="text-xs text-primary font-bold">Procesando imagen...</span>
+                                            </div>
+                                        ) : mosaicoForm.src ? (
                                             <div className="flex items-center gap-3">
                                                 <img src={mosaicoForm.src} className="w-16 h-16 object-cover rounded border border-border" />
                                                 <div className="text-left">

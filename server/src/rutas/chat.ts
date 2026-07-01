@@ -5,9 +5,13 @@ const router = Router();
 
 router.post('/', async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        console.error('Falta la variable de entorno GEMINI_API_KEY en el servidor.');
-        return res.status(500).json({ error: 'Configuración de Inteligencia Artificial incompleta.' });
+    if (!apiKey || apiKey.trim() === '') {
+        const msg = 'GEMINI_API_KEY no configurado en el servidor. Agrega la variable de entorno en server/.env (local) y en Railway (producción).';
+        console.error('❌ Chat IA:', msg);
+        return res.status(500).json({ 
+            error: 'El chatbot de IA no está configurado. Contacta al administrador.',
+            _debug: process.env.NODE_ENV !== 'production' ? msg : undefined
+        });
     }
 
     try {
