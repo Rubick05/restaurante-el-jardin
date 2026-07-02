@@ -58,26 +58,42 @@ export default function GestionQR() {
             const base64 = ev.target?.result as string;
             const fecha = new Date().toISOString();
             
-            // Guardar local
-            localStorage.setItem(QR_KEY, base64);
-            localStorage.setItem(QR_UPDATED_KEY, fecha);
-
-            // Guardar en base de datos del servidor
             try {
+                // Subir al servidor de Supabase Storage mediante el backend
+                const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imagen_base64: base64 })
+                });
+                
+                if (!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.error || 'Error al subir el QR');
+                }
+                
+                const data = await res.json();
+                const publicUrl = data.url;
+
+                // Guardar local
+                localStorage.setItem(QR_KEY, publicUrl);
+                localStorage.setItem(QR_UPDATED_KEY, fecha);
+
+                // Guardar en base de datos del servidor
                 await fetch(`${API_BASE_URL}/api/web-config`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         clave: 'qr_pago',
-                        valor: { imagen: base64, fecha }
+                        valor: { imagen: publicUrl, fecha }
                     })
                 });
-            } catch (err) {
-                console.error('Error guardando QR en BD:', err);
+            } catch (err: any) {
+                console.error('Error guardando QR:', err);
+                alert(err.message || 'Error al guardar el código QR.');
+            } finally {
+                queryClient.invalidateQueries({ queryKey: ['qr-admin'] });
+                setSubiendo(false);
             }
-
-            queryClient.invalidateQueries({ queryKey: ['qr-admin'] });
-            setSubiendo(false);
         };
         reader.readAsDataURL(file);
     };

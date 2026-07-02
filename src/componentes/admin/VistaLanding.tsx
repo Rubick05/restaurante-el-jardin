@@ -170,16 +170,31 @@ export default function VistaLanding() {
         if (!validarTamañoArchivo(file, 15)) return;
         const esVideo = file.type.startsWith('video/');
         try {
-            // Comprimir solo imágenes, los videos se envían como están
+            // Comprimir si es imagen (comprimirImagen lee video sin modificar)
             const base64 = await comprimirImagen(file, esVideo ? Infinity as unknown as number : 1200, 0.85);
+            
+            // Subir al servidor de Supabase Storage mediante el backend
+            const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imagen_base64: base64 })
+            });
+            
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Error al subir el archivo');
+            }
+            
+            const data = await res.json();
             setFormularioPromo(prev => ({
                 ...prev,
-                imagen_base64: base64,
+                imagen_url: data.url,
+                imagen_base64: undefined, // Limpiar base64 para no saturar la base de datos
                 tipo: esVideo ? 'video' : 'imagen',
             }));
             setArchivoNombre(file.name);
-        } catch {
-            alert('Error al procesar el archivo. Intenta con otro.');
+        } catch (err: any) {
+            alert(err.message || 'Error al procesar el archivo. Intenta con otro.');
         }
     }, []);
 
@@ -240,9 +255,23 @@ export default function VistaLanding() {
         setProcesandoHero(true);
         try {
             const base64 = await comprimirImagen(file, 1600, 0.88);
-            await guardarHeroSlides([...heroSlides, base64]);
-        } catch {
-            alert('Error al procesar la imagen. Intenta con otro archivo.');
+            
+            // Subir al servidor de Supabase Storage mediante el backend
+            const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imagen_base64: base64 })
+            });
+            
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Error al subir la imagen');
+            }
+            
+            const data = await res.json();
+            await guardarHeroSlides([...heroSlides, data.url]);
+        } catch (err: any) {
+            alert(err.message || 'Error al procesar la imagen. Intenta con otro archivo.');
         } finally {
             setProcesandoHero(false);
         }
@@ -283,10 +312,24 @@ export default function VistaLanding() {
         setProcesandoMosaico(true);
         try {
             const base64 = await comprimirImagen(file, 1200, 0.85);
-            setMosaicoForm(prev => ({ ...prev, src: base64 }));
+            
+            // Subir al servidor de Supabase Storage mediante el backend
+            const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ imagen_base64: base64 })
+            });
+            
+            if (!res.ok) {
+                const errData = await res.json();
+                throw new Error(errData.error || 'Error al subir la imagen');
+            }
+            
+            const data = await res.json();
+            setMosaicoForm(prev => ({ ...prev, src: data.url }));
             setMosaicoArchivoNombre(file.name);
-        } catch {
-            alert('Error al procesar la imagen. Intenta con otro archivo.');
+        } catch (err: any) {
+            alert(err.message || 'Error al procesar la imagen. Intenta con otro archivo.');
         } finally {
             setProcesandoMosaico(false);
         }

@@ -152,16 +152,16 @@ export default function GestionMenu() {
               <div className="space-y-2 md:col-span-2">
                 <label className="text-sm font-medium">Imagen del Plato (opcional)</label>
                 <div className="flex items-center gap-3">
-                  {formulario.imagen_base64 ? (
+                  {(formulario.imagen_base64 || formulario.url_imagen) ? (
                     <div className="relative group">
                       <img
-                        src={formulario.imagen_base64}
+                        src={formulario.imagen_base64 || formulario.url_imagen}
                         alt="preview"
                         className="w-24 h-24 object-cover rounded-lg border shadow-sm"
                       />
                       <button
                         type="button"
-                        onClick={() => setFormulario({ ...formulario, imagen_base64: undefined })}
+                        onClick={() => setFormulario({ ...formulario, imagen_base64: undefined, url_imagen: undefined })}
                         className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         ×
@@ -188,9 +188,27 @@ export default function GestionMenu() {
                         setProcesandoImagen(true);
                         try {
                           const base64 = await comprimirImagen(file, 900, 0.82);
-                          setFormulario(prev => ({ ...prev, imagen_base64: base64 }));
-                        } catch {
-                          alert('Error al procesar la imagen. Intenta con otro archivo.');
+                          
+                          // Subir al servidor de Supabase Storage mediante el backend
+                          const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ imagen_base64: base64 })
+                          });
+                          
+                          if (!res.ok) {
+                            const errData = await res.json();
+                            throw new Error(errData.error || 'Error al subir la imagen');
+                          }
+                          
+                          const data = await res.json();
+                          setFormulario(prev => ({ 
+                            ...prev, 
+                            url_imagen: data.url, 
+                            imagen_base64: undefined // Limpiar base64 para liberar la base de datos
+                          }));
+                        } catch (err: any) {
+                          alert(err.message || 'Error al procesar la imagen. Intenta con otro archivo.');
                         } finally {
                           setProcesandoImagen(false);
                           e.target.value = '';
@@ -206,7 +224,7 @@ export default function GestionMenu() {
                     >
                       {procesandoImagen
                         ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Procesando...</>
-                        : <><ImagePlus className="w-4 h-4 mr-2" />{formulario.imagen_base64 ? 'Cambiar imagen' : 'Subir imagen'}</>
+                        : <><ImagePlus className="w-4 h-4 mr-2" />{formulario.imagen_base64 || formulario.url_imagen ? 'Cambiar imagen' : 'Subir imagen'}</>
                       }
                     </Button>
                     <p className="text-xs text-muted-foreground mt-1">PNG, JPG o WebP · Máx 15MB · Se comprime automáticamente.</p>
@@ -268,9 +286,9 @@ export default function GestionMenu() {
               {[...menu].sort((a, b) => (a.categoria || '').localeCompare(b.categoria || '') || a.nombre.localeCompare(b.nombre)).map(item => (
                 <div key={item.id} className={`flex items-center justify-between p-4 hover:bg-muted/30 transition-colors ${!item.disponible ? 'opacity-60 bg-muted/20' : ''}`}>
                   {/* Miniatura de imagen */}
-                  {item.imagen_base64 ? (
+                  {item.imagen_base64 || item.url_imagen ? (
                     <img
-                      src={item.imagen_base64}
+                      src={item.imagen_base64 || item.url_imagen}
                       alt={item.nombre}
                       className="w-12 h-12 object-cover rounded-lg border shadow-sm mr-3 shrink-0"
                     />
