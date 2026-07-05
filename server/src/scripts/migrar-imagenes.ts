@@ -60,7 +60,7 @@ async function subirASupabase(base64: string, supabaseUrl: string, supabaseKey: 
 async function migrar() {
     const connectionString = process.env.DATABASE_URL;
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 
     if (!connectionString) {
         console.error('❌ Error: DATABASE_URL no está configurada.');
@@ -68,14 +68,14 @@ async function migrar() {
     }
 
     if (!supabaseUrl || !supabaseKey) {
-        console.error('❌ Error: Debes configurar SUPABASE_URL y SUPABASE_ANON_KEY en tu entorno o archivo .env');
+        console.error('❌ Error: Debes configurar SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY o SUPABASE_ANON_KEY en tu entorno o archivo .env');
         process.exit(1);
     }
 
     console.log('🔌 Conectando a la base de datos...');
     const client = new Client({
         connectionString,
-        ssl: connectionString.includes('localhost') ? false : { rejectUnauthorized: false }
+        ssl: { rejectUnauthorized: false }
     });
 
     try {
@@ -84,21 +84,31 @@ async function migrar() {
 
         // 1. Migrar elementos_menu
         console.log('\n--- Migrando imágenes de Elementos de Menú ---');
+        // Seleccionamos sólo ID y Nombre primero para evitar transferencias masivas que tumben el socket
         const resMenu = await client.query(
-            "SELECT id, nombre, imagen_base64 FROM elementos_menu WHERE imagen_base64 IS NOT NULL AND imagen_base64 != ''"
+            "SELECT id, nombre FROM elementos_menu WHERE imagen_base64 IS NOT NULL AND imagen_base64 != ''"
         );
         console.log(`Se encontraron ${resMenu.rows.length} platos con imágenes base64.`);
 
         for (const row of resMenu.rows) {
             try {
-                console.log(`⏳ Subiendo imagen de: "${row.nombre}"...`);
-                const urlPublica = await subirASupabase(row.imagen_base64, supabaseUrl, supabaseKey, 'plato');
-                
-                await client.query(
-                    "UPDATE elementos_menu SET url_imagen = $1, imagen_base64 = NULL WHERE id = $2",
-                    [urlPublica, row.id]
-                );
-                console.log(`✅ Migrado: "${row.nombre}" -> ${urlPublica}`);
+                console.log(`⏳ Obteniendo base64 de: "${row.nombre}"...`);
+                // Traer el base64 de este elemento específico de forma individual
+                const singleRes = await client.query("SELECT imagen_base64 FROM elementos_menu WHERE id = $1", [row.id]);
+                const base64 = singleRes.rows[0]?.imagen_base64;
+
+                if (base64) {
+                    console.log(`⏳ Subiendo imagen a Supabase Storage...`);
+                    const urlPublica = await subirASupabase(base64, supabaseUrl, supabaseKey, 'plato');
+                    
+                    await client.query(
+                        "UPDATE elementos_menu SET url_imagen = $1, imagen_base64 = NULL WHERE id = $2",
+                        [urlPublica, row.id]
+                    );
+                    console.log(`✅ Migrado con éxito: "${row.nombre}" -> ${urlPublica}`);
+                } else {
+                    console.log(`ℹ️ Saltado: "${row.nombre}" no tiene base64.`);
+                }
             } catch (err: any) {
                 console.error(`❌ Error migrando "${row.nombre}":`, err.message);
             }
@@ -106,21 +116,30 @@ async function migrar() {
 
         // 2. Migrar promociones
         console.log('\n--- Migrando imágenes de Promociones ---');
+        // Seleccionamos sólo ID y Título primero
         const resPromos = await client.query(
-            "SELECT id, titulo, imagen_base64 FROM promociones WHERE imagen_base64 IS NOT NULL AND imagen_base64 != ''"
+            "SELECT id, titulo FROM promociones WHERE imagen_base64 IS NOT NULL AND imagen_base64 != ''"
         );
         console.log(`Se encontraron ${resPromos.rows.length} promociones con imágenes base64.`);
 
         for (const row of resPromos.rows) {
             try {
-                console.log(`⏳ Subiendo imagen de promo: "${row.titulo}"...`);
-                const urlPublica = await subirASupabase(row.imagen_base64, supabaseUrl, supabaseKey, 'promo');
-                
-                await client.query(
-                    "UPDATE promociones SET imagen_url = $1, imagen_base64 = NULL WHERE id = $2",
-                    [urlPublica, row.id]
-                );
-                console.log(`✅ Migrado: "${row.titulo}" -> ${urlPublica}`);
+                console.log(`⏳ Obteniendo base64 de promo: "${row.titulo}"...`);
+                const singleRes = await client.query("SELECT imagen_base64 FROM promociones WHERE id = $1", [row.id]);
+                const base64 = singleRes.rows[0]?.imagen_base64;
+
+                if (base64) {
+                    console.log(`⏳ Subiendo imagen a Supabase Storage...`);
+                    const urlPublica = await subirASupabase(base64, supabaseUrl, supabaseKey, 'promo');
+                    
+                    await client.query(
+                        "UPDATE promociones SET imagen_url = $1, imagen_base64 = NULL WHERE id = $2",
+                        [urlPublica, row.id]
+                    );
+                    console.log(`✅ Migrado con éxito: "${row.titulo}" -> ${urlPublica}`);
+                } else {
+                    console.log(`ℹ️ Saltado: "${row.titulo}" no tiene base64.`);
+                }
             } catch (err: any) {
                 console.error(`❌ Error migrando promo "${row.titulo}":`, err.message);
             }
