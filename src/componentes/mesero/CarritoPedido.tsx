@@ -58,7 +58,7 @@ export function CarritoPedido({ items, onUpdateQuantity, onSubmit, procesando, n
                                     className="h-8 w-8 hover:bg-destructive/10"
                                     onClick={() => onUpdateQuantity(item.id_elemento_menu, -1, item.instrucciones)}
                                 >
-                                    {item.text_color_or_something_maybe_deleted = item.cantidad === 1 ? <Trash2 className="h-4 w-4 text-destructive" /> : <Minus className="h-4 w-4" />}
+                                    {item.cantidad === 1 ? <Trash2 className="h-4 w-4 text-destructive" /> : <Minus className="h-4 w-4" />}
                                 </Button>
                                 <span className="w-5 text-center text-sm font-bold">{item.cantidad}</span>
                                 <Button
