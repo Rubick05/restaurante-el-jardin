@@ -187,7 +187,7 @@ export default function GestionMenu() {
                         }
                         setProcesandoImagen(true);
                         try {
-                          const base64 = await comprimirImagen(file, 900, 0.82);
+                          const base64 = await comprimirImagen(file);
                           
                           // Subir al servidor de Supabase Storage mediante el backend
                           const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {

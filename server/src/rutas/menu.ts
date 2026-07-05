@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { pool } from '../bd/pool';
 import { emisorTiempoReal } from '../sincronizacion/emisor-tiempo-real';
+import { eliminarImagenCloudinary } from '../utils/cloudinary';
 
 const router = Router();
 
@@ -17,10 +18,15 @@ router.get('/', async (req, res) => {
     }
 });
 
-// POST /api/menu — crear elemento
+// POST /api/menu — crear o actualizar elemento
 router.post('/', async (req, res) => {
     try {
         const { id, nombre, categoria, precio_actual, disponible, descripcion, url_imagen, imagen_base64, costo } = req.body;
+        
+        // Obtener la imagen anterior para borrarla si cambia
+        const viejoPlato = await pool.query('SELECT url_imagen FROM elementos_menu WHERE id = $1', [id]);
+        const viejaUrl = viejoPlato.rows[0]?.url_imagen;
+
         const r = await pool.query(`
             INSERT INTO elementos_menu
                 (id, nombre, categoria, precio_actual, disponible, descripcion, url_imagen, imagen_base64, costo, actualizado_en)
@@ -37,6 +43,12 @@ router.post('/', async (req, res) => {
                 actualizado_en = NOW()
             RETURNING *
         `, [id, nombre, categoria, precio_actual, disponible ?? true, descripcion, url_imagen, imagen_base64, costo ?? 0]);
+
+        // Si se actualizó la imagen y la antigua era diferente, borrar la antigua de Cloudinary
+        if (viejaUrl && viejaUrl !== url_imagen) {
+            eliminarImagenCloudinary(viejaUrl);
+        }
+
         emisorTiempoReal.notificarCambio('demo-tenant', 'menu', 'actualizado', r.rows[0]);
         res.status(201).json(r.rows[0]);
     } catch (error: any) {
@@ -49,6 +61,14 @@ router.patch('/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const campos = req.body;
+
+        // Si se va a actualizar la imagen, obtener primero la antigua
+        let viejaUrl: string | null = null;
+        if (campos.hasOwnProperty('url_imagen')) {
+            const viejoPlato = await pool.query('SELECT url_imagen FROM elementos_menu WHERE id = $1', [id]);
+            viejaUrl = viejoPlato.rows[0]?.url_imagen;
+        }
+
         const sets: string[] = [];
         const vals: any[] = [];
         let i = 1;
@@ -58,10 +78,17 @@ router.patch('/:id', async (req, res) => {
         }
         sets.push(`actualizado_en = NOW()`);
         vals.push(id);
+        
         const r = await pool.query(
             `UPDATE elementos_menu SET ${sets.join(',')} WHERE id = $${i} RETURNING *`,
             vals
         );
+
+        // Si cambió la imagen con éxito, borrar la antigua de Cloudinary
+        if (viejaUrl && campos.url_imagen !== viejaUrl) {
+            eliminarImagenCloudinary(viejaUrl);
+        }
+
         emisorTiempoReal.notificarCambio('demo-tenant', 'menu', 'actualizado', r.rows[0]);
         res.json(r.rows[0]);
     } catch (error: any) {
@@ -72,7 +99,17 @@ router.patch('/:id', async (req, res) => {
 // DELETE /api/menu/:id
 router.delete('/:id', async (req, res) => {
     try {
+        // Obtener el plato antes de borrar para limpiar su imagen
+        const platoRes = await pool.query('SELECT url_imagen FROM elementos_menu WHERE id = $1', [req.params.id]);
+        const urlImagen = platoRes.rows[0]?.url_imagen;
+
         await pool.query('DELETE FROM elementos_menu WHERE id = $1', [req.params.id]);
+
+        // Si tenía imagen, eliminarla de Cloudinary
+        if (urlImagen) {
+            eliminarImagenCloudinary(urlImagen);
+        }
+
         emisorTiempoReal.notificarCambio('demo-tenant', 'menu', 'eliminado', { id: req.params.id });
         res.json({ ok: true });
     } catch (error: any) {

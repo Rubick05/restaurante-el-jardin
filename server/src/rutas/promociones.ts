@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { pool } from '../bd/pool';
 import { emisorTiempoReal } from '../sincronizacion/emisor-tiempo-real';
+import { eliminarImagenCloudinary } from '../utils/cloudinary';
 
 const router = Router();
 
@@ -40,8 +41,13 @@ router.post('/', async (req, res) => {
         
         let query;
         let params;
+        let viejaUrl: string | null = null;
         
         if (id) {
+            // Obtener la imagen anterior si existe para borrarla si cambia
+            const viejoPromo = await pool.query('SELECT imagen_url FROM promociones WHERE id = $1', [id]);
+            viejaUrl = viejoPromo.rows[0]?.imagen_url;
+
             // Actualizar
             query = `
                 UPDATE promociones 
@@ -64,6 +70,12 @@ router.post('/', async (req, res) => {
         }
 
         const r = await pool.query(query, params);
+
+        // Si cambió la imagen con éxito y la anterior era diferente, borrar la anterior
+        if (viejaUrl && viejaUrl !== imagen_url) {
+            eliminarImagenCloudinary(viejaUrl);
+        }
+
         emisorTiempoReal.notificarCambio('demo-tenant', 'promociones', 'actualizado', r.rows[0]);
         res.status(201).json(r.rows[0]);
     } catch (error: any) {
@@ -74,7 +86,17 @@ router.post('/', async (req, res) => {
 // DELETE /api/promociones/:id
 router.delete('/:id', async (req, res) => {
     try {
+        // Obtener la imagen de la promoción antes de borrarla
+        const promoRes = await pool.query('SELECT imagen_url FROM promociones WHERE id = $1', [req.params.id]);
+        const urlImagen = promoRes.rows[0]?.imagen_url;
+
         await pool.query('DELETE FROM promociones WHERE id = $1', [req.params.id]);
+
+        // Si tenía imagen, borrarla de Cloudinary
+        if (urlImagen) {
+            eliminarImagenCloudinary(urlImagen);
+        }
+
         emisorTiempoReal.notificarCambio('demo-tenant', 'promociones', 'eliminado', { id: req.params.id });
         res.json({ ok: true });
     } catch (error: any) {

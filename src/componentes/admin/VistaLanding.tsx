@@ -171,7 +171,7 @@ export default function VistaLanding() {
         const esVideo = file.type.startsWith('video/');
         try {
             // Comprimir si es imagen (comprimirImagen lee video sin modificar)
-            const base64 = await comprimirImagen(file, esVideo ? Infinity as unknown as number : 1200, 0.85);
+            const base64 = await comprimirImagen(file, esVideo ? Infinity as unknown as number : 900, 0.70);
             
             // Subir al servidor de Supabase Storage mediante el backend
             const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
@@ -254,7 +254,7 @@ export default function VistaLanding() {
         if (!validarTamañoArchivo(file, 15)) return;
         setProcesandoHero(true);
         try {
-            const base64 = await comprimirImagen(file, 1600, 0.88);
+            const base64 = await comprimirImagen(file, 1200, 0.72);
             
             // Subir al servidor de Supabase Storage mediante el backend
             const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
@@ -311,7 +311,7 @@ export default function VistaLanding() {
         if (!validarTamañoArchivo(file, 15)) return;
         setProcesandoMosaico(true);
         try {
-            const base64 = await comprimirImagen(file, 1200, 0.85);
+            const base64 = await comprimirImagen(file, 800, 0.70);
             
             // Subir al servidor de Supabase Storage mediante el backend
             const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {

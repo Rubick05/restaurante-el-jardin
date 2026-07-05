@@ -16,8 +16,8 @@
  */
 export async function comprimirImagen(
   file: File,
-  maxWidth = 900,
-  quality = 0.82
+  maxWidth = 750,
+  quality = 0.70
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     // Para archivos no-imagen (videos, etc.), leer directamente sin comprimir
