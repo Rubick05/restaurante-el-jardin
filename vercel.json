@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.ts"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/cierre-diario",
+      "schedule": "0 4 * * *"
+    }
+  ]
+}

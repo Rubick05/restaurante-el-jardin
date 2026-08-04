@@ -15,7 +15,7 @@ import VistaLanding from '@/componentes/admin/VistaLanding';
 import ReportesVentas from '@/componentes/admin/ReportesVentas';
 
 import GestionUsuarios from '@/componentes/admin/GestionUsuarios';
-import { useSocketSync } from '@/hooks/useSocketSync';
+import { useSupabaseSync } from '@/hooks/useSupabaseSync';
 import { useInicializacion } from '@/hooks/useInicializacion';
 
 function RutaProtegida({
@@ -186,7 +186,7 @@ const router = createBrowserRouter([
 
 
 function AppInterna() {
-  useSocketSync();
+  useSupabaseSync();
   useInicializacion();
   return <RouterProvider router={router} />;
 }

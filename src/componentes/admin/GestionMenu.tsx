@@ -68,7 +68,6 @@ export default function GestionMenu() {
         descripcion: formulario.descripcion,
         actualizado_en: new Date().toISOString(),
         url_imagen: formulario.url_imagen,
-        imagen_base64: formulario.imagen_base64,
       } as ElementoMenu;
 
       // ── Guardar en SERVIDOR primero ──

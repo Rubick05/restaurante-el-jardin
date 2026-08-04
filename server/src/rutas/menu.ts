@@ -5,11 +5,12 @@ import { eliminarImagenCloudinary } from '../utils/cloudinary';
 
 const router = Router();
 
-// GET /api/menu — todos los elementos del menú
+// GET /api/menu — todos los elementos del menú (optimizado sin blobs base64)
 router.get('/', async (req, res) => {
     try {
         const r = await pool.query(`
-            SELECT * FROM elementos_menu
+            SELECT id, id_restaurante, nombre, descripcion, categoria, precio_actual, disponible, url_imagen, costo, actualizado_en 
+            FROM elementos_menu
             ORDER BY categoria, nombre
         `);
         res.json(r.rows);
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
 // POST /api/menu — crear o actualizar elemento
 router.post('/', async (req, res) => {
     try {
-        const { id, nombre, categoria, precio_actual, disponible, descripcion, url_imagen, imagen_base64, costo } = req.body;
+        const { id, nombre, categoria, precio_actual, disponible, descripcion, url_imagen, costo } = req.body;
         
         // Obtener la imagen anterior para borrarla si cambia
         const viejoPlato = await pool.query('SELECT url_imagen FROM elementos_menu WHERE id = $1', [id]);
@@ -29,8 +30,8 @@ router.post('/', async (req, res) => {
 
         const r = await pool.query(`
             INSERT INTO elementos_menu
-                (id, nombre, categoria, precio_actual, disponible, descripcion, url_imagen, imagen_base64, costo, actualizado_en)
-            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,NOW())
+                (id, nombre, categoria, precio_actual, disponible, descripcion, url_imagen, costo, actualizado_en)
+            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW())
             ON CONFLICT (id) DO UPDATE SET
                 nombre = EXCLUDED.nombre,
                 categoria = EXCLUDED.categoria,
@@ -38,11 +39,10 @@ router.post('/', async (req, res) => {
                 disponible = EXCLUDED.disponible,
                 descripcion = EXCLUDED.descripcion,
                 url_imagen = EXCLUDED.url_imagen,
-                imagen_base64 = EXCLUDED.imagen_base64,
                 costo = EXCLUDED.costo,
                 actualizado_en = NOW()
-            RETURNING *
-        `, [id, nombre, categoria, precio_actual, disponible ?? true, descripcion, url_imagen, imagen_base64, costo ?? 0]);
+            RETURNING id, id_restaurante, nombre, descripcion, categoria, precio_actual, disponible, url_imagen, costo, actualizado_en
+        `, [id, nombre, categoria, precio_actual, disponible ?? true, descripcion, url_imagen, costo ?? 0]);
 
         // Si se actualizó la imagen y la antigua era diferente, borrar la antigua de Cloudinary
         if (viejaUrl && viejaUrl !== url_imagen) {

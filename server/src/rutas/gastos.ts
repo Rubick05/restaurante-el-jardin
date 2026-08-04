@@ -4,14 +4,29 @@ import { emisorTiempoReal } from '../sincronizacion/emisor-tiempo-real';
 
 const router = Router();
 
-// GET /api/gastos — obtener todos los gastos
+// GET /api/gastos — obtener gastos (con filtrado opcional por rango)
 router.get('/', async (req, res) => {
     try {
-        const r = await pool.query(`
-            SELECT * FROM gastos
-            ORDER BY fecha DESC, creado_en DESC
-        `);
-        res.json(r.rows);
+        const { desde, hasta } = req.query;
+        let query = 'SELECT * FROM gastos';
+        const params: any[] = [];
+
+        if (desde && hasta) {
+            query += ' WHERE fecha >= $1 AND fecha <= $2';
+            params.push(desde, hasta);
+        } else if (desde) {
+            query += ' WHERE fecha >= $1';
+            params.push(desde);
+        }
+
+        query += ' ORDER BY fecha DESC, creado_en DESC LIMIT 1000';
+
+        const r = await pool.query(query, params);
+        const gastosFormatted = r.rows.map((g: any) => ({
+            ...g,
+            monto: Number(g.monto ?? 0)
+        }));
+        res.json(gastosFormatted);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
     }

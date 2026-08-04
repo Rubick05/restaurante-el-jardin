@@ -215,7 +215,6 @@ export default function VistaLanding() {
                     subtitulo: formularioPromo.subtitulo || null,
                     badge: formularioPromo.badge || null,
                     tipo: formularioPromo.tipo,
-                    imagen_base64: formularioPromo.imagen_base64,
                     imagen_url: formularioPromo.imagen_url,
                     orden: formularioPromo.orden || 1,
                     fecha_inicio: formularioPromo.fecha_inicio || new Date().toISOString().split('T')[0],

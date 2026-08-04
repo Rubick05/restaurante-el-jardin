@@ -9,7 +9,10 @@ const connectionString = process.env.DATABASE_URL;
 
 export const pool = new Pool({
     connectionString,
-    ssl: connectionString?.includes('localhost') ? false : { rejectUnauthorized: false }
+    ssl: connectionString?.includes('localhost') ? false : { rejectUnauthorized: false },
+    max: process.env.VERCEL ? 3 : 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
 });
 
 const USUARIOS_INICIALES = [
@@ -19,11 +22,14 @@ const USUARIOS_INICIALES = [
     { id: 'cam-02', nombre: 'Camarero 2', usuario: 'cam2', password: 'cam456', rol: 'camarero' },
 ];
 
-// ─── Auto-migración: crea las tablas si no existen al iniciar ─────────────────
+let dbInicializada = false;
+
+// ─── Auto-migración: crea las tablas e índices si no existen ─────────────────
 export async function inicializarBaseDeDatos() {
+    if (dbInicializada) return;
     const client = await pool.connect();
     try {
-        console.log('🗄️  Iniciando migración automática...');
+        console.log('🗄️  Iniciando migración automática e índices...');
 
         await client.query(`
             CREATE TABLE IF NOT EXISTS elementos_menu (
@@ -94,6 +100,9 @@ export async function inicializarBaseDeDatos() {
             CREATE INDEX IF NOT EXISTS idx_pedidos_creado ON pedidos(creado_en);
             CREATE INDEX IF NOT EXISTS idx_items_pedido   ON items_pedido(id_pedido);
             CREATE INDEX IF NOT EXISTS idx_menu_disponible ON elementos_menu(disponible);
+            CREATE INDEX IF NOT EXISTS idx_gastos_fecha ON gastos(fecha);
+            CREATE INDEX IF NOT EXISTS idx_dias_cerrados_fecha ON dias_cerrados(fecha);
+            CREATE INDEX IF NOT EXISTS idx_pedidos_fecha_estado ON pedidos(creado_en, estado);
 
             CREATE TABLE IF NOT EXISTS promociones (
                 id              TEXT        PRIMARY KEY DEFAULT gen_random_uuid()::TEXT,
@@ -173,6 +182,7 @@ export async function inicializarBaseDeDatos() {
             console.log('✅ Menú inicial cargado (21 items)');
         }
 
+        dbInicializada = true;
         console.log('✅ Base de datos lista');
     } catch (err) {
         console.error('❌ Error en migración:', err);
