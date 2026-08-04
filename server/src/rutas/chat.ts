@@ -81,7 +81,7 @@ REGLAS DE COMPORTAMIENTO:
 5. Mantén tus respuestas claras y no demasiado extensas. Usa viñetas.
 `;
 
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
         const response = await fetch(geminiUrl, {
             method: 'POST',

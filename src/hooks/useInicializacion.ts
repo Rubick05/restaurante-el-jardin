@@ -21,13 +21,8 @@ function getApiUrl(): string {
         return buildEnv.replace(/\/api$/, '').replace(/\/$/, '');
     }
 
-    // 2. En producción: el servidor sirve el frontend, misma URL base
+    // 2. En producción: el servidor sirve el frontend, misma URL base (Vercel)
     if (import.meta.env.PROD) {
-        // Si estamos en Vercel o un dominio externo, conectamos al backend oficial en Railway
-        if (window.location.hostname.includes('vercel.app') || !window.location.hostname.includes('railway.app')) {
-            return 'https://restaurante-el-jardin-production-a426.up.railway.app';
-        }
-        // En Railway, se usa el propio origin
         return window.location.origin;
     }
 
