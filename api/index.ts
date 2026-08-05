@@ -163,4 +163,6 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
     });
 });
 
-export default app;
+export default function handler(req: any, res: any) {
+    return app(req, res);
+}
