@@ -6,6 +6,10 @@ import { normalizarPedidos, formatearFechaLocal } from './useInicializacion';
 function obtenerClienteSupabaseSeguro() {
     try {
         let rawUrl = (import.meta.env.VITE_SUPABASE_URL || 'https://ucnobrafrlvwdzonbhlc.supabase.co').trim().replace(/['"]/g, '');
+        // Si por error se colocó la DATABASE_URL (postgresql://) en VITE_SUPABASE_URL, usar la URL HTTPS
+        if (rawUrl.startsWith('postgres://') || rawUrl.startsWith('postgresql://')) {
+            rawUrl = 'https://ucnobrafrlvwdzonbhlc.supabase.co';
+        }
         // Eliminar sufijo /rest/v1/ si fue copiado por error
         if (rawUrl.endsWith('/rest/v1/') || rawUrl.endsWith('/rest/v1')) {
             rawUrl = rawUrl.replace(/\/rest\/v1\/?$/, '');
