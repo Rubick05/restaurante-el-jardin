@@ -19,6 +19,10 @@ export const pool = new Pool({
     connectionTimeoutMillis: 5000,
 });
 
+pool.on('error', (err) => {
+    console.error('⚠️ [Pool Error no crítico]:', err.message);
+});
+
 const USUARIOS_INICIALES = [
     { id: 'admin-01', nombre: 'Administrador', usuario: 'admin', password: 'admin123', rol: 'administrador' },
     { id: 'cocina-01', nombre: 'Cocina', usuario: 'cocina', password: 'cocina123', rol: 'cocinero' },

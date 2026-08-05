@@ -30,16 +30,33 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Asignar rutas de API (Soporta prefijos con y sin /api para compatibilidad en Vercel Serverless)
-app.use(['/api/pedidos', '/pedidos'], pedidosRouter);
-app.use(['/api/menu', '/menu'], menuRouter);
-app.use(['/api/historial', '/historial'], historialRouter);
-app.use(['/api/promociones', '/promociones'], promocionesRouter);
-app.use(['/api/gastos', '/gastos'], gastosRouter);
-app.use(['/api/web-config', '/web-config'], webConfigRouter);
-app.use(['/api/imagenes', '/imagenes'], imagenesRouter);
-app.use(['/api/usuarios', '/usuarios'], usuariosRouter);
-app.use(['/api/chat', '/chat'], chatRouter);
+// Asignar rutas de API (Prefijos explícitos para Vercel Serverless)
+app.use('/api/pedidos', pedidosRouter);
+app.use('/pedidos', pedidosRouter);
+
+app.use('/api/menu', menuRouter);
+app.use('/menu', menuRouter);
+
+app.use('/api/historial', historialRouter);
+app.use('/historial', historialRouter);
+
+app.use('/api/promociones', promocionesRouter);
+app.use('/promociones', promocionesRouter);
+
+app.use('/api/gastos', gastosRouter);
+app.use('/gastos', gastosRouter);
+
+app.use('/api/web-config', webConfigRouter);
+app.use('/web-config', webConfigRouter);
+
+app.use('/api/imagenes', imagenesRouter);
+app.use('/imagenes', imagenesRouter);
+
+app.use('/api/usuarios', usuariosRouter);
+app.use('/usuarios', usuariosRouter);
+
+app.use('/api/chat', chatRouter);
+app.use('/chat', chatRouter);
 
 // Endpoint de verificación de salud
 app.get('/api/health', (_req, res) => {
@@ -131,6 +148,16 @@ app.post('/api/cron/cierre-diario', async (req, res) => {
     } finally {
         client.release();
     }
+});
+
+// Middleware de captura de errores global para evitar caídas silenciosas en Vercel
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    console.error('❌ Express Global Error:', err);
+    res.status(500).json({
+        ok: false,
+        error: err.message || 'Internal Server Error',
+        details: err.toString()
+    });
 });
 
 export default app;
