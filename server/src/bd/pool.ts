@@ -9,7 +9,7 @@ try {
     // Ignorar si el archivo .env no existe en Serverless
 }
 
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres.ucnobrafrlvwdzonbhlc:6aw%402f2PNWSSXs4@aws-1-us-east-2.pooler.supabase.com:6543/postgres';
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres.ucnobrafrlvwdzonbhlc:6aw%402f2PNWSSXs4@aws-1-us-east-2.pooler.supabase.com:5432/postgres';
 
 export const pool = new Pool({
     connectionString,
