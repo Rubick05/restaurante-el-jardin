@@ -3,11 +3,29 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@supabase/supabase-js';
 import { normalizarPedidos, formatearFechaLocal } from './useInicializacion';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://ucnobrafrlvwdzonbhlc.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjbm9icmFmcmx2d2R6b25iaGxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDYyNDUsImV4cCI6MjA5NzM4MjI0NX0.-rYM2aTmDV3ohzUUg8uI4OSmoetFGJy4wEw_yrnSe04';
+function obtenerClienteSupabaseSeguro() {
+    try {
+        let rawUrl = (import.meta.env.VITE_SUPABASE_URL || 'https://ucnobrafrlvwdzonbhlc.supabase.co').trim().replace(/['"]/g, '');
+        // Eliminar sufijo /rest/v1/ si fue copiado por error
+        if (rawUrl.endsWith('/rest/v1/') || rawUrl.endsWith('/rest/v1')) {
+            rawUrl = rawUrl.replace(/\/rest\/v1\/?$/, '');
+        }
+        if (rawUrl && !rawUrl.startsWith('http://') && !rawUrl.startsWith('https://')) {
+            rawUrl = `https://${rawUrl}`;
+        }
+        
+        let anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjbm9icmFmcmx2d2R6b25iaGxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDYyNDUsImV4cCI6MjA5NzM4MjI0NX0.-rYM2aTmDV3ohzUUg8uI4OSmoetFGJy4wEw_yrnSe04').trim().replace(/['"]/g, '');
 
-// Inicializamos el cliente si las variables están configuradas
-const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+        if (rawUrl && anonKey) {
+            return createClient(rawUrl, anonKey);
+        }
+    } catch (e) {
+        console.warn('⚠️ No se pudo inicializar Supabase Realtime:', e);
+    }
+    return null;
+}
+
+const supabase = obtenerClienteSupabaseSeguro();
 
 export function useSupabaseSync() {
     const queryClient = useQueryClient();
