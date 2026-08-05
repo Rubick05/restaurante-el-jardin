@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { pool } from '../server/src/bd/pool.js';
+import { pool } from './db.js';
 
 // Cargar variables de entorno
 dotenv.config();
