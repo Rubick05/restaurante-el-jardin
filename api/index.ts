@@ -30,33 +30,36 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Función aux para obtener el router sin importar si se importó como ES Module ({ default }) o CJS
+const r = (mod: any) => mod.default || mod;
+
 // Asignar rutas de API (Prefijos explícitos para Vercel Serverless)
-app.use('/api/pedidos', pedidosRouter);
-app.use('/pedidos', pedidosRouter);
+app.use('/api/pedidos', r(pedidosRouter));
+app.use('/pedidos', r(pedidosRouter));
 
-app.use('/api/menu', menuRouter);
-app.use('/menu', menuRouter);
+app.use('/api/menu', r(menuRouter));
+app.use('/menu', r(menuRouter));
 
-app.use('/api/historial', historialRouter);
-app.use('/historial', historialRouter);
+app.use('/api/historial', r(historialRouter));
+app.use('/historial', r(historialRouter));
 
-app.use('/api/promociones', promocionesRouter);
-app.use('/promociones', promocionesRouter);
+app.use('/api/promociones', r(promocionesRouter));
+app.use('/promociones', r(promocionesRouter));
 
-app.use('/api/gastos', gastosRouter);
-app.use('/gastos', gastosRouter);
+app.use('/api/gastos', r(gastosRouter));
+app.use('/gastos', r(gastosRouter));
 
-app.use('/api/web-config', webConfigRouter);
-app.use('/web-config', webConfigRouter);
+app.use('/api/web-config', r(webConfigRouter));
+app.use('/web-config', r(webConfigRouter));
 
-app.use('/api/imagenes', imagenesRouter);
-app.use('/imagenes', imagenesRouter);
+app.use('/api/imagenes', r(imagenesRouter));
+app.use('/imagenes', r(imagenesRouter));
 
-app.use('/api/usuarios', usuariosRouter);
-app.use('/usuarios', usuariosRouter);
+app.use('/api/usuarios', r(usuariosRouter));
+app.use('/usuarios', r(usuariosRouter));
 
-app.use('/api/chat', chatRouter);
-app.use('/chat', chatRouter);
+app.use('/api/chat', r(chatRouter));
+app.use('/chat', r(chatRouter));
 
 // Endpoint de verificación de salud
 app.get('/api/health', (_req, res) => {
