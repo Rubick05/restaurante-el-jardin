@@ -2,12 +2,7 @@ import { Pool } from 'pg';
 import dotenv from 'dotenv';
 import path from 'path';
 
-try {
-    dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
-    dotenv.config();
-} catch (e) {
-    // Ignorar si el archivo .env no existe en Serverless
-}
+dotenv.config();
 
 const connectionString = process.env.DATABASE_URL || 'postgresql://postgres.ucnobrafrlvwdzonbhlc:6aw%402f2PNWSSXs4@aws-1-us-east-2.pooler.supabase.com:5432/postgres';
 
