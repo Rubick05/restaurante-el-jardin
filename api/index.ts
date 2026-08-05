@@ -30,16 +30,16 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Asignar rutas de API
-app.use('/api/pedidos', pedidosRouter);
-app.use('/api/menu', menuRouter);
-app.use('/api/historial', historialRouter);
-app.use('/api/promociones', promocionesRouter);
-app.use('/api/gastos', gastosRouter);
-app.use('/api/web-config', webConfigRouter);
-app.use('/api/imagenes', imagenesRouter);
-app.use('/api/usuarios', usuariosRouter);
-app.use('/api/chat', chatRouter);
+// Asignar rutas de API (Soporta prefijos con y sin /api para compatibilidad en Vercel Serverless)
+app.use(['/api/pedidos', '/pedidos'], pedidosRouter);
+app.use(['/api/menu', '/menu'], menuRouter);
+app.use(['/api/historial', '/historial'], historialRouter);
+app.use(['/api/promociones', '/promociones'], promocionesRouter);
+app.use(['/api/gastos', '/gastos'], gastosRouter);
+app.use(['/api/web-config', '/web-config'], webConfigRouter);
+app.use(['/api/imagenes', '/imagenes'], imagenesRouter);
+app.use(['/api/usuarios', '/usuarios'], usuariosRouter);
+app.use(['/api/chat', '/chat'], chatRouter);
 
 // Endpoint de verificación de salud
 app.get('/api/health', (_req, res) => {
