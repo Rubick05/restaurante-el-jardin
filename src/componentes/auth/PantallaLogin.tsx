@@ -4,13 +4,22 @@ import { useAuth } from '@/lib/auth/contexto-auth';
 import { UtensilsCrossed, LogIn, Eye, EyeOff } from 'lucide-react';
 
 export default function PantallaLogin() {
-    const { login, usuarioActual } = useAuth();
+    const { login, usuarioActual, cargando: cargandoAuth } = useAuth();
     const navigate = useNavigate();
     const [usuario, setUsuario] = useState('');
     const [password, setPassword] = useState('');
     const [mostrarPassword, setMostrarPassword] = useState(false);
     const [error, setError] = useState('');
     const [cargando, setCargando] = useState(false);
+
+    // Mientras se verifica el estado de sesión guardado en localStorage
+    if (cargandoAuth) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <span className="animate-spin border-4 border-amber-600 border-t-transparent rounded-full w-10 h-10" />
+            </div>
+        );
+    }
 
     // Si ya hay sesión activa, redirigir directo
     if (usuarioActual) {
