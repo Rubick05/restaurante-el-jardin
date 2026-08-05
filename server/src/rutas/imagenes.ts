@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { cloudinary } from '../utils/cloudinary';
+import { cloudinary } from '../utils/cloudinary.js';
 
 const router = Router();
 

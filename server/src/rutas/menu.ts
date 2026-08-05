@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { pool } from '../bd/pool';
-import { emisorTiempoReal } from '../sincronizacion/emisor-tiempo-real';
-import { eliminarImagenCloudinary } from '../utils/cloudinary';
+import { pool } from '../bd/pool.js';
+import { emisorTiempoReal } from '../sincronizacion/emisor-tiempo-real.js';
+import { eliminarImagenCloudinary } from '../utils/cloudinary.js';
 
 const router = Router();
 

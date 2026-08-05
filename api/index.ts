@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { pool } from '../server/src/bd/pool';
+import { pool } from '../server/src/bd/pool.js';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -10,15 +10,15 @@ dotenv.config();
 const app = express();
 
 // Rutas de la API (Importaciones directas desde el subdirectorio del servidor)
-import pedidosRouter from '../server/src/rutas/pedidos';
-import menuRouter from '../server/src/rutas/menu';
-import historialRouter from '../server/src/rutas/historial';
-import usuariosRouter from '../server/src/rutas/usuarios';
-import promocionesRouter from '../server/src/rutas/promociones';
-import gastosRouter from '../server/src/rutas/gastos';
-import webConfigRouter from '../server/src/rutas/webConfig';
-import chatRouter from '../server/src/rutas/chat';
-import imagenesRouter from '../server/src/rutas/imagenes';
+import pedidosRouter from '../server/src/rutas/pedidos.js';
+import menuRouter from '../server/src/rutas/menu.js';
+import historialRouter from '../server/src/rutas/historial.js';
+import usuariosRouter from '../server/src/rutas/usuarios.js';
+import promocionesRouter from '../server/src/rutas/promociones.js';
+import gastosRouter from '../server/src/rutas/gastos.js';
+import webConfigRouter from '../server/src/rutas/webConfig.js';
+import chatRouter from '../server/src/rutas/chat.js';
+import imagenesRouter from '../server/src/rutas/imagenes.js';
 
 // Configuración de CORS
 app.use(cors({

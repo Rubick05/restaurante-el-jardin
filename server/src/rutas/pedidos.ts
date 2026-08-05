@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { pool } from '../bd/pool';
-import { emisorTiempoReal } from '../sincronizacion/emisor-tiempo-real';
+import { pool } from '../bd/pool.js';
+import { emisorTiempoReal } from '../sincronizacion/emisor-tiempo-real.js';
 
 const router = Router();
 
