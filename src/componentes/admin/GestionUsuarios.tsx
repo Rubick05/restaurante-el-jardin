@@ -5,12 +5,13 @@ import { Button } from '@/componentes/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/componentes/ui/card';
 import { Input } from '@/componentes/ui/input';
 import { Label } from '@/componentes/ui/label';
-import { Users, UserPlus, KeyRound, Trash2, Pencil } from 'lucide-react';
+import { Users, UserPlus, KeyRound, Trash2, Pencil, Eye, EyeOff } from 'lucide-react';
 
 interface Usuario {
     id: string;
     nombre: string;
     usuario: string;
+    password?: string;
     rol: string;
     creado_en: string;
 }
@@ -27,6 +28,14 @@ export default function GestionUsuarios() {
     const [password, setPassword] = useState('');
     const [rol, setRol] = useState('camarero');
     const [errorForm, setErrorForm] = useState('');
+
+    // Estado para ver/ocultar contraseñas
+    const [mostrarPasswords, setMostrarPasswords] = useState<Record<string, boolean>>({});
+    const [mostrarPasswordModal, setMostrarPasswordModal] = useState(false);
+
+    const toggleMostrarPassword = (id: string) => {
+        setMostrarPasswords(prev => ({ ...prev, [id]: !prev[id] }));
+    };
 
     const { data: usuarios = [], isLoading } = useQuery<Usuario[]>({
         queryKey: ['usuarios'],
@@ -70,7 +79,7 @@ export default function GestionUsuarios() {
             setNombre(usr.nombre);
             setUsuario(usr.usuario);
             setRol(usr.rol);
-            setPassword('');
+            setPassword(usr.password || '');
         } else {
             setEditando(null);
             setNombre('');
@@ -78,6 +87,7 @@ export default function GestionUsuarios() {
             setRol('camarero');
             setPassword('');
         }
+        setMostrarPasswordModal(false);
         setErrorForm('');
         setModalAbierto(true);
     };
@@ -85,6 +95,7 @@ export default function GestionUsuarios() {
     const cerrarModal = () => {
         setModalAbierto(false);
         setEditando(null);
+        setMostrarPasswordModal(false);
     };
 
     const handleGuardar = (e: React.FormEvent) => {
@@ -127,13 +138,40 @@ export default function GestionUsuarios() {
                         <CardHeader className="pb-2">
                             <CardTitle className="text-lg flex justify-between items-start">
                                 <span>{u.nombre}</span>
-                                <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border">
+                                <span className="text-xs font-normal px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border">
                                     {u.rol === 'camarero' ? 'mesero' : u.rol}
                                 </span>
                             </CardTitle>
                             <CardDescription className="text-sm">
                                 @{u.usuario}
                             </CardDescription>
+
+                            {/* Mostrar contraseña con opción de revelar */}
+                            <div className="flex items-center justify-between text-xs bg-muted/40 p-2 rounded-lg border border-border/60 mt-2">
+                                <span className="text-muted-foreground flex items-center gap-1.5 font-medium">
+                                    <KeyRound className="w-3.5 h-3.5 text-primary" /> Clave:
+                                </span>
+                                <div className="flex items-center gap-2">
+                                    <span className="font-mono text-xs font-semibold text-foreground tracking-wider">
+                                        {mostrarPasswords[u.id] ? (u.password || '(sin clave)') : '••••••••'}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            toggleMostrarPassword(u.id);
+                                        }}
+                                        className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted"
+                                        title={mostrarPasswords[u.id] ? "Ocultar contraseña" : "Ver contraseña"}
+                                    >
+                                        {mostrarPasswords[u.id] ? (
+                                            <EyeOff className="w-3.5 h-3.5 text-amber-500" />
+                                        ) : (
+                                            <Eye className="w-3.5 h-3.5" />
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
                         </CardHeader>
                         <CardContent className="pt-2 flex justify-end gap-2">
                             <Button variant="outline" size="sm" onClick={() => abrirModal(u)}>
@@ -208,19 +246,31 @@ export default function GestionUsuarios() {
                             </div>
 
                             <div className="space-y-1.5 pt-2 border-t border-border">
-                                <Label htmlFor="pass" className="flex items-center gap-1.5 text-primary text-xs uppercase tracking-wider">
-                                    <KeyRound className="w-3.5 h-3.5 text-primary" />
-                                    Contraseña {editando && '(Dejar en blanco para mantener actual)'}
+                                <Label htmlFor="pass" className="flex items-center justify-between text-primary text-xs uppercase tracking-wider">
+                                    <span className="flex items-center gap-1.5">
+                                        <KeyRound className="w-3.5 h-3.5 text-primary" />
+                                        Contraseña {editando && '(Visible / modificable)'}
+                                    </span>
                                 </Label>
-                                <Input
-                                    id="pass"
-                                    type="password"
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    required={!editando}
-                                    placeholder={editando ? '••••••••' : 'Indica una contraseña...'}
-                                    className="bg-muted/30 border-border text-foreground focus:ring-primary"
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="pass"
+                                        type={mostrarPasswordModal ? 'text' : 'password'}
+                                        value={password}
+                                        onChange={e => setPassword(e.target.value)}
+                                        required={!editando}
+                                        placeholder={editando ? 'Contraseña actual...' : 'Indica una contraseña...'}
+                                        className="bg-muted/30 border-border text-foreground focus:ring-primary pr-10 font-mono"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setMostrarPasswordModal(!mostrarPasswordModal)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                        title={mostrarPasswordModal ? 'Ocultar' : 'Mostrar'}
+                                    >
+                                        {mostrarPasswordModal ? <EyeOff className="w-4 h-4 text-amber-500" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

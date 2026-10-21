@@ -6,7 +6,7 @@ const router = Router();
 // GET /api/usuarios
 router.get('/', async (req, res) => {
     try {
-        const result = await pool.query('SELECT id, nombre, usuario, rol, creado_en FROM usuarios ORDER BY nombre ASC');
+        const result = await pool.query('SELECT id, nombre, usuario, password, rol, creado_en FROM usuarios ORDER BY nombre ASC');
         res.json(result.rows);
     } catch (error: any) {
         res.status(500).json({ error: error.message });
@@ -27,7 +27,7 @@ router.post('/', async (req, res) => {
         const r = await pool.query(`
             INSERT INTO usuarios (nombre, usuario, password, rol)
             VALUES ($1, $2, $3, $4)
-            RETURNING id, nombre, usuario, rol, creado_en
+            RETURNING id, nombre, usuario, password, rol, creado_en
         `, [nombre, usuario.trim().toLowerCase(), password, rol]);
 
         res.json({ ok: true, usuario: r.rows[0] });
@@ -64,7 +64,7 @@ router.put('/:id', async (req, res) => {
         const r = await pool.query(`
             UPDATE usuarios SET ${campos.join(', ')}
             WHERE id = $${idx}
-            RETURNING id, nombre, usuario, rol, creado_en
+            RETURNING id, nombre, usuario, password, rol, creado_en
         `, values);
 
         res.json({ ok: true, usuario: r.rows[0] });

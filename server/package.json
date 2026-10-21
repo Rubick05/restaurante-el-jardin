@@ -9,7 +9,8 @@
         "migrate-data": "ts-node src/scripts/migrar-datos.ts",
         "migrate-images": "ts-node src/scripts/migrar-imagenes.ts",
         "migrate-to-cloudinary": "ts-node src/scripts/migrar-a-cloudinary.ts",
-        "migrate-remaining-compressed": "ts-node src/scripts/migrar-restantes-compresso.ts"
+        "migrate-remaining-compressed": "ts-node src/scripts/migrar-restantes-compresso.ts",
+        "migrate-to-imgbb": "ts-node src/scripts/migrar-a-imgbb.ts"
     },
     "keywords": [],
     "author": "",

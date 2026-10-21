@@ -76,8 +76,18 @@ app.get('/api/test-db', async (_req, res) => {
     }
 });
 
-// Endpoint del Cron Job de Vercel para el cierre diario automático
-app.post('/api/cron/cierre-diario', async (req, res) => {
+// Endpoint Keep-Alive para evitar suspensión por inactividad en Supabase
+app.get('/api/cron/keep-alive', async (_req, res) => {
+    try {
+        const result = await pool.query('SELECT NOW() as now');
+        res.json({ ok: true, message: 'Supabase ping exitoso', time: result.rows[0].now });
+    } catch (error: any) {
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+// Endpoint del Cron Job de Vercel para el cierre diario automático (soporta GET y POST)
+app.all('/api/cron/cierre-diario', async (req, res) => {
     // Validar secret de Vercel Cron para seguridad
     const authHeader = req.headers.authorization;
     if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

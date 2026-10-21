@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/componentes/ui/card'
 import { Plus, Pencil, Trash2, Save, X, ImagePlus, Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { API_BASE_URL, normalizarMenu } from '@/hooks/useInicializacion';
-import { comprimirImagen, validarTamañoArchivo } from '@/lib/utils/imagen';
+import { comprimirImagen, validarTamañoArchivo, subirImagenAImgBB } from '@/lib/utils/imagen';
 
 export default function GestionMenu() {
   const queryClient = useQueryClient();
@@ -188,22 +188,12 @@ export default function GestionMenu() {
                         try {
                           const base64 = await comprimirImagen(file);
                           
-                          // Subir al servidor de Supabase Storage mediante el backend
-                          const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ imagen_base64: base64 })
-                          });
+                          // Subir optimizado a ImgBB (con fallback al servidor)
+                          const resSubida = await subirImagenAImgBB(base64, file.name);
                           
-                          if (!res.ok) {
-                            const errData = await res.json();
-                            throw new Error(errData.error || 'Error al subir la imagen');
-                          }
-                          
-                          const data = await res.json();
                           setFormulario(prev => ({ 
                             ...prev, 
-                            url_imagen: data.url, 
+                            url_imagen: resSubida.url, 
                             imagen_base64: undefined // Limpiar base64 para liberar la base de datos
                           }));
                         } catch (err: any) {

@@ -12,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/componentes/ui/tabs';
 import { Label } from '@/componentes/ui/label';
 import { Badge } from '@/componentes/ui/badge';
-import { comprimirImagen, validarTamañoArchivo } from '@/lib/utils/imagen';
+import { comprimirImagen, validarTamañoArchivo, subirImagenAImgBB } from '@/lib/utils/imagen';
 
 interface Promocion {
     id: string;
@@ -173,19 +173,8 @@ export default function VistaLanding() {
             // Comprimir si es imagen (comprimirImagen lee video sin modificar)
             const base64 = await comprimirImagen(file, esVideo ? Infinity as unknown as number : 900, 0.70);
             
-            // Subir al servidor de Supabase Storage mediante el backend
-            const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imagen_base64: base64 })
-            });
-            
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || 'Error al subir el archivo');
-            }
-            
-            const data = await res.json();
+            // Subir optimizado a ImgBB (con fallback al servidor)
+            const data = await subirImagenAImgBB(base64, file.name);
             setFormularioPromo(prev => ({
                 ...prev,
                 imagen_url: data.url,
@@ -255,19 +244,8 @@ export default function VistaLanding() {
         try {
             const base64 = await comprimirImagen(file, 1200, 0.72);
             
-            // Subir al servidor de Supabase Storage mediante el backend
-            const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imagen_base64: base64 })
-            });
-            
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || 'Error al subir la imagen');
-            }
-            
-            const data = await res.json();
+            // Subir optimizado a ImgBB (con fallback al servidor)
+            const data = await subirImagenAImgBB(base64, file.name);
             await guardarHeroSlides([...heroSlides, data.url]);
         } catch (err: any) {
             alert(err.message || 'Error al procesar la imagen. Intenta con otro archivo.');
@@ -312,19 +290,8 @@ export default function VistaLanding() {
         try {
             const base64 = await comprimirImagen(file, 800, 0.70);
             
-            // Subir al servidor de Supabase Storage mediante el backend
-            const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ imagen_base64: base64 })
-            });
-            
-            if (!res.ok) {
-                const errData = await res.json();
-                throw new Error(errData.error || 'Error al subir la imagen');
-            }
-            
-            const data = await res.json();
+            // Subir optimizado a ImgBB (con fallback al servidor)
+            const data = await subirImagenAImgBB(base64, file.name);
             setMosaicoForm(prev => ({ ...prev, src: data.url }));
             setMosaicoArchivoNombre(file.name);
         } catch (err: any) {

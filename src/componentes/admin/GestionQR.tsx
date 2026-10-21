@@ -6,6 +6,7 @@ import { QrCode, Upload, Trash2, RefreshCw, Calendar, Loader2 } from 'lucide-rea
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { API_BASE_URL } from '@/hooks/useInicializacion';
+import { subirImagenAImgBB } from '@/lib/utils/imagen';
 
 // QR se guarda en una entry especial de elementosMenu con id='qr-restaurante'
 const QR_KEY = 'qr-restaurante-imagen';
@@ -59,19 +60,8 @@ export default function GestionQR() {
             const fecha = new Date().toISOString();
             
             try {
-                // Subir al servidor de Supabase Storage mediante el backend
-                const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imagen_base64: base64 })
-                });
-                
-                if (!res.ok) {
-                    const errData = await res.json();
-                    throw new Error(errData.error || 'Error al subir el QR');
-                }
-                
-                const data = await res.json();
+                // Subir optimizado a ImgBB (con fallback al servidor)
+                const data = await subirImagenAImgBB(base64, 'qr-restaurante');
                 const publicUrl = data.url;
 
                 // Guardar local

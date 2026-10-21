@@ -1,0 +1,29 @@
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Se ejecuta automáticamente cada 3 días a las 06:00 UTC
+    - cron: '0 6 */3 * *'
+  workflow_dispatch: # Permite ejecución manual desde la pestaña 'Actions' en GitHub
+
+jobs:
+  ping-supabase:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping a Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://ucnobrafrlvwdzonbhlc.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjbm9icmFmcmx2d2R6b25iaGxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MDYyNDUsImV4cCI6MjA5NzM4MjI0NX0.-rYM2aTmDV3ohzUUg8uI4OSmoetFGJy4wEw_yrnSe04' }}
+        run: |
+          echo "Enviando ping a Supabase..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X GET "${SUPABASE_URL}/rest/v1/elementos_menu?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          echo "Código HTTP recibido: ${HTTP_STATUS}"
+          if [ "$HTTP_STATUS" -eq 200 ]; then
+            echo "✅ Supabase respondió correctamente. Contador de inactividad reiniciado."
+          else
+            echo "⚠️ Error al conectar con Supabase. Código: ${HTTP_STATUS}"
+            exit 1
+          fi

@@ -1,7 +1,9 @@
+import { API_BASE_URL } from '@/hooks/useInicializacion';
+
 /**
- * Utilidades de procesamiento de imágenes para el admin panel.
+ * Utilidades de procesamiento y subida de imágenes.
  * Comprime imágenes del lado del cliente usando Canvas API antes de
- * almacenarlas como base64, reduciendo significativamente el tamaño.
+ * subirlas o almacenarlas, reduciendo significativamente el tamaño y optimizando la carga.
  */
 
 /**
@@ -10,8 +12,8 @@
  * Para videos u otros archivos no-imagen, retorna el base64 original sin modificar.
  * 
  * @param file     Archivo de imagen a comprimir
- * @param maxWidth Ancho máximo en píxeles (por defecto 900px)
- * @param quality  Calidad JPEG 0.0–1.0 (por defecto 0.82)
+ * @param maxWidth Ancho máximo en píxeles (por defecto 750px)
+ * @param quality  Calidad JPEG 0.0–1.0 (por defecto 0.70)
  * @returns        Base64 data URL de la imagen comprimida
  */
 export async function comprimirImagen(
@@ -79,4 +81,77 @@ export function validarTamañoArchivo(file: File, maxMB = 15): boolean {
     return false;
   }
   return true;
+}
+
+export interface ResultadoSubidaImagen {
+  url: string;
+  thumb_url?: string;
+  display_url?: string;
+}
+
+/**
+ * Sube una imagen optimizada a ImgBB.
+ * Intenta primero la subida directa a la API de ImgBB para máxima velocidad
+ * y menor consumo de recursos del servidor. Si es video o hay fallo de red,
+ * delega la subida al endpoint del servidor backend (/api/imagenes/upload).
+ * 
+ * @param imagenBase64 Cadena data URL o base64 de la imagen
+ * @param nombre       Nombre opcional para el archivo
+ */
+export async function subirImagenAImgBB(
+  imagenBase64: string,
+  nombre?: string
+): Promise<ResultadoSubidaImagen> {
+  const esVideo = typeof imagenBase64 === 'string' && imagenBase64.startsWith('data:video/');
+  const imgbbApiKey = (import.meta.env.VITE_IMGBB_API_KEY as string) || '424027c5531739d483f18832dced19c9';
+
+  // Si no es un video, intentamos primero subir directo a ImgBB para acelerar la carga
+  if (!esVideo && imgbbApiKey) {
+    try {
+      const limpia = imagenBase64.replace(/^data:image\/[a-zA-Z+]+;base64,/, '');
+      const params = new URLSearchParams();
+      params.append('image', limpia);
+      if (nombre) params.append('name', nombre);
+
+      const res = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: params
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data?.url) {
+          return {
+            url: json.data.url,
+            display_url: json.data.display_url,
+            thumb_url: json.data.thumb?.url
+          };
+        }
+      }
+    } catch (directError) {
+      console.warn('Subida directa a ImgBB falló, usando endpoint del backend como alternativa...', directError);
+    }
+  }
+
+  // Fallback: subida a través del backend (/api/imagenes/upload)
+  const res = await fetch(`${API_BASE_URL}/api/imagenes/upload`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ imagen_base64: imagenBase64, nombre })
+  });
+
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || 'Error al subir la imagen');
+  }
+
+  const data = await res.json();
+  return {
+    url: data.url,
+    thumb_url: data.thumb_url,
+    display_url: data.display_url
+  };
 }
