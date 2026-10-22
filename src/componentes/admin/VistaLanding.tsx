@@ -3,8 +3,10 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
     Upload, Pencil, Trash2, Save, X, ImagePlus, Tag, 
     CheckCircle, ChevronDown, ChevronUp, Sparkles, 
-    MonitorSmartphone, Plus, Image, Grid, FileText, Loader2
+    MonitorSmartphone, Plus, Image, Grid, FileText, Loader2,
+    Eye, EyeOff, Globe
 } from 'lucide-react';
+import SimuladorWebLanding from './SimuladorWebLanding';
 import { API_BASE_URL } from '@/hooks/useInicializacion';
 import { Button } from '@/componentes/ui/button';
 import { Input } from '@/componentes/ui/input';
@@ -43,6 +45,7 @@ const BADGE_CHIPS = ['Nuevo', 'Promo', 'Evento', 'Hoy', 'Especial'] as const;
 export default function VistaLanding() {
     const queryClient = useQueryClient();
     const [seccionActiva, setSeccionActiva] = useState('promos');
+    const [mostrarPreview, setMostrarPreview] = useState(true);
 
     // ────────────────────────────────────────────────────────────────
     // ESTADOS: PROMOCIONES
@@ -378,7 +381,7 @@ export default function VistaLanding() {
     });
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 pb-20">
+        <div className="max-w-[1700px] mx-auto space-y-6 pb-20 px-2 sm:px-4">
             {/* Toast de Exito */}
             {exito && (
                 <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -389,34 +392,74 @@ export default function VistaLanding() {
                 </div>
             )}
 
-            {/* Header */}
-            <div className="flex items-center gap-3">
-                <div className="bg-primary/10 rounded-lg p-2">
-                    <MonitorSmartphone className="w-8 h-8 text-primary" />
+            {/* Header con métricas y botón de simulador */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card/60 p-4 sm:p-5 rounded-2xl border border-border shadow-xs backdrop-blur-xs">
+                <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 rounded-xl p-2.5">
+                        <MonitorSmartphone className="w-8 h-8 text-primary" />
+                    </div>
+                    <div>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl sm:text-2xl font-bold font-serif text-foreground">Gestión Web · El Jardín</h1>
+                            <Badge className="bg-emerald-500/15 text-emerald-500 border-none font-bold text-[10px] hidden sm:inline-flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> En Vivo
+                            </Badge>
+                        </div>
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                            Controla los eventos, portada y galería de la web pública con previsualización en tiempo real
+                        </p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-2xl sm:text-3xl font-bold font-serif text-foreground">Gestión Web</h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Controla y actualiza los contenidos de la página pública jardin-web de forma dinámica
-                    </p>
+
+                {/* Métricas rápidas y botón de vista previa */}
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                    <div className="hidden lg:flex items-center gap-2 bg-muted/40 px-3 py-1.5 rounded-xl border border-border text-xs">
+                        <span className="text-muted-foreground">Activos:</span>
+                        <Badge variant="outline" className="text-[11px] bg-background font-mono">{promosActivas.length} Promos</Badge>
+                        <Badge variant="outline" className="text-[11px] bg-background font-mono">{heroSlides.length} Hero</Badge>
+                        <Badge variant="outline" className="text-[11px] bg-background font-mono">{galeriaItems.length} Mosaico</Badge>
+                    </div>
+
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setMostrarPreview(!mostrarPreview)}
+                        className="text-xs flex items-center gap-1.5 border-border hover:bg-accent font-semibold"
+                    >
+                        {mostrarPreview ? (
+                            <>
+                                <EyeOff className="w-3.5 h-3.5 text-muted-foreground" />
+                                <span>Ocultar Simulador</span>
+                            </>
+                        ) : (
+                            <>
+                                <Eye className="w-3.5 h-3.5 text-primary" />
+                                <span>Ver Simulador Web</span>
+                            </>
+                        )}
+                    </Button>
                 </div>
             </div>
 
-            <Tabs value={seccionActiva} onValueChange={setSeccionActiva} className="w-full">
-                <TabsList className="bg-muted w-full sm:w-auto grid grid-cols-3">
-                    <TabsTrigger value="promos" className="flex items-center gap-1.5">
-                        <FileText className="w-4 h-4" />
-                        Promociones y Avisos
-                    </TabsTrigger>
-                    <TabsTrigger value="hero" className="flex items-center gap-1.5">
-                        <Image className="w-4 h-4" />
-                        Portada Hero
-                    </TabsTrigger>
-                    <TabsTrigger value="mosaico" className="flex items-center gap-1.5">
-                        <Grid className="w-4 h-4" />
-                        Galería Mosaico
-                    </TabsTrigger>
-                </TabsList>
+            {/* Layout Dividido: Controles de Gestión (Izquierda) + Simulador en Vivo (Derecha) */}
+            <div className={`grid grid-cols-1 ${mostrarPreview ? 'xl:grid-cols-12 gap-6 items-start' : ''}`}>
+                <div className={mostrarPreview ? 'xl:col-span-7 space-y-6' : 'max-w-5xl mx-auto space-y-6 w-full'}>
+                    <Tabs value={seccionActiva} onValueChange={setSeccionActiva} className="w-full">
+                        <TabsList className="bg-muted w-full sm:w-auto grid grid-cols-3">
+                            <TabsTrigger value="promos" className="flex items-center gap-1.5">
+                                <FileText className="w-4 h-4" />
+                                Promociones y Avisos
+                            </TabsTrigger>
+                            <TabsTrigger value="hero" className="flex items-center gap-1.5">
+                                <Image className="w-4 h-4" />
+                                Portada Hero
+                            </TabsTrigger>
+                            <TabsTrigger value="mosaico" className="flex items-center gap-1.5">
+                                <Grid className="w-4 h-4" />
+                                Galería Mosaico
+                            </TabsTrigger>
+                        </TabsList>
 
                 {/* ──────────────────────────────────────────────────────── */}
                 {/* TAB 1: PROMOCIONES Y AVISOS */}
@@ -967,6 +1010,40 @@ export default function VistaLanding() {
                 </TabsContent>
             </Tabs>
         </div>
+
+        {/* Columna Derecha: Simulador Web en Vivo (Sticky en Desktop) */}
+        {mostrarPreview && (
+            <div className="xl:col-span-5 sticky top-4 h-fit hidden xl:block">
+                <SimuladorWebLanding
+                    heroSlides={heroSlides}
+                    promociones={promociones}
+                    galeriaItems={galeriaItems}
+                    formularioPromo={formularioPromo}
+                    mosaicoForm={mosaicoForm}
+                    seccionActiva={seccionActiva}
+                />
+            </div>
+        )}
+    </div>
+
+    {/* Simulador en pantallas pequeñas (debajo de los controles) */}
+    {mostrarPreview && (
+        <div className="xl:hidden mt-8 pt-6 border-t border-border">
+            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                <Eye className="w-4 h-4 text-primary" />
+                Simulación en Vivo de la Web
+            </h3>
+            <SimuladorWebLanding
+                heroSlides={heroSlides}
+                promociones={promociones}
+                galeriaItems={galeriaItems}
+                formularioPromo={formularioPromo}
+                mosaicoForm={mosaicoForm}
+                seccionActiva={seccionActiva}
+            />
+        </div>
+    )}
+</div>
     );
 
     function handleFileInput(e: React.ChangeEvent<HTMLInputElement>) {

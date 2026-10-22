@@ -69,6 +69,22 @@ export async function comprimirImagen(
 }
 
 /**
+ * Optimiza URLs de imágenes (especialmente Cloudinary) inyectando f_auto, q_auto y ancho límite.
+ */
+export function optimizarUrlImagen(url?: string | null, width = 800): string {
+  if (!url || typeof url !== 'string') return '';
+  if (url.startsWith('data:') || (url.startsWith('/') && !url.startsWith('//'))) return url;
+
+  if (url.includes('cloudinary.com') && url.includes('/image/upload/')) {
+    if (!url.includes('f_auto') && !url.includes('q_auto')) {
+      return url.replace('/image/upload/', `/image/upload/f_auto,q_auto,w_${width},c_limit/`);
+    }
+  }
+
+  return url;
+}
+
+/**
  * Valida el tamaño de un archivo y muestra un error si es demasiado grande.
  * @param file      Archivo a validar
  * @param maxMB     Tamaño máximo en MB (por defecto 15MB)
