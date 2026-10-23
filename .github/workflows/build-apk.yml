@@ -23,11 +23,11 @@ jobs:
           node-version: 22
           cache: 'npm'
 
-      - name: 3. Configurar Java JDK 17
+      - name: 3. Configurar Java JDK 21 (Requerido por Capacitor 8)
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: 4. Instalar Dependencias Web
         run: npm ci
