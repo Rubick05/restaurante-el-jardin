@@ -16,9 +16,10 @@ export interface Pedido {
     numero_ficha: number; // Número secuencial del día (1, 2, 3...)
     numero_letrero?: string; // Letrero físico para ubicación (1-30)
     datos_facturacion?: {
-        tipo: 'factura' | 'recibo';
+        tipo?: 'factura' | 'recibo' | string;
         nit_ci?: string;
         razon_social?: string;
+        [key: string]: any;
     };
     creado_en: string; // ISO String
     actualizado_en: string;

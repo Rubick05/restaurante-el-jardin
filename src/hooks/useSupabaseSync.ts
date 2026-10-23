@@ -29,7 +29,7 @@ function obtenerClienteSupabaseSeguro() {
     return null;
 }
 
-const supabase = obtenerClienteSupabaseSeguro();
+export const supabase = obtenerClienteSupabaseSeguro();
 
 export function useSupabaseSync() {
     const queryClient = useQueryClient();
@@ -51,25 +51,31 @@ export function useSupabaseSync() {
                     console.log('📢 Cambio detectado en pedidos:', payload);
                     const { bdLocal } = await import('@/lib/bd/bd-local');
                     
-                    if (payload.eventType === 'INSERT') {
+                    if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
                         const pedido = payload.new as any;
                         if (pedido?.id) {
                             try {
-                                const [normalizado] = normalizarPedidos([pedido]);
-                                await bdLocal.pedidos.put(normalizado);
+                                if (supabase) {
+                                    const { data: completo } = await supabase
+                                        .from('pedidos')
+                                        .select('*, items:items_pedido(*)')
+                                        .eq('id', pedido.id)
+                                        .single();
+                                    if (completo) {
+                                        const [normalizado] = normalizarPedidos([completo]);
+                                        await bdLocal.pedidos.put(normalizado);
+                                    } else {
+                                        const local = await bdLocal.pedidos.get(pedido.id);
+                                        const [normalizado] = normalizarPedidos([{ ...local, ...pedido }]);
+                                        await bdLocal.pedidos.put(normalizado);
+                                    }
+                                } else {
+                                    const local = await bdLocal.pedidos.get(pedido.id);
+                                    const [normalizado] = normalizarPedidos([{ ...local, ...pedido }]);
+                                    await bdLocal.pedidos.put(normalizado);
+                                }
                             } catch (e) {
-                                console.error('Error guardando pedido nuevo', e);
-                            }
-                        }
-                    } else if (payload.eventType === 'UPDATE') {
-                        const pedido = payload.new as any;
-                        if (pedido?.id) {
-                            try {
-                                const local = await bdLocal.pedidos.get(pedido.id);
-                                const [normalizado] = normalizarPedidos([{ ...local, ...pedido }]);
-                                await bdLocal.pedidos.put(normalizado);
-                            } catch (e) {
-                                console.error('Error actualizando pedido local', e);
+                                console.error('Error guardando/actualizando pedido en tiempo real', e);
                             }
                         }
                     } else if (payload.eventType === 'DELETE') {
@@ -87,6 +93,34 @@ export function useSupabaseSync() {
                     queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
                     queryClient.invalidateQueries({ queryKey: ['pedidos-cocina'] });
                     queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
+                    queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
+                }
+            )
+            // Escuchar cambios en la tabla 'items_pedido'
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'items_pedido' },
+                async (payload) => {
+                    console.log('📢 Cambio detectado en items_pedido:', payload);
+                    const item = (payload.new || payload.old) as any;
+                    if (item?.id_pedido && supabase) {
+                        try {
+                            const { data: completo } = await supabase
+                                .from('pedidos')
+                                .select('*, items:items_pedido(*)')
+                                .eq('id', item.id_pedido)
+                                .single();
+                            if (completo) {
+                                const { bdLocal } = await import('@/lib/bd/bd-local');
+                                const [normalizado] = normalizarPedidos([completo]);
+                                await bdLocal.pedidos.put(normalizado);
+                            }
+                        } catch (e) {
+                            console.error('Error sincronizando items_pedido', e);
+                        }
+                    }
+                    queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
+                    queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
                     queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
                 }
             )
