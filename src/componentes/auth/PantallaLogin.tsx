@@ -3,6 +3,8 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth/contexto-auth';
 import { UtensilsCrossed, LogIn, Eye, EyeOff, Smartphone } from 'lucide-react';
 
+import ModalInstalarApp from '@/componentes/ui/ModalInstalarApp';
+
 export default function PantallaLogin() {
     const { login, usuarioActual, cargando: cargandoAuth } = useAuth();
     const navigate = useNavigate();
@@ -11,6 +13,7 @@ export default function PantallaLogin() {
     const [mostrarPassword, setMostrarPassword] = useState(false);
     const [error, setError] = useState('');
     const [cargando, setCargando] = useState(false);
+    const [mostrarModalApp, setMostrarModalApp] = useState(false);
 
     // Mientras se verifica el estado de sesión guardado en localStorage
     if (cargandoAuth) {
@@ -127,21 +130,26 @@ export default function PantallaLogin() {
                 </div>
 
                 <div className="mt-4 flex flex-col items-center gap-2">
-                    <a
-                        href="https://github.com/Rubick05/restaurante-el-jardin/releases/download/latest-apk/El-Jardin-Restaurante.apk"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-xs transition shadow-sm"
+                    <button
+                        type="button"
+                        onClick={() => setMostrarModalApp(true)}
+                        className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-xs transition shadow-sm active:scale-[0.99]"
                     >
                         <Smartphone className="w-4 h-4" />
-                        Descargar APK Oficial Android (v1.0)
-                    </a>
+                        Instalar App (iPhone iOS / Android / APK)
+                    </button>
                 </div>
 
                 <p className="text-center text-xs text-muted-foreground/40 mt-4">
                     Restaurante El Jardín · Sistema Interno
                 </p>
             </div>
+
+            {/* Modal de Instalación PWA (iOS / Android) y APK */}
+            <ModalInstalarApp
+                abierto={mostrarModalApp}
+                alCerrar={() => setMostrarModalApp(false)}
+            />
         </div>
     );
 }

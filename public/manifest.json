@@ -1,18 +1,31 @@
 {
-    "name": "Restaurante Pelusa",
-    "short_name": "PelusaPOS",
-    "start_url": ".",
-    "display": "standalone",
-    "background_color": "#ffffff",
-    "theme_color": "#0f172a",
-    "description": "Sistema de Gestión de Restaurantes Offline-First",
-    "icons": [
-        {
-            "src": "/vite.svg",
-            "sizes": "512x512",
-            "type": "image/svg+xml",
-            "purpose": "any maskable"
-        }
-    ],
-    "orientation": "landscape"
+  "name": "El Jardín — Restaurante & Gestión",
+  "short_name": "El Jardín",
+  "description": "Sistema de Gestión Gastronómica, Comandas y Pedidos en Tiempo Real",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0c",
+  "theme_color": "#18181b",
+  "orientation": "any",
+  "categories": ["food", "business", "productivity"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
 }
