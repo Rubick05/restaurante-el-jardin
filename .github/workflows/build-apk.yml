@@ -17,10 +17,10 @@ jobs:
       - name: 1. Checkout del Repositorio
         uses: actions/checkout@v4
 
-      - name: 2. Configurar Node.js 20
+      - name: 2. Configurar Node.js 22 (LTS Requerido por Capacitor 8)
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: 3. Configurar Java JDK 17
@@ -64,9 +64,9 @@ jobs:
         env:
           BUILD_NUMBER: ${{ github.run_number }}
           KEYSTORE_PATH: "el-jardin-release.jks"
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'ElJardin2026Secure' }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'eljardin' }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'ElJardin2026Secure' }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           cd android
           chmod +x gradlew
