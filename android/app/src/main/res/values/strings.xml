@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Restaurante Pelusa</string>
+    <string name="title_activity_main">Restaurante Pelusa</string>
+    <string name="package_name">com.restaurante.pelusa</string>
+    <string name="custom_url_scheme">com.restaurante.pelusa</string>
+</resources>

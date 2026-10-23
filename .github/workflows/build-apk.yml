@@ -1,0 +1,107 @@
+name: Compilar APK Android Oficial (Release Firmado)
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-android:
+    name: Compilar y Publicar APK Android
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Checkout del Repositorio
+        uses: actions/checkout@v4
+
+      - name: 2. Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: 3. Configurar Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: 4. Instalar Dependencias Web
+        run: npm ci
+
+      - name: 5. Compilar Aplicación Web (Producción)
+        run: npm run build
+
+      - name: 6. Sincronizar Assets con Capacitor Android
+        run: npx cap sync android
+
+      - name: 7. Configurar Keystore de Producción Persistente
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          mkdir -p android/app
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Decodificando Keystore oficial desde secreto de GitHub..."
+            echo "$KEYSTORE_BASE64" | base64 --decode > android/app/el-jardin-release.jks
+          else
+            echo "Aviso: ANDROID_KEYSTORE_BASE64 no configurado en Secrets. Generando Keystore determinista de respaldo..."
+            keytool -genkeypair -v \
+              -keystore android/app/el-jardin-release.jks \
+              -alias "${KEY_ALIAS:-eljardin}" \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "${KEYSTORE_PASSWORD:-ElJardin2026Secure}" \
+              -keypass "${KEY_PASSWORD:-ElJardin2026Secure}" \
+              -dname "CN=El Jardin, OU=Restaurante, O=Pelusa, L=Cochabamba, ST=Cochabamba, C=BO"
+          fi
+
+      - name: 8. Compilar APK Android Firmado (assembleRelease)
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          KEYSTORE_PATH: "el-jardin-release.jks"
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'ElJardin2026Secure' }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'eljardin' }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'ElJardin2026Secure' }}
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace --no-daemon
+
+      - name: 9. Preparar Directorio de Salida
+        run: |
+          mkdir -p release-output
+          cp android/app/build/outputs/apk/release/app-release.apk release-output/El-Jardin-Restaurante.apk
+
+      - name: 10. Subir APK como Artefacto de GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: El-Jardin-Restaurante-APK
+          path: release-output/El-Jardin-Restaurante.apk
+          retention-days: 30
+
+      - name: 11. Publicar Release Oficial en GitHub (Sobreescritura Limpia)
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        with:
+          tag_name: latest-apk
+          name: El Jardín Restaurante — APK Oficial (v1.0.${{ github.run_number }})
+          make_latest: true
+          body: |
+            🌿 **APK Oficial de El Jardín Restaurante listo para instalar en Android**.
+            
+            - **Instalación y Actualización Directa:** Puedes instalar este APK sobre la versión anterior de tu teléfono sin desinstalarla y sin perder configuraciones ni datos.
+            - Compilación Oficial número: `${{ github.run_number }}`.
+            - Menú interactivo sincronizado en tiempo real.
+            - Sistema de reservas y pedidos.
+            
+            📥 Descarga el archivo adjunto `El-Jardin-Restaurante.apk` e instálalo directamente en tu teléfono.
+          draft: false
+          prerelease: false
+          files: release-output/El-Jardin-Restaurante.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

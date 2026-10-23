@@ -1,7 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '@/lib/auth/contexto-auth';
-import { UtensilsCrossed, LogIn, Eye, EyeOff } from 'lucide-react';
+import { UtensilsCrossed, LogIn, Eye, EyeOff, Smartphone } from 'lucide-react';
 
 export default function PantallaLogin() {
     const { login, usuarioActual, cargando: cargandoAuth } = useAuth();
@@ -126,7 +126,19 @@ export default function PantallaLogin() {
                     </form>
                 </div>
 
-                <p className="text-center text-xs text-muted-foreground/30 mt-6">
+                <div className="mt-4 flex flex-col items-center gap-2">
+                    <a
+                        href="https://github.com/Rubick05/restaurante-el-jardin/releases/download/latest-apk/El-Jardin-Restaurante.apk"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary font-semibold text-xs transition shadow-sm"
+                    >
+                        <Smartphone className="w-4 h-4" />
+                        Descargar APK Oficial Android (v1.0)
+                    </a>
+                </div>
+
+                <p className="text-center text-xs text-muted-foreground/40 mt-4">
                     Restaurante El Jardín · Sistema Interno
                 </p>
             </div>
