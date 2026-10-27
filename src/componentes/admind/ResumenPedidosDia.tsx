@@ -6,15 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/componentes/ui/card'
 import { Badge } from '@/componentes/ui/badge';
 import { Button } from '@/componentes/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/componentes/ui/tabs';
+import { Link } from 'react-router-dom';
 import { 
     Calendar, DollarSign, Hash, MapPin, X, UtensilsCrossed, 
     UserCircle, RefreshCw, ChevronDown, ChevronUp, ClipboardList, TrendingUp,
-    Pencil, Trash2, CheckCircle2, Printer, FileText
+    Pencil, Trash2, CheckCircle2, Printer, FileText, Lock
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { useState } from 'react';
 import { API_BASE_URL, normalizarPedidos, formatearFechaLocal } from '@/hooks/useInicializacion';
+import { supabase } from '@/hooks/useSupabaseSync';
 import NavegadorMenu from '@/componentes/mesero/NavegadorMenu';
 import { ModalCobro } from '@/componentes/mesero/ModalCobro';
 
@@ -311,51 +313,99 @@ export default function ResumenPedidosDia() {
         refetchInterval: 10000
     });
 
+    const fechaHoyStr = formatearFechaLocal(new Date());
+
+    // Consultar si el día de hoy ya está registrado como cerrado
+    const { data: diaCerradoHoy } = useQuery({
+        queryKey: ['dia-cerrado-hoy', fechaHoyStr],
+        queryFn: async () => {
+            const local = await bdLocal.diasCerrados.get(fechaHoyStr);
+            if (local) return local;
+
+            if (supabase) {
+                try {
+                    const { data } = await supabase
+                        .from('dias_cerrados')
+                        .select('*')
+                        .eq('id', fechaHoyStr)
+                        .maybeSingle();
+                    if (data) {
+                        await bdLocal.diasCerrados.put(data);
+                        return data;
+                    }
+                } catch {}
+            }
+            return null;
+        },
+        refetchInterval: 5000,
+    });
+
     const totalDia = pedidosDia.reduce((acc, p) => p.estado !== 'cancelado' ? acc + p.total : acc, 0);
     const totalItems = pedidosDia.reduce((acc, p) => p.estado !== 'cancelado' ? acc + (p.items?.length || 0) : acc, 0);
 
     const cerrarDia = async () => {
         if (!confirm('¿Cerrar el día? Se guardará el resumen para el historial y todos los pedidos quedarán archivados.')) return;
         setProcesando(true);
+        const fechaStr = formatearFechaLocal(new Date());
         try {
-            const apiUrl = API_BASE_URL;
-
-            if (apiUrl) {
-                // Cerrar vía servidor
-                const res = await fetch(`${apiUrl}/api/pedidos/cerrar-dia`, { method: 'POST' });
-                if (!res.ok) throw new Error('Error del servidor');
-                const data = await res.json();
-                await queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
-                await queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
-                await queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
-                alert(`✅ Día cerrado. Total: Bs ${Number(data.total_recaudado ?? 0).toFixed(2)}`);
-            } else {
-                // Offline: cerrar localmente
-                const fechaStr = formatearFechaLocal(new Date());
-                for (const pedido of pedidosDia) {
-                    if (pedido.estado !== 'pagado') {
-                        await bdLocal.pedidos.update(pedido.id, {
-                            estado: 'pagado',
-                            actualizado_en: new Date().toISOString()
-                        });
-                    }
+            // 1. Archivar SIEMPRE localmente en Dexie (inmediato y garantizado)
+            for (const pedido of pedidosDia) {
+                if (pedido.estado !== 'pagado') {
+                    await bdLocal.pedidos.update(pedido.id, {
+                        estado: 'pagado',
+                        actualizado_en: new Date().toISOString()
+                    });
                 }
-                await bdLocal.diasCerrados.put({
-                    id: fechaStr,
-                    fecha: fechaStr,
-                    total_recaudado: totalDia,
-                    total_pedidos: pedidosDia.length,
-                    total_items: totalItems,
-                    pedidos_snapshot: JSON.stringify(pedidosDia),
-                    cerrado_en: new Date().toISOString(),
-                });
-                await queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
-                await queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
-                await queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
-                alert(`✅ Día cerrado. Total recaudado: Bs ${totalDia.toFixed(2)}\n${pedidosDia.length} pedidos archivados.`);
             }
-        } catch {
-            alert('Error al cerrar el día');
+
+            const snapshot = {
+                id: fechaStr,
+                fecha: fechaStr,
+                total_recaudado: totalDia,
+                total_pedidos: pedidosDia.length,
+                total_items: totalItems,
+                pedidos_snapshot: JSON.stringify(pedidosDia),
+                cerrado_en: new Date().toISOString(),
+            };
+
+            await bdLocal.diasCerrados.put(snapshot);
+
+            // 2. Sincronizar en Supabase si está disponible
+            if (supabase) {
+                try {
+                    await supabase.from('dias_cerrados').upsert(snapshot);
+                    const hoyInicio = new Date();
+                    hoyInicio.setHours(0, 0, 0, 0);
+                    await supabase.from('pedidos')
+                        .update({ estado: 'pagado', actualizado_en: new Date().toISOString() })
+                        .gte('creado_en', hoyInicio.toISOString());
+                } catch (e) {
+                    console.warn('Error sincronizando cierre con Supabase:', e);
+                }
+            }
+
+            // 3. Sincronizar vía servidor si está disponible
+            const apiUrl = API_BASE_URL;
+            if (apiUrl) {
+                try {
+                    await fetch(`${apiUrl}/api/pedidos/cerrar-dia`, { method: 'POST' });
+                } catch (e) {
+                    console.warn('Error al llamar API de servidor (cierre guardado en BD/local):', e);
+                }
+            }
+
+            // 4. Invalidar queries para actualizar la interfaz al instante
+            await queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
+            await queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
+            await queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
+            await queryClient.invalidateQueries({ queryKey: ['dia-cerrado-hoy'] });
+            await queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
+            await queryClient.invalidateQueries({ queryKey: ['pedidos-online-despacho'] });
+
+            alert(`✅ ¡Día cerrado exitosamente!\n\nFecha: ${fechaStr}\nTotal Recaudado: Bs ${totalDia.toFixed(2)}\nPedidos Archivados: ${pedidosDia.length}\n\nEl resumen ya está guardado en Historial Días.`);
+        } catch (err: any) {
+            console.error('Error al cerrar el día:', err);
+            alert(`Error al cerrar el día: ${err.message || 'Error inesperado'}`);
         } finally {
             setProcesando(false);
         }
@@ -431,14 +481,40 @@ export default function ResumenPedidosDia() {
                     <Button
                         onClick={cerrarDia}
                         disabled={procesando || pedidosDia.length === 0}
-                        className="bg-primary hover:bg-primary/95 text-primary-foreground font-semibold"
+                        className={`${diaCerradoHoy ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-primary hover:bg-primary/95'} text-white font-semibold`}
                         size="sm"
                     >
-                        <X className="mr-1.5 h-4 w-4" />
-                        Cerrar Día
+                        {diaCerradoHoy ? <CheckCircle2 className="mr-1.5 h-4 w-4" /> : <X className="mr-1.5 h-4 w-4" />}
+                        {diaCerradoHoy ? 'Día Cerrado ✓ (Actualizar)' : 'Cerrar Día'}
                     </Button>
                 </div>
             </div>
+
+            {/* Banner Informativo de Día Cerrado */}
+            {diaCerradoHoy && (
+                <div className="bg-emerald-500/10 border-2 border-emerald-500/30 text-emerald-800 dark:text-emerald-200 rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 shrink-0">
+                            <Lock className="w-5 h-5 sm:w-6 sm:h-6" />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className="font-black text-sm sm:text-base tracking-wide">EL DÍA DE HOY HA SIDO CERRADO EXITOSAMENTE</span>
+                                <Badge className="bg-emerald-600 text-white font-bold text-[10px]">ARCHIVADO</Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                Cierre guardado a las {new Date(diaCerradoHoy.cerrado_en).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · Total recaudado: <strong>Bs. {Number(diaCerradoHoy.total_recaudado).toFixed(2)}</strong> con {diaCerradoHoy.total_pedidos} pedidos archivados.
+                            </p>
+                        </div>
+                    </div>
+                    <Link
+                        to="/admin/historial-dias"
+                        className="text-xs font-bold text-emerald-700 dark:text-emerald-300 hover:underline flex items-center gap-1 shrink-0 bg-emerald-500/20 px-3 py-1.5 rounded-lg border border-emerald-500/30 w-fit"
+                    >
+                        Ver en Historial Días →
+                    </Link>
+                </div>
+            )}
 
             {/* Cards de Resumen */}
             <div className="grid grid-cols-3 gap-3">

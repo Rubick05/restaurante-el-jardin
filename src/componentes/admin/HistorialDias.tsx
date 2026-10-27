@@ -12,6 +12,7 @@ import { es } from 'date-fns/locale';
 import { useState } from 'react';
 import { USUARIOS_SISTEMA } from '@/lib/auth/usuarios';
 import { API_BASE_URL } from '@/hooks/useInicializacion';
+import { supabase } from '@/hooks/useSupabaseSync';
 
 function nombreMesero(idMesero: string): string {
     return USUARIOS_SISTEMA.find(u => u.id === idMesero)?.nombre ?? idMesero;
@@ -36,6 +37,35 @@ export default function HistorialDias() {
     const { data: dias = [], isFetching } = useQuery({
         queryKey: ['dias-cerrados'],
         queryFn: async () => {
+            // 1. Intentar cargar desde el backend
+            try {
+                const res = await fetch(`${API_BASE_URL}/api/historial`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data)) {
+                        for (const d of data) {
+                            await bdLocal.diasCerrados.put(d);
+                        }
+                    }
+                }
+            } catch {}
+
+            // 2. Intentar cargar desde Supabase si hay conexión
+            if (supabase) {
+                try {
+                    const { data } = await supabase
+                        .from('dias_cerrados')
+                        .select('*')
+                        .order('fecha', { ascending: false })
+                        .limit(90);
+                    if (data && data.length > 0) {
+                        for (const d of data) {
+                            await bdLocal.diasCerrados.put(d);
+                        }
+                    }
+                } catch {}
+            }
+
             const todos = await bdLocal.diasCerrados.toArray();
             return todos.sort((a, b) => b.fecha.localeCompare(a.fecha));
         },
@@ -46,16 +76,24 @@ export default function HistorialDias() {
         if (!confirm('¿Eliminar este registro histórico? Esta acción no se puede deshacer.')) return;
 
         try {
-            const res = await fetch(`${API_BASE_URL}/api/historial/${id}`, { method: 'DELETE' });
+            // Eliminar en servidor
+            try {
+                await fetch(`${API_BASE_URL}/api/historial/${id}`, { method: 'DELETE' });
+            } catch {}
 
-            if (res.ok) {
-                await bdLocal.diasCerrados.delete(id);
-                queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
-            } else {
-                alert('No se pudo borrar el registro del servidor. Verifica tu conexión.');
+            // Eliminar en Supabase
+            if (supabase) {
+                try {
+                    await supabase.from('dias_cerrados').delete().eq('id', id);
+                } catch {}
             }
+
+            // Eliminar localmente
+            await bdLocal.diasCerrados.delete(id);
+            queryClient.invalidateQueries({ queryKey: ['dias-cerrados'] });
+            queryClient.invalidateQueries({ queryKey: ['dia-cerrado-hoy'] });
         } catch {
-            alert('Error de red al intentar borrar del servidor.');
+            alert('Error al intentar borrar el registro.');
         }
     };
 

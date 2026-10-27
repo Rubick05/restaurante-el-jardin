@@ -5,6 +5,7 @@ import PaginaSemilla from "@/paginas/PaginaSemilla";
 import VistaMesero from "@/componentes/mesero/VistaMesero";
 import TableroCocina from "@/componentes/cocina/TableroCocina";
 import HistorialEntregas from "@/componentes/cocina/HistorialEntregas";
+import TableroPedidosOnline from "@/componentes/pedidos-online/TableroPedidosOnline";
 import GestionMenu from "@/componentes/admin/GestionMenu";
 import GestionQR from "@/componentes/admin/GestionQR";
 import HistorialDias from "@/componentes/admin/HistorialDias";
@@ -92,6 +93,17 @@ const router = createBrowserRouter([
           <RutaProtegida
             elemento={<TableroCocina />}
             rolesPermitidos={['cocinero', 'administrador']}
+          />
+        ),
+      },
+
+      // ── PEDIDOS ONLINE / DESPACHO ──────────────────────────
+      {
+        path: "pedidos-online",
+        element: (
+          <RutaProtegida
+            elemento={<TableroPedidosOnline />}
+            rolesPermitidos={['administrador', 'camarero', 'cocinero']}
           />
         ),
       },

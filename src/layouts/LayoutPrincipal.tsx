@@ -16,7 +16,8 @@ import {
     MonitorSmartphone,
     Image,
     Users,
-    TrendingUp
+    TrendingUp,
+    Bike
 } from "lucide-react";
 import { Button } from "@/componentes/ui/button";
 import { useAuth } from "@/lib/auth/contexto-auth";
@@ -110,6 +111,12 @@ export default function LayoutPrincipal() {
                         <NavLink to="/historial-entregas" icon={PackageCheck} label="Historial Entregas" />
                     </>
                 )}
+
+                {/* DESPACHO Y DELIVERY WEB */}
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground px-2 pt-3 pb-1">
+                    Atención Web
+                </p>
+                <NavLink to="/pedidos-online" icon={Bike} label="Pedidos Online / Delivery" />
 
                 {/* ADMIN */}
                 {esAdmin && (

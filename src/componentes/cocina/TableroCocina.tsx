@@ -275,10 +275,68 @@ export default function TableroCocina() {
             }
 
             queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
+            queryClient.invalidateQueries({ queryKey: ['pedidos-online-despacho'] });
             queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
             queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
         } catch (err) {
             console.error('Error al cambiar estado delivery:', err);
+        }
+    };
+
+    // Entregar a Despacho: libera a la cocina del plato y lo transfiere a la sección de pedidos online
+    const entregarADespacho = async (item: ItemExtendido) => {
+        try {
+            const pedido = await bdLocal.pedidos.get(item.pedidoId);
+            if (!pedido?.items) return;
+
+            const itemsActualizados = pedido.items.map((it, idx) =>
+                idx === item.itemIndex ? { ...it, estado_item: 'entregado' as const } : it
+            );
+
+            const nuevoEstadoPedido = pedido.estado === 'pendiente' || pedido.estado === 'en_proceso' ? 'listo' : pedido.estado;
+
+            await bdLocal.pedidos.update(item.pedidoId, {
+                items: itemsActualizados,
+                estado: nuevoEstadoPedido,
+                actualizado_en: new Date().toISOString(),
+            });
+
+            try {
+                await fetch(`${API_BASE_URL}/api/pedidos/${item.pedidoId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        estado: nuevoEstadoPedido,
+                        item_id: item.itemId,
+                        estado_item: 'entregado',
+                        nuevosItems: itemsActualizados,
+                        items: itemsActualizados,
+                    }),
+                });
+            } catch {}
+
+            if (supabase) {
+                try {
+                    if (item.itemId) {
+                        await supabase.from('items_pedido').update({
+                            estado_item: 'entregado',
+                            actualizado_en: new Date().toISOString()
+                        }).eq('id', item.itemId);
+                    }
+                    await supabase.from('pedidos').update({
+                        estado: nuevoEstadoPedido,
+                        actualizado_en: new Date().toISOString()
+                    }).eq('id', item.pedidoId);
+                } catch (e) {
+                    console.warn('Error Supabase entregar a despacho:', e);
+                }
+            }
+
+            queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
+            queryClient.invalidateQueries({ queryKey: ['pedidos-online-despacho'] });
+            queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
+        } catch (err) {
+            console.error('Error al entregar a despacho:', err);
         }
     };
 
@@ -530,45 +588,29 @@ export default function TableroCocina() {
                             </div>
                         )}
 
-                        {/* Botones de Cambio de Estado Delivery para el Cliente (En camino, Ya en puerta, Entregado) */}
-                        {item.esWeb && item.tipoEntrega === 'delivery' && (
-                            <div className="grid grid-cols-2 gap-1.5 pt-1">
+                        {/* Botón Pasar a Despacho para Pedidos Web (Libera el tablero de Cocina) */}
+                        {item.esWeb ? (
+                            <div className="space-y-1.5 pt-1">
                                 <Button
                                     type="button"
                                     size="sm"
-                                    variant={item.pedidoEstado === 'en_camino' ? 'default' : 'outline'}
-                                    className={`text-xs h-7 gap-1 font-bold ${
-                                        item.pedidoEstado === 'en_camino' 
-                                            ? 'bg-blue-600 text-white' 
-                                            : 'border-blue-400 text-blue-700 dark:text-blue-300 hover:bg-blue-50'
-                                    }`}
-                                    onClick={() => cambiarEstadoPedidoDelivery(item, 'en_camino')}
+                                    className="w-full text-xs h-8 gap-1.5 font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow"
+                                    onClick={() => entregarADespacho(item)}
                                 >
-                                    🛵 En camino
+                                    <PackageCheck className="w-4 h-4" /> 📦 Pasar a Despacho Online
                                 </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={item.pedidoEstado === 'en_puerta' ? 'default' : 'outline'}
-                                    className={`text-xs h-7 gap-1 font-bold ${
-                                        item.pedidoEstado === 'en_puerta' 
-                                            ? 'bg-amber-600 text-white' 
-                                            : 'border-amber-400 text-amber-700 dark:text-amber-300 hover:bg-amber-50'
-                                    }`}
-                                    onClick={() => cambiarEstadoPedidoDelivery(item, 'en_puerta')}
-                                >
-                                    🚪 Ya en puerta
-                                </Button>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    variant="outline"
-                                    className="col-span-2 text-xs h-7 gap-1 font-bold border-emerald-500 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50"
-                                    onClick={() => cambiarEstadoPedidoDelivery(item, 'entregado')}
-                                >
-                                    <CheckCircle2 className="w-3.5 h-3.5" /> Marcar Entregado
-                                </Button>
+                                <p className="text-[10px] text-center text-muted-foreground">
+                                    Despeja la cocina. El encargado de Delivery coordinará la entrega.
+                                </p>
                             </div>
+                        ) : (
+                            <Button
+                                onClick={() => avanzarItem(item)}
+                                className="w-full font-semibold" 
+                                size="sm"
+                            >
+                                ✓ Entregado a Garzón
+                            </Button>
                         )}
                     </div>
                 ) : (
