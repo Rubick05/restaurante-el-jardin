@@ -47,6 +47,7 @@ interface ItemExtendido {
     saldoPendiente?: number;
     pagoConfirmado?: boolean;
     datosFacturacion?: any;
+    pedidoEstado?: string;
 }
 
 export default function TableroCocina() {
@@ -160,6 +161,7 @@ export default function TableroCocina() {
                         saldoPendiente,
                         pagoConfirmado,
                         datosFacturacion: df,
+                        pedidoEstado: pedido.estado,
                     });
                 }
             }
@@ -243,6 +245,41 @@ export default function TableroCocina() {
         queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
         queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
         queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
+    };
+
+    // Cambiar estado de delivery: en camino, ya en puerta, entregado
+    const cambiarEstadoPedidoDelivery = async (item: ItemExtendido, nuevoEstado: 'en_camino' | 'en_puerta' | 'entregado') => {
+        try {
+            await bdLocal.pedidos.update(item.pedidoId, {
+                estado: nuevoEstado,
+                actualizado_en: new Date().toISOString(),
+            });
+
+            try {
+                await fetch(`${API_BASE_URL}/api/pedidos/${item.pedidoId}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ estado: nuevoEstado }),
+                });
+            } catch {}
+
+            if (supabase) {
+                try {
+                    await supabase.from('pedidos').update({
+                        estado: nuevoEstado,
+                        actualizado_en: new Date().toISOString()
+                    }).eq('id', item.pedidoId);
+                } catch (e) {
+                    console.warn('Error actualizando estado en Supabase:', e);
+                }
+            }
+
+            queryClient.invalidateQueries({ queryKey: ['items-cocina'] });
+            queryClient.invalidateQueries({ queryKey: ['pedidos-activos'] });
+            queryClient.invalidateQueries({ queryKey: ['pedidos-dia'] });
+        } catch (err) {
+            console.error('Error al cambiar estado delivery:', err);
+        }
     };
 
     // Confirmar pago del pedido web y opcionalmente mover a preparación
@@ -414,6 +451,16 @@ export default function TableroCocina() {
                                 <span className="line-clamp-2">{item.direccion}</span>
                             </div>
                         )}
+                        {item.datosFacturacion?.google_maps_url && (
+                            <a
+                                href={item.datosFacturacion.google_maps_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold pt-0.5"
+                            >
+                                📍 Abrir en Google Maps ↗
+                            </a>
+                        )}
                     </div>
                 )}
 
@@ -480,6 +527,47 @@ export default function TableroCocina() {
                                         <span>Pagado 100% (Bs. 0 pendiente)</span>
                                     </div>
                                 )}
+                            </div>
+                        )}
+
+                        {/* Botones de Cambio de Estado Delivery para el Cliente (En camino, Ya en puerta, Entregado) */}
+                        {item.esWeb && item.tipoEntrega === 'delivery' && (
+                            <div className="grid grid-cols-2 gap-1.5 pt-1">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={item.pedidoEstado === 'en_camino' ? 'default' : 'outline'}
+                                    className={`text-xs h-7 gap-1 font-bold ${
+                                        item.pedidoEstado === 'en_camino' 
+                                            ? 'bg-blue-600 text-white' 
+                                            : 'border-blue-400 text-blue-700 dark:text-blue-300 hover:bg-blue-50'
+                                    }`}
+                                    onClick={() => cambiarEstadoPedidoDelivery(item, 'en_camino')}
+                                >
+                                    🛵 En camino
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant={item.pedidoEstado === 'en_puerta' ? 'default' : 'outline'}
+                                    className={`text-xs h-7 gap-1 font-bold ${
+                                        item.pedidoEstado === 'en_puerta' 
+                                            ? 'bg-amber-600 text-white' 
+                                            : 'border-amber-400 text-amber-700 dark:text-amber-300 hover:bg-amber-50'
+                                    }`}
+                                    onClick={() => cambiarEstadoPedidoDelivery(item, 'en_puerta')}
+                                >
+                                    🚪 Ya en puerta
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    className="col-span-2 text-xs h-7 gap-1 font-bold border-emerald-500 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50"
+                                    onClick={() => cambiarEstadoPedidoDelivery(item, 'entregado')}
+                                >
+                                    <CheckCircle2 className="w-3.5 h-3.5" /> Marcar Entregado
+                                </Button>
                             </div>
                         )}
                     </div>

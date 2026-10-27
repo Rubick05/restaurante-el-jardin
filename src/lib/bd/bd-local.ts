@@ -7,7 +7,7 @@ export interface Pedido {
     id_mesa: string;
     id_mesero: string;
     numero_pedido: string;
-    estado: 'pendiente' | 'confirmado' | 'en_proceso' | 'listo' | 'entregado' | 'pagado' | 'cancelado';
+    estado: 'pendiente' | 'confirmado' | 'en_proceso' | 'listo' | 'entregado' | 'pagado' | 'cancelado' | 'en_camino' | 'en_puerta';
     tipo_pedido: 'mesa' | 'llevar' | 'delivery';
     subtotal: number;
     impuesto: number;
