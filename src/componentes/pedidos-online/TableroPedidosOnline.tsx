@@ -184,8 +184,11 @@ export default function TableroPedidosOnline() {
         }
     };
 
-    // Generador de enlaces de WhatsApp según estado
-    const generarEnlaceWhatsApp = (pedido: Pedido, tipoMensaje: 'confirmar' | 'en_camino' | 'en_puerta' | 'personalizado') => {
+    // Generador de enlaces de WhatsApp según estado con mensajes completos pre-cargados
+    const generarEnlaceWhatsApp = (
+        pedido: Pedido, 
+        tipoMensaje: 'confirmar' | 'en_preparacion' | 'listo' | 'en_camino' | 'en_puerta' | 'entregado'
+    ) => {
         const df = (pedido.datos_facturacion || {}) as any;
         const telefono = (df.cliente_telefono || '').replace(/\D/g, '');
         if (!telefono) return null;
@@ -194,25 +197,32 @@ export default function TableroPedidosOnline() {
         const nombre = df.cliente_nombre || 'Estimado cliente';
         const ficha = pedido.numero_ficha || 'Web';
         const saldo = Number(df.saldo_pendiente ?? 0);
+        const tipoEntrega = df.tipo_entrega || 'delivery';
 
         let texto = '';
-        if (tipoMensaje === 'confirmar') {
+        if (tipoMensaje === 'confirmar' || tipoMensaje === 'en_preparacion') {
             texto = `¡Hola ${nombre}! 👋 Te confirmamos que tu pedido #${ficha} en *Restaurante El Jardín* fue recibido con éxito y ya está en preparación 🍲.`;
             if (saldo > 0) {
-                texto += `\nSaldo pendiente al recibir: *Bs. ${saldo.toFixed(0)}*.`;
+                texto += `\n💰 Saldo pendiente al recibir: *Bs. ${saldo.toFixed(0)}*.`;
+            }
+        } else if (tipoMensaje === 'listo') {
+            if (tipoEntrega === 'delivery') {
+                texto = `📦 ¡Hola ${nombre}! Tu pedido #${ficha} de *Restaurante El Jardín* ya está listo y empaquetado en nuestra barra de despacho. En breves minutos saldrá el repartidor 🛵.`;
+            } else {
+                texto = `🪴 ¡Hola ${nombre}! Tu mesa y pedido #${ficha} en *Restaurante El Jardín* ya están listos esperándote. ¡Te esperamos! 😊`;
             }
         } else if (tipoMensaje === 'en_camino') {
-            texto = `🛵 ¡Hola ${nombre}! Tu pedido #${ficha} de *Restaurante El Jardín* ya salió en camino con nuestro repartidor a tu dirección:\n📍 ${df.direccion || ''}.\nTe avisaremos apenas estemos en tu puerta.`;
+            texto = `🛵 ¡Hola ${nombre}! Tu pedido #${ficha} de *Restaurante El Jardín* ya va en camino con nuestro repartidor a tu dirección:\n📍 ${df.direccion || 'tu domicilio'}${df.zona ? ` (${df.zona})` : ''}.\nTe avisaremos apenas estemos en tu puerta.`;
             if (saldo > 0) {
-                texto += `\nRecuerda tener listos *Bs. ${saldo.toFixed(0)}* para el pago.`;
+                texto += `\n💰 Recuerda tener listos *Bs. ${saldo.toFixed(0)}* para el pago al repartidor.`;
             }
         } else if (tipoMensaje === 'en_puerta') {
-            texto = `🚪 ¡Hola ${nombre}! Nuestro repartidor ya se encuentra en tu puerta con tu pedido caliente de *El Jardín*. Por favor salir a recibirlo.`;
+            texto = `🚪 ¡Hola ${nombre}! Nuestro repartidor de *El Jardín* ya se encuentra en tu puerta con tu comida caliente. Por favor salir a recibirlo.`;
             if (saldo > 0) {
-                texto += `\nMonto a cancelar: *Bs. ${saldo.toFixed(0)}*. ¡Buen provecho! 🍽️`;
+                texto += `\n💰 Monto a cancelar: *Bs. ${saldo.toFixed(0)}*.`;
             }
-        } else {
-            texto = `Hola ${nombre}, nos comunicamos de Restaurante El Jardín respecto a tu pedido #${ficha}.`;
+        } else if (tipoMensaje === 'entregado') {
+            texto = `🍽️ ¡Hola ${nombre}! Confirmamos la entrega de tu pedido #${ficha}. ¡Muchas gracias por tu preferencia en *Restaurante El Jardín*! ¡Que tengas un excelente provecho! ✨`;
         }
 
         return `https://wa.me/${telCompleto}?text=${encodeURIComponent(texto)}`;
@@ -730,26 +740,63 @@ export default function TableroPedidosOnline() {
                                             )}
                                         </div>
 
-                                        {/* Avisos rápidos de WhatsApp con mensaje listo */}
+                                        {/* Avisos rápidos de WhatsApp con mensaje listo para cada estado */}
                                         {telefono && (
-                                            <div className="pt-1 flex items-center gap-1">
-                                                <span className="text-[10px] text-muted-foreground">Aviso WhatsApp:</span>
-                                                <a
-                                                    href={generarEnlaceWhatsApp(pedido, 'en_camino') || '#'}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-[10px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/20 font-semibold"
-                                                >
-                                                    🛵 "En camino"
-                                                </a>
-                                                <a
-                                                    href={generarEnlaceWhatsApp(pedido, 'en_puerta') || '#'}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-[10px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/20 font-semibold"
-                                                >
-                                                    🚪 "En puerta"
-                                                </a>
+                                            <div className="pt-2 border-t border-border/40 space-y-1">
+                                                <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
+                                                    <MessageCircle className="w-3 h-3 text-emerald-600" /> Enviar Estado por WhatsApp:
+                                                </div>
+                                                <div className="flex flex-wrap gap-1">
+                                                    <a
+                                                        href={generarEnlaceWhatsApp(pedido, 'en_preparacion') || '#'}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-[10.5px] bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/20 font-semibold flex items-center gap-0.5"
+                                                        title="Avisar que el pedido fue recibido y está en preparación"
+                                                    >
+                                                        🍲 Confirmado
+                                                    </a>
+                                                    <a
+                                                        href={generarEnlaceWhatsApp(pedido, 'listo') || '#'}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-[10.5px] bg-purple-500/10 hover:bg-purple-500/20 text-purple-700 dark:text-purple-300 px-2 py-0.5 rounded border border-purple-500/20 font-semibold flex items-center gap-0.5"
+                                                        title="Avisar que está listo en despacho"
+                                                    >
+                                                        📦 Listo
+                                                    </a>
+                                                    {tipoEntrega === 'delivery' && (
+                                                        <>
+                                                            <a
+                                                                href={generarEnlaceWhatsApp(pedido, 'en_camino') || '#'}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-[10.5px] bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded border border-blue-500/20 font-semibold flex items-center gap-0.5"
+                                                                title="Avisar que el repartidor va en camino"
+                                                            >
+                                                                🛵 En camino
+                                                            </a>
+                                                            <a
+                                                                href={generarEnlaceWhatsApp(pedido, 'en_puerta') || '#'}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-[10.5px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded border border-amber-500/20 font-semibold flex items-center gap-0.5"
+                                                                title="Avisar que el repartidor está en la puerta"
+                                                            >
+                                                                🚪 En puerta
+                                                            </a>
+                                                        </>
+                                                    )}
+                                                    <a
+                                                        href={generarEnlaceWhatsApp(pedido, 'entregado') || '#'}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-[10.5px] bg-slate-500/10 hover:bg-slate-500/20 text-slate-700 dark:text-slate-300 px-2 py-0.5 rounded border border-slate-500/20 font-semibold flex items-center gap-0.5"
+                                                        title="Enviar agradecimiento de entrega"
+                                                    >
+                                                        🍽️ Entregado
+                                                    </a>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
